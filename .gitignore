@@ -1,6 +1,8 @@
 # Logs
 logs
 *.log
+*.env
+.wwebjs_auth
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

@@ -11,6 +11,10 @@
     </p>
 </div>
 
+### Try it here !
+
+[WhatsBot Playground](https://chat.whatsapp.com/LafMN793Hj9BBn3rOAe5CI)
+
 ### Getting Started
 
 Installing dependencies

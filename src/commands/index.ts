@@ -7,4 +7,5 @@ export default {
     gpt: require("./gpt.command"),
     meme: require("./meme.command"),
     joke: require("./joke.command"),
+    get: require("./get.command"),
 }

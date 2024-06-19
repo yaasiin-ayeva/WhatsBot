@@ -1,18 +1,40 @@
 import { config } from "dotenv";
+import logger from "./logger.config";
+
 config();
 
-export const EnvConfig = {
-    GEMINI_API_KEY: process.env.GEMINI_API_KEY,
-    CHAT_GPT_PROJECT_ID: process.env.CHAT_GPT_PROJECT_ID,
-    CHAT_GPT_ORG_ID: process.env.CHAT_GPT_ORG_ID,
-    CHAT_GPT_API_KEY: process.env.CHAT_GPT_API_KEY
-};
+class EnvConfig {
 
-const initialize = () => {
-    if (!EnvConfig.GEMINI_API_KEY) throw new Error("Please provide a valid Gemini API key.");
-    if (!EnvConfig.CHAT_GPT_PROJECT_ID) throw new Error("Please provide a valid ChatGPT Project ID.");
-    if (!EnvConfig.CHAT_GPT_ORG_ID) throw new Error("Please provide a valid ChatGPT Organization ID.");
-    if (!EnvConfig.CHAT_GPT_API_KEY) throw new Error("Please provide a valid ChatGPT API key.");
-};
+    static GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+    static CHAT_GPT_PROJECT_ID = process.env.CHAT_GPT_PROJECT_ID;
+    static CHAT_GPT_ORG_ID = process.env.CHAT_GPT_ORG_ID;
+    static CHAT_GPT_API_KEY = process.env.CHAT_GPT_API_KEY;
+    static CHROME_PATH = process.env.CHROME_PATH;
 
-initialize();
+    static validate() {
+        if (!this.GEMINI_API_KEY) {
+            throw new Error("Environment variable GEMINI_API_KEY is missing. Please provide a valid Gemini API key.");
+        }
+        if (!this.CHAT_GPT_PROJECT_ID) {
+            throw new Error("Environment variable CHAT_GPT_PROJECT_ID is missing. Please provide a valid ChatGPT Project ID.");
+        }
+        if (!this.CHAT_GPT_ORG_ID) {
+            throw new Error("Environment variable CHAT_GPT_ORG_ID is missing. Please provide a valid ChatGPT Organization ID.");
+        }
+        if (!this.CHAT_GPT_API_KEY) {
+            throw new Error("Environment variable CHAT_GPT_API_KEY is missing. Please provide a valid ChatGPT API key.");
+        }
+        if (!this.CHROME_PATH) {
+            throw new Error("Environment variable CHROME_PATH is missing. Please provide a valid Chrome path.");
+        }
+    }
+}
+
+try {
+    EnvConfig.validate();
+} catch (error) {
+    logger.error(error);
+    process.exit(1);
+}
+
+export default EnvConfig;

@@ -1,10 +1,11 @@
 import { Message, MessageMedia } from "whatsapp-web.js";
-import { downloadFile, downloader, identifySocialNetwork } from "../utils/dl.util";
+import { downloadFile, downloader, identifySocialNetwork } from "../utils/get.util";
 import logger from "../configs/logger.config";
-import { isUrl } from "../utils/common.util";
+import { del_file, isUrl } from "../utils/common.util";
 const path = require("path");
 
 const DOWNLOAD_DIR = "public/downloads";
+let filePath: string = null;
 
 export const run = async (message: Message, args: string[] = null, _prefix: string = "/") => {
 
@@ -27,7 +28,7 @@ export const run = async (message: Message, args: string[] = null, _prefix: stri
         const videoUrl = await downloader(url, socialNetwork);
 
         const uniqid = Date.now();
-        const filePath = path.join(DOWNLOAD_DIR, `${uniqid}.mp4`);
+        filePath = path.join(DOWNLOAD_DIR, `${uniqid}.mp4`);
 
         message.reply(`> WhatsBot 🤖 Downloading your file from ${socialNetwork}...`);
 
@@ -39,5 +40,7 @@ export const run = async (message: Message, args: string[] = null, _prefix: stri
     } catch (err) {
         logger.error(err);
         message.reply('> WhatsBot 🤖 Error during file download.');
+    } finally {
+        del_file(filePath);
     }
 };

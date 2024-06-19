@@ -79,7 +79,7 @@ To see available language codes, use `/langlist`
 
 8. Get
 ```
-/get [url] - Download file from a social media
+/get [url] - Download file from a social media (Tiktok) without watermark
 ```
 
 ### Project Structure

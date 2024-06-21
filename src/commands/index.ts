@@ -8,4 +8,5 @@ export default {
     meme: require("./meme.command"),
     joke: require("./joke.command"),
     get: require("./get.command"),
+    meteo: require("./meteo.command"),
 }

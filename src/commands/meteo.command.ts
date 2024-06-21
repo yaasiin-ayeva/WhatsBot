@@ -1,29 +1,30 @@
 import { Message, MessageMedia } from 'whatsapp-web.js';
 import 'dotenv/config';
 import axios from 'axios';
-import moment from 'moment';
-import 'moment/locale/fr';
 import * as fs from 'fs';
 import * as path from 'path';
-
+import { format_localtime } from '../utils/common.util';
+import logger from '../configs/logger.config';
 
 export const run = async (message: Message, args: string[] = null, prefix: string = "/") => {
-    if (message.body.startsWith('/meteo')) {
-        const city = message.body.split(' ')[1];
-        if (city) {
-            try {
-                const weatherInfo = await getWeather(city);
-                const weatherImage = await getWeatherImage(weatherInfo.icon);
-                const formattedLocaltime = moment(weatherInfo.localtime, 'YYYY-MM-DD HH:mm').format('LLL');
-                const formattedMessage = `${weatherInfo.city}, ${formattedLocaltime} - ${weatherInfo.description}.`;
-                await message.reply(MessageMedia.fromFilePath(weatherImage));
-                await message.reply(formattedMessage);
-            } catch (error) {
-                console.error(error);
-                message.reply('> WhatsBot 🤖 Le service météorologique est fermé et revient bientôt.');
-            }
-        } else {
-            message.reply('> WhatsBot 🤖 You prick! Specify a city; learn: /meteo Niamtougou. Do I have to tell you ?');
+
+    const city = args.join(" ");
+
+    if (!city) {
+        message.reply(`> WhatsBot 🤖 Please specify a city, for example: ${prefix}weather New York.`);
+        return;
+    }
+
+    if (city) {
+        try {
+            const weatherInfo = await getWeather(city);
+            const weatherImage = await getWeatherImage(weatherInfo.icon);
+            const formattedLocaltime = format_localtime(weatherInfo.localtime);
+            const formattedMessage = `${weatherInfo.city}, ${formattedLocaltime} - ${weatherInfo.description}.`;
+            await message.reply(MessageMedia.fromFilePath(weatherImage), null, { caption: formattedMessage });
+        } catch (error) {
+            logger.error(error);
+            message.reply('> WhatsBot 🤖 The weather service is currently unavailable. Please try again later.');
         }
     }
 };
@@ -33,7 +34,7 @@ async function getWeather(city: string): Promise<{ description: string, icon: st
     if (!apiKey) {
         throw new Error('API key is missing. Please check your .env file.');
     }
-    const url = `http://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${city}&lang=fr`;
+    const url = `http://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${city}&lang=en`;
     const response = await axios.get(url);
     const data = response.data;
 
@@ -52,7 +53,7 @@ async function getWeatherImage(iconUrl: string): Promise<string> {
     const response = await axios.get(iconUrl, { responseType: 'arraybuffer' });
     const buffer = Buffer.from(response.data, 'binary');
     const fileName = path.basename(iconUrl);
-    const filePath = path.resolve(`./tmp/${fileName}`);
+    const filePath = path.resolve(`./public/${fileName}`);
     fs.writeFileSync(filePath, buffer);
     return filePath;
 }

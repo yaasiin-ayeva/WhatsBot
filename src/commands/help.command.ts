@@ -10,6 +10,7 @@ export const run = (message: Message, args: string[] = null, prefix: string = "/
         { name: "chat", description: "Chat with Gemini AI", eg: "chat Hello gemini!" }, { name: "gpt", description: "Chat with ChatGPT", eg: "gpt Hello chatgpt!" },
         { name: "meme", description: "Get random meme", eg: "meme" }, { name: "joke", description: "Get random joke", eg: "joke" },
         { name: "get", description: "Download file from a social media", eg: "get https://www.tiktok.com/@tiktok/video/7371419698862378270" },
+        { name: "meteo", description: "Get the weather for a city", eg: "weather New York" }
     ];
 
     let content = "";

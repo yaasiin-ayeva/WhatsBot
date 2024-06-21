@@ -82,6 +82,11 @@ To see available language codes, use `/langlist`
 /get [url] - Download file from a social media (Tiktok) without watermark
 ```
 
+8. Meteo
+```
+/meteo [city] - Get current meteo for a city
+```
+
 ### Project Structure
 ````	
 src/

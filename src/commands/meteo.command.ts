@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { format_localtime } from '../utils/common.util';
 import logger from '../configs/logger.config';
+import EnvConfig from '../configs/env.config';
 
 export const run = async (message: Message, args: string[] = null, prefix: string = "/") => {
 
@@ -30,11 +31,8 @@ export const run = async (message: Message, args: string[] = null, prefix: strin
 };
 
 async function getWeather(city: string): Promise<{ description: string, icon: string, city: string, localtime: string }> {
-    const apiKey = process.env.OPENWEATHERMAP_API_KEY;
-    if (!apiKey) {
-        throw new Error('API key is missing. Please check your .env file.');
-    }
-    const url = `http://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${city}&lang=en`;
+    
+    const url = `http://api.weatherapi.com/v1/current.json?key=${EnvConfig.OPENWEATHERMAP_API_KEY}&q=${city}&lang=en`;
     const response = await axios.get(url);
     const data = response.data;
 

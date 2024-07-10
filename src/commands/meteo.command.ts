@@ -12,7 +12,7 @@ export const run = async (message: Message, args: string[] = null, prefix: strin
     const city = args.join(" ");
 
     if (!city) {
-        message.reply(`> WhatsBot 🤖 Please specify a city, for example: ${prefix}weather New York.`);
+        message.reply(`> WhatsBot 🤖 Please specify a city, for example: ${prefix}meteo New York.`);
         return;
     }
 

@@ -1,8 +1,9 @@
-const { ttdl } = require('btch-downloader');
+const { ttdl, igdl, twitter, fbdown } = require('btch-downloader');
 import axios from "axios";
 const fs = require("fs");
+import * as cheerio from 'cheerio';
 
-export type TSocialNetwork = "tiktok";
+export type TSocialNetwork = "tiktok" | "instagram" | "twitter" | "facebook" | "pinterest";
 
 export interface ITikTokResult {
     title: string;
@@ -13,18 +14,71 @@ export interface ITikTokResult {
     creator: string;
 }
 
+export interface IInstagramResult {
+    wm?: string;
+    url: string;
+    thumbnail?: string;
+}
+
+export interface ITwitterResult {
+    title: string;
+    url: {
+        hd?: string;
+        sd?: string;
+    }[];
+}
+
+export interface IFacebookResult {
+    Normal_video: string;
+    HD: string;
+    audio: string;
+}
+
+export interface IPinterestResult {
+    video: string;
+}
+
 const downloaders: { [key in TSocialNetwork]: (url: string) => Promise<string> } = {
     tiktok: async (url: string) => {
         const result = await ttdl(url) as ITikTokResult;
         return result.video.length > 0 ? result.video[0] : '';
     },
+    instagram: async (url: string) => {
+        const result = await igdl(url) as IInstagramResult[];
+        return result.length > 0 && result[0].url ? result[0].url : '';
+    },
+    twitter: async (url: string) => {
+        const result = await twitter(url) as ITwitterResult;
+        return result.url?.[0]?.hd ?? result.url?.[0]?.sd ?? '';
+    },
+    facebook: async (url: string) => {
+        const result = await fbdown(url) as IFacebookResult;
+        return result.HD ?? result.Normal_video ?? result.audio ?? '';
+    },
+    pinterest: async (url: string) => {
+        try {
+            const response = await axios.get(url);
+            const $ = cheerio.load(response.data);
+
+            const video = $('video[src]').attr('src');
+            if (!video) {
+                return '';
+            }
+
+            const videoUrl = video.replace("/hls/", "/720p/").replace(".m3u8", ".mp4");
+            return videoUrl ? videoUrl : '';
+        } catch (error) {
+            return '';
+        }
+    }
 };
 
 const socialNetworkPatterns: { [key in TSocialNetwork]: RegExp } = {
     tiktok: /^(?:https?:\/\/)?(?:www\.)?(tiktok\.com|vm\.tiktok\.com)\/.+$/i,
-    // instagram: /^(?:https?:\/\/)?(?:www\.)?instagram\.com\/.+$/i,
-    // facebook: /^(?:https?:\/\/)?(?:www\.)?facebook\.com|m\.facebook|fb.watch\/.+$/i,
-    // twitter: /^(?:https?:\/\/)?(?:www\.)?(twitter\.com|x\.com)\/.+$/i,
+    instagram: /^(?:https?:\/\/)?(?:www\.)?instagram\.com\/.+$/i,
+    twitter: /^(?:https?:\/\/)?(?:www\.)?(twitter\.com|x\.com)\/.+$/i,
+    facebook: /^(?:https?:\/\/)?(?:www\.)?facebook\.com|m\.facebook|fb.watch\/.+$/i,
+    pinterest: /^(?:https?:\/\/)?(?:www\.)?pinterest\.com|pin\.it\/.+$/i,
     // youtube: /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/|youtu\.be\/).+$/i,
 };
 

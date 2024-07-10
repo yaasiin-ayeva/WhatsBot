@@ -8,6 +8,7 @@
         "@iamtraction/google-translate": "^2.0.1",
         "axios": "^1.7.2",
         "btch-downloader": "^2.3.2",
+        "cheerio": "^1.0.0-rc.12",
         "dotenv": "^16.4.5",
         "fs": "^0.0.1-security",
         "moment": "^2.30.1",

@@ -7,7 +7,7 @@
     </h1>
     <img src="public/index.png" alt="Preview" width="100%">
     <p>
-        Simple WhatsApp bot from unofficial Whatsapp API, built in NodeJS   &amp;  TypeScript, uses Gemini   &amp;   ChatGPT APIs for Completion.
+        Simple WhatsApp bot from unofficial Whatsapp API, built in NodeJS   &amp;  TypeScript, uses Gemini   &amp;   ChatGPT APIs for Completion, and having many cool features.
     </p>
 </div>
 
@@ -79,7 +79,7 @@ To see available language codes, use `/langlist`
 
 8. Get
 ```
-/get [url] - Download file from a social media (Tiktok) without watermark
+/get [url] - Download file from a social media (Tiktok, Twitter, Instagram, Facebook, Pinterest) without watermark
 ```
 
 9. Meteo

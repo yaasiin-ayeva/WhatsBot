@@ -3,6 +3,7 @@ logs
 *.log
 *.env
 .wwebjs_auth
+.wwebjs_cache
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

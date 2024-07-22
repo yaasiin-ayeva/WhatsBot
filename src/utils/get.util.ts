@@ -1,9 +1,9 @@
-const { ttdl, igdl, twitter, fbdown } = require('btch-downloader');
+const { ttdl, igdl, twitter, fbdown, youtube } = require('btch-downloader');
 import axios from "axios";
 const fs = require("fs");
 import * as cheerio from 'cheerio';
 
-export type TSocialNetwork = "tiktok" | "instagram" | "twitter" | "facebook" | "pinterest";
+export type TSocialNetwork = "tiktok" | "instagram" | "twitter" | "facebook" | "pinterest" | "youtube";
 
 export interface ITikTokResult {
     title: string;
@@ -38,6 +38,12 @@ export interface IPinterestResult {
     video: string;
 }
 
+export interface IYoutubeResult {
+    id: string | null;
+    mp4: string;
+    mp3: string;
+}
+
 const downloaders: { [key in TSocialNetwork]: (url: string) => Promise<string> } = {
     tiktok: async (url: string) => {
         const result = await ttdl(url) as ITikTokResult;
@@ -70,6 +76,10 @@ const downloaders: { [key in TSocialNetwork]: (url: string) => Promise<string> }
         } catch (error) {
             return '';
         }
+    },
+    youtube: async (url: string) => {
+        const result = await youtube(url) as IYoutubeResult;
+        return result && result.mp4 ? result.mp4 : '';
     }
 };
 
@@ -79,7 +89,7 @@ const socialNetworkPatterns: { [key in TSocialNetwork]: RegExp } = {
     twitter: /^(?:https?:\/\/)?(?:www\.)?(twitter\.com|x\.com)\/.+$/i,
     facebook: /^(?:https?:\/\/)?(?:www\.)?facebook\.com|m\.facebook|fb.watch\/.+$/i,
     pinterest: /^(?:https?:\/\/)?(?:www\.)?pinterest\.com|pin\.it\/.+$/i,
-    // youtube: /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/|youtu\.be\/).+$/i,
+    youtube: /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/|youtu\.be\/).+$/i,
 };
 
 export const identifySocialNetwork = (url: string): TSocialNetwork | null => {

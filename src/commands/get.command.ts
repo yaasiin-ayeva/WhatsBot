@@ -1,5 +1,5 @@
 import { Message, MessageMedia } from "whatsapp-web.js";
-import { downloadFile, downloader, identifySocialNetwork } from "../utils/get.util";
+import { MAX_STREAMING_FILE_SIZE, downloadFile, downloader, identifySocialNetwork } from "../utils/get.util";
 import logger from "../configs/logger.config";
 import { del_file, isUrl } from "../utils/common.util";
 
@@ -38,7 +38,7 @@ export const run = async (message: Message, args: string[] = null, _prefix: stri
 
         ffmpeg.setFfmpegPath(ffmpegPath);
 
-        message.reply(`> WhatsBot 🤖 Downloading your file from ${socialNetwork} (This might take some time)...`);
+        message.reply(`> WhatsBot 🤖 Getting your file from ${socialNetwork} (Max file size allowed ${MAX_STREAMING_FILE_SIZE / 1024 / 1024} Mb)...`);
 
         await downloadFile(videoUrl, originalFilePath);
 

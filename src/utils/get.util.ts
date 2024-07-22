@@ -5,6 +5,8 @@ import * as cheerio from 'cheerio';
 
 export type TSocialNetwork = "tiktok" | "instagram" | "twitter" | "facebook" | "pinterest" | "youtube";
 
+export const MAX_STREAMING_FILE_SIZE = 75 * 1024 * 1024;    // 75 MB
+
 export interface ITikTokResult {
     title: string;
     title_audio: string;
@@ -115,16 +117,26 @@ export const downloader = async (url: string, type: TSocialNetwork): Promise<str
     }
 };
 
-export const downloadFile = async (url: string, filePath: string): Promise<string> => {
+export const downloadFile = async (url: string, filePath: string, maxSize: number = MAX_STREAMING_FILE_SIZE): Promise<string> => {
     try {
+
         const response = await axios.get(url, { responseType: 'stream' });
         const fileStream = fs.createWriteStream(filePath);
+
+        let downloadedSize = 0;
+
         return new Promise((resolve, reject) => {
+            response.data.on('data', (chunk: Buffer) => {
+                downloadedSize += chunk.length;
+                if (downloadedSize > maxSize) {
+                    response.data.destroy();
+                    reject(new Error(`File size exceeds the maximum limit of ${maxSize / 1024 / 1024} MB`));
+                }
+            });
+
             response.data.pipe(fileStream);
             fileStream.on('finish', () => resolve(filePath));
-            fileStream.on('error', (err: Error) => {
-                reject(err);
-            });
+            fileStream.on('error', (err: Error) => reject(err));
         });
     } catch (error) {
         throw error;

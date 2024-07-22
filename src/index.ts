@@ -17,7 +17,7 @@ client.on('qr', (qr: any) => {
     qrcode.generate(qr, { small: true });
 });
 
-const prefix = "/";
+const prefix = ".";
 
 client.on('message_create', async (message: Message) => {
     const content = message.body.trim();

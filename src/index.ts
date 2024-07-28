@@ -1,8 +1,9 @@
 import logger from "./configs/logger.config";
 import commands from "./commands/index";
 import { ClientConfig } from "./configs/client.config";
-import { Message } from "whatsapp-web.js";
+import { Message, MessageMedia } from "whatsapp-web.js";
 import { readAsciiArt } from "./utils/ascii-art.util";
+import { textToSpeech } from "./utils/text-to-speech.util";
 const { Client } = require("whatsapp-web.js");
 
 const client = new Client(ClientConfig);
@@ -17,7 +18,7 @@ client.on('qr', (qr: any) => {
     qrcode.generate(qr, { small: true });
 });
 
-const prefix = "/";
+const prefix = ".";
 
 client.on('message_create', async (message: Message) => {
     const content = message.body.trim();
@@ -28,6 +29,15 @@ client.on('message_create', async (message: Message) => {
 
     const args = content.slice(prefix.length).trim().split(/ +/);
     const command = args.shift()?.toLowerCase();
+
+    // const DOWNLOAD_DIR = "public/downloads";
+
+    // const audioPath = `${DOWNLOAD_DIR}/${message.id.id}.ogg`;
+    
+    // await textToSpeech(message.body, audioPath);
+    // const media = await MessageMedia.fromFilePath(audioPath);
+    // await message.reply(media);
+
     try {
         if (command && command in commands) {
             await commands[command].run(message, args, prefix);

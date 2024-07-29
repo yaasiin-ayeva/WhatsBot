@@ -34,7 +34,7 @@ export class AppConfig {
     public getBotMessageSignature(italic: boolean = true, margin: number = 3): string {
         margin = Math.max(0, margin);
         const marginString = "\n".repeat(margin);
-        const signatureContent = `${this.getBotName()} ${this.getBotEmoji()}`;
+        const signatureContent = `Powered by ${this.getBotName()} ${this.getBotEmoji()}`;
         return `${marginString}${italic ? `_${signatureContent}_` : signatureContent}`;
     }
 

@@ -12,6 +12,7 @@ class EnvConfig {
     static CHROME_PATH = process.env.CHROME_PATH;
     static OPENWEATHERMAP_API_KEY = process.env.OPENWEATHERMAP_API_KEY;
     static SPEECHIFY_API_KEY = process.env.SPEECHIFY_API_KEY;
+    static ENV = process.env.ENV;
 
     static validate() {
         if (!this.GEMINI_API_KEY) {
@@ -34,6 +35,9 @@ class EnvConfig {
         }
         if (!this.SPEECHIFY_API_KEY) {
             throw new Error("Environment variable SPEECHIFY_API_KEY is missing. Please provide a valid Speechify API key.");
+        }
+        if (!this.ENV) {
+            throw new Error("Environment variable ENV is missing. Please provide a valid ENV.");
         }
     }
 }

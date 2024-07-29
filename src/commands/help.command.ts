@@ -1,7 +1,9 @@
 import { Message } from "whatsapp-web.js";
+import { AppConfig } from "../configs/app.config";
 
-export const run = (message: Message, args: string[] = null, prefix: string = "/") => {
+export const run = (message: Message, args: string[] = null) => {
 
+    const prefix = AppConfig.instance.getBotPrefix();
     const query = args.join(" ").trim();
 
     const commands = [

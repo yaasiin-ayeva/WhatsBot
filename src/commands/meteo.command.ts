@@ -6,13 +6,14 @@ import * as path from 'path';
 import { format_localtime } from '../utils/common.util';
 import logger from '../configs/logger.config';
 import EnvConfig from '../configs/env.config';
+import { AppConfig } from '../configs/app.config';
 
-export const run = async (message: Message, args: string[] = null, prefix: string = "/") => {
+export const run = async (message: Message, args: string[] = null) => {
 
     const city = args.join(" ");
 
     if (!city) {
-        message.reply(`> WhatsBot 🤖 Please specify a city, for example: ${prefix}meteo New York.`);
+        message.reply(`> WhatsBot 🤖 Please specify a city, for example: ${AppConfig.instance.getBotPrefix()}meteo New York.`);
         return;
     }
 
@@ -22,7 +23,7 @@ export const run = async (message: Message, args: string[] = null, prefix: strin
             const weatherImage = await getWeatherImage(weatherInfo.icon);
             const formattedLocaltime = format_localtime(weatherInfo.localtime);
             const formattedMessage = `${weatherInfo.city}, ${formattedLocaltime} - ${weatherInfo.description}.`;
-            await message.reply(MessageMedia.fromFilePath(weatherImage), null, { caption: formattedMessage });
+            await message.reply(MessageMedia.fromFilePath(weatherImage), null, { caption: AppConfig.instance.printMessage(formattedMessage) });
         } catch (error) {
             logger.error(error);
             message.reply('> WhatsBot 🤖 The weather service is currently unavailable. Please try again later.');
@@ -31,8 +32,8 @@ export const run = async (message: Message, args: string[] = null, prefix: strin
 };
 
 async function getWeather(city: string): Promise<{ description: string, icon: string, city: string, localtime: string }> {
-    
-    const url = `http://api.weatherapi.com/v1/current.json?key=${EnvConfig.OPENWEATHERMAP_API_KEY}&q=${city}&lang=en`;
+
+    const url = AppConfig.instance.getWeatherApiUrl(EnvConfig.OPENWEATHERMAP_API_KEY, city);
     const response = await axios.get(url);
     const data = response.data;
 

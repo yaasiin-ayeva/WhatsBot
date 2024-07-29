@@ -9,7 +9,7 @@ const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 
 const DOWNLOAD_DIR = "public/downloads";
 
-export const run = async (message: Message, args: string[] = null, _prefix: string = "/") => {
+export const run = async (message: Message, args: string[] = null) => {
 
     const url = args.join(" ");
 

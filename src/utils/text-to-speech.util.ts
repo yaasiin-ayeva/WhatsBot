@@ -1,3 +1,4 @@
+import { AppConfig } from "../configs/app.config";
 import EnvConfig from "../configs/env.config";
 import logger from "../configs/logger.config";
 
@@ -7,7 +8,7 @@ const path = require('path');
 
 export async function textToSpeech(text: string, outputFile: string) {
 
-    const url = 'https://api.sws.speechify.com/v1/audio/speech';
+    const url = AppConfig.instance.getSpeechifyBaseUrl();
     const options = {
         method: 'POST',
         headers: {

@@ -6,8 +6,10 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 
-export async function textToSpeech(text: string, outputFile: string) {
+export async function textToSpeech(text: string, outputFile: string) : Promise<string> {
 
+    console.log("tts", text, outputFile);
+    
     const url = AppConfig.instance.getSpeechifyBaseUrl();
     const options = {
         method: 'POST',
@@ -31,10 +33,10 @@ export async function textToSpeech(text: string, outputFile: string) {
         const audioBuffer = Buffer.from(audioData, 'base64');
 
         fs.writeFileSync(path.resolve(outputFile), audioBuffer);
+
+        return outputFile;
     } catch (error) {
         logger.error(error);
         throw new Error('Failed to convert text to speech.');
     }
 }
-
-// textToSpeech('Hello, World!', 'public/downloads/sample.wav');

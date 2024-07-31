@@ -28,7 +28,7 @@ export class AppConfig {
     }
 
     public getBotAvatar(): string {
-        return "public/favicon.png";
+        return "public/botavatar.gif";
     }
 
     public getBotMessageSignature(italic: boolean = true, margin: number = 3): string {

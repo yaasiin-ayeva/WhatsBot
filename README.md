@@ -37,54 +37,55 @@ npm run dev
 
 A QR code will be generated in the terminal for you to scan.
 Kindly scan it with your whatsapp app and you're all set! 🎉
+In development mode, your bot prefix will be automatically set to `!`
 
 ### Features
 
 1. AI Completion with Gemini AI
 ```
-/chat [text] - Send a message to the AI
+!chat [text] - Send a message to the AI
 ```
 
 2. AI Completion with ChatGPT
 ```
-/gpt [text] - Send a message to the AI
+!gpt [text] - Send a message to the AI
 ```
 
 3. Language Translation
 ```
-/translate [language-code] [text] - Translate text to the specified language
+!translate [language-code] [text] - Translate text to the specified language
 ```
 
 To see available language codes, use `/langlist`
 
 4. Memes
 ```
-/meme - Get a random meme
+!meme - Get a random meme
 ```
 
 5. Jokes
 ```
-/joke - Get a random joke
+!joke - Get a random joke
 ```
 
 6. Help
 ```
-/help - Get help
+!help - Get help
 ```
 
 7. Ping
 ```
-/ping - Ping the bot
+!ping - Ping the bot
 ```
 
 8. Get
 ```
-/get [url] - Download file from a social media (Tiktok, Twitter, Instagram, Facebook, Pinterest) without watermark
+!get [url] - Download file from a social media (Tiktok, Twitter, Instagram, Facebook, Pinterest) without watermark
 ```
 
 9. Meteo
 ```
-/meteo [city] - Get current meteo for a city
+!meteo [city] - Get current meteo for a city
 ```
 
 ### Project Structure

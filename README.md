@@ -1,19 +1,23 @@
-<div align="center">
-    <h1>
-        WhatsBot 
-        <a href="https://yaasiin-dev.vercel.app/" target="_blank">
-            <img src="https://vercelbadge.vercel.app/api/yaasiin-ayeva/yaasiin.dev" alt="Vercel deployment status">
-        </a>
-    </h1>
-    <img src="public/botavatar.gif" alt="Preview" width="40%">
-    <p>
-        Simple WhatsApp bot from unofficial Whatsapp API, built in NodeJS   &amp;  TypeScript, uses Gemini   &amp;   ChatGPT APIs for Completion, and having many cool features. You can talk to the bot in voice messages, the bot will transcribe and respond. 🤖
-    </p>
-</div>
+<body>
+    <div align="center">
+        <h1>
+            WhatsBot 
+            <a href="https://yaasiin-dev.vercel.app/" target="_blank">
+                <img src="https://vercelbadge.vercel.app/api/yaasiin-ayeva/yaasiin.dev" alt="Vercel deployment status" style="vertical-align: middle;">
+            </a>
+        </h1>
+        <img src="public/botavatar.gif" alt="Preview" width="40%" style="max-width: 300px; border-radius: 8px;">
+        <p>
+            Simple WhatsApp bot from unofficial WhatsApp API, built in NodeJS &amp; TypeScript, using Gemini &amp; ChatGPT APIs for completion, with many cool features. You can interact with the bot using voice messages, and it will transcribe and respond. 🤖
+        </p>
+        <p>
+            Try it here: <a href="https://wa.me/qr/SBHRATABRAZVA1" target="_blank">WhatsBot Playground</a> or scan the QR code below:
+            <br>
+            <img src="public/qr.jpg" width="35%" alt="WhatsApp QR Code" style="margin-top: 20px;">
+        </p>
+    </div>
+</body>
 
-### Try it here !
-
-[WhatsBot Playground](https://chat.whatsapp.com/LafMN793Hj9BBn3rOAe5CI)
 
 ### Getting Started
 

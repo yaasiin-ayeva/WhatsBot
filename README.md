@@ -93,37 +93,6 @@ For third-party services used in the bot, kindly get the API keys and set them c
 !meteo <city> - Get current weather for a city
 ```
 
-<!-- ### Project Structure
-````	
-src/
-│
-├── commands/         # Contains command modules
-│   ├── chat.command.ts
-│   ├── gpt.command.ts
-│   ├── help.command.ts
-│   ├── index.ts
-│   ├── langlist.command.ts
-│   ├── meme.command.ts
-│   ├── joke.command.ts
-│   ├── ping.command.ts
-│   └── translate.command.ts
-│
-├── configs/          # Configuration files
-│   ├── client.config.ts
-│   ├── env.config.ts
-│   └── logger.config.ts
-│
-├── utils/            # Utility functions
-│   ├── chat-gpt.util.ts
-│   ├── gemini.util.ts
-│   └── translate.util.ts
-│
-├── public/           # Public assets
-│   └── index.png     # Bot preview image
-│
-└── index.ts          # Main entry point
-```` -->
-
 ### Contributing
 
 If you'd like to contribute, please read the [Contributing Guide](CONTRIBUTING.md)

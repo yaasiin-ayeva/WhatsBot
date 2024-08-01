@@ -1,6 +1,7 @@
 import EnvConfig from "./env.config";
 
 const fs = require('fs');
+import { MessageTypes } from "whatsapp-web.js";
 
 export class AppConfig {
 
@@ -42,7 +43,7 @@ export class AppConfig {
         return `${message} ${this.getBotMessageSignature()}`;
     }
 
-    public getBotDownloadPath(): string {
+    public getDownloadDir(): string {
         const dir = "public/downloads";
         if (!fs.existsSync(dir)) fs.mkdirSync(dir);
         return dir;
@@ -62,5 +63,16 @@ export class AppConfig {
 
     public getSpeechifyBaseUrl(): string {
         return "https://api.sws.speechify.com/v1/audio/speech";
+    }
+
+    public getDefaultAudioAiCommand(): string {
+        return "chat";
+    }
+
+    public getSupportedMessageTypes(): string[] {
+        return [
+            MessageTypes.TEXT,
+            MessageTypes.VOICE
+        ]
     }
 }

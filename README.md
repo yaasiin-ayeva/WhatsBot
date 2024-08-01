@@ -5,9 +5,9 @@
             <img src="https://vercelbadge.vercel.app/api/yaasiin-ayeva/yaasiin.dev" alt="Vercel deployment status">
         </a>
     </h1>
-    <img src="public/index.png" alt="Preview" width="100%">
+    <img src="public/botavatar.gif" alt="Preview" width="40%">
     <p>
-        Simple WhatsApp bot from unofficial Whatsapp API, built in NodeJS   &amp;  TypeScript, uses Gemini   &amp;   ChatGPT APIs for Completion, and having many cool features.
+        Simple WhatsApp bot from unofficial Whatsapp API, built in NodeJS   &amp;  TypeScript, uses Gemini   &amp;   ChatGPT APIs for Completion, and having many cool features. You can talk to the bot in voice messages, the bot will transcribe and respond. 🤖
     </p>
 </div>
 
@@ -17,27 +17,34 @@
 
 ### Getting Started
 
-Installing dependencies
+Runninng Locally
 
 ```bash
 npm install
-```
-
-Setup your environment variables
-
-```bash
 cp .env.example .env
-```
-
-Make sure the environment variables are set and start the server
-
-```bash
 npm run dev
 ```
 
+Make sure the environment variables are set before starting the server
+
 A QR code will be generated in the terminal for you to scan.
 Kindly scan it with your whatsapp app and you're all set! 🎉
+
+
 In development mode, your bot prefix will be automatically set to `!`
+
+### Configurations
+
+You can change the configurations in `src/configs/app.config.ts`
+
+For third-party services used in the bot, kindly get the API keys and set them correctly. These are the one used in the bot, skipping them could lead to limitations :
+
+- [Gemini](https://gemini.com/api) : AI for text completion
+- [ChatGPT](https://platform.openai.com/api-keys) : ChatGPT for text completion
+- [Open Weather API](https://www.weatherapi.com/my/) : Provides weather information
+- [Speechify](https://console.sws.speechify.com/api-keys) : Text-to-Speech tool used in this project
+- [AssemblyAI](https://www.assemblyai.com/docs) : Speech to text tool used in this project 
+
 
 ### Features
 
@@ -51,12 +58,10 @@ In development mode, your bot prefix will be automatically set to `!`
 !gpt [text] - Send a message to the AI
 ```
 
-3. Language Translation
+3. Get
 ```
-!translate [language-code] [text] - Translate text to the specified language
+!get <url> - Download file from a social media (Tiktok, Twitter, Instagram, Facebook, Pinterest, Youtube) without watermark
 ```
-
-To see available language codes, use `/langlist`
 
 4. Memes
 ```
@@ -78,17 +83,17 @@ To see available language codes, use `/langlist`
 !ping - Ping the bot
 ```
 
-8. Get
+8. Language Translation
 ```
-!get [url] - Download file from a social media (Tiktok, Twitter, Instagram, Facebook, Pinterest) without watermark
-```
-
-9. Meteo
-```
-!meteo [city] - Get current meteo for a city
+!translate [language-code] [text] - Translate text to the specified language
 ```
 
-### Project Structure
+9. Weather
+```
+!meteo <city> - Get current weather for a city
+```
+
+<!-- ### Project Structure
 ````	
 src/
 │
@@ -117,7 +122,11 @@ src/
 │   └── index.png     # Bot preview image
 │
 └── index.ts          # Main entry point
-````
+```` -->
+
+### Contributing
+
+If you'd like to contribute, please read the [Contributing Guide](CONTRIBUTING.md)
 
 ## License
 

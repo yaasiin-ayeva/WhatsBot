@@ -1,27 +1,71 @@
-import { Message, MessageMedia } from "whatsapp-web.js";
+import { Message, MessageMedia, MessageTypes } from "whatsapp-web.js";
 import { geminiCompletion } from "../utils/gemini.util";
 import logger from "../configs/logger.config";
 import { AppConfig } from "../configs/app.config";
+import { speechToText } from "../utils/speech-to-text.util";
+import { textToSpeech } from "../utils/text-to-speech.util";
+import { del_file } from "../utils/common.util";
+
+const fs = require('fs');
+const path = require('path');
 
 export const run = async (message: Message, args: string[]) => {
-    const query = args.join(" ");
+    let query = args.join(" ");
 
-    if (!query) {
+    if (!query && message.type !== MessageTypes.VOICE) {
         message.reply(AppConfig.instance.printMessage("Please provide a message for Gemini AI."));
         return;
+    }
+
+    if (message.type === MessageTypes.VOICE) {
+
+        const audioPath = `${AppConfig.instance.getDownloadDir()}/${message.id.id}.wav`;
+        const media = await message.downloadMedia();
+
+        const base64 = media.data;
+        const fileBuffer = Buffer.from(base64, 'base64');
+
+        const dir = path.dirname(audioPath);
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+
+        fs.writeFile(audioPath, fileBuffer, (err) => {
+            if (err) {
+                logger.error(`Error saving file: ${err}`);
+            } else {
+                logger.info(`File saved successfully to ${audioPath}`);
+            }
+        });
+
+        const transcript = await speechToText(audioPath);
+        del_file(audioPath);
+        query = transcript.text;
+
+        if (!query || !query.length) {
+            message.reply(AppConfig.instance.printMessage("Something went wrong. Please try again later."));
+            return;
+        }
     }
 
     try {
         const result = await geminiCompletion(query);
         const chatReply = result.response.text() || 'No reply';
-        const media = MessageMedia.fromFilePath(AppConfig.instance.getBotAvatar());
 
-        await message.reply(
-            media,
-            null,
-            { caption: AppConfig.instance.printMessage(chatReply) },
-        );
+        if (message.type === MessageTypes.VOICE) {
 
+            const filePath = await textToSpeech(chatReply, `${message.id.id}.wav`);
+            const voice = await MessageMedia.fromFilePath(filePath);
+            await message.reply(voice, null, { sendAudioAsVoice: true });
+
+        } else {
+            const media = MessageMedia.fromFilePath(AppConfig.instance.getBotAvatar());
+            await message.reply(
+                media,
+                null,
+                { caption: AppConfig.instance.printMessage(chatReply) },
+            );
+        }
     } catch (err) {
         logger.error(err);
         message.reply(AppConfig.instance.printMessage("Error communicating with Gemini AI."));

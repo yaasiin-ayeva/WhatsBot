@@ -6,10 +6,8 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 
-export async function textToSpeech(text: string, outputFile: string) : Promise<string> {
+export async function textToSpeech(text: string, fileName: string) : Promise<string> {
 
-    console.log("tts", text, outputFile);
-    
     const url = AppConfig.instance.getSpeechifyBaseUrl();
     const options = {
         method: 'POST',
@@ -28,13 +26,15 @@ export async function textToSpeech(text: string, outputFile: string) : Promise<s
     };
 
     try {
+        
         const response = await axios(url, options);
         const audioData = response.data.audio_data;
         const audioBuffer = Buffer.from(audioData, 'base64');
+        const filePath = path.resolve(AppConfig.instance.getDownloadDir(), fileName);
 
-        fs.writeFileSync(path.resolve(outputFile), audioBuffer);
+        fs.writeFileSync(filePath, audioBuffer);
 
-        return outputFile;
+        return filePath;
     } catch (error) {
         logger.error(error);
         throw new Error('Failed to convert text to speech.');

@@ -53,19 +53,26 @@ export const run = async (message: Message, args: string[]) => {
         const chatReply = result.response.text() || 'No reply';
 
         if (message.type === MessageTypes.VOICE) {
-
-            const filePath = await textToSpeech(chatReply, `${message.id.id}.wav`);
-            const voice = await MessageMedia.fromFilePath(filePath);
-            await message.reply(voice, null, { sendAudioAsVoice: true });
-
-        } else {
-            const media = MessageMedia.fromFilePath(AppConfig.instance.getBotAvatar());
-            await message.reply(
-                media,
-                null,
-                { caption: AppConfig.instance.printMessage(chatReply) },
-            );
+            try {
+                const filePath = await textToSpeech(chatReply, `${message.id.id}.wav`);
+                const voice = await MessageMedia.fromFilePath(filePath);
+                await message.reply(voice, null, { sendAudioAsVoice: true });
+                del_file(filePath);
+                return;
+            } catch (error) {
+                logger.error(error);
+                message.reply(AppConfig.instance.printMessage(`${chatReply}\n\n_Sorry btw but i was unable to send this as voice._`));
+                return;
+            }
         }
+
+        const media = MessageMedia.fromFilePath(AppConfig.instance.getBotAvatar());
+        await message.reply(
+            media,
+            null,
+            { caption: AppConfig.instance.printMessage(chatReply) },
+        );
+
     } catch (err) {
         logger.error(err);
         message.reply(AppConfig.instance.printMessage("Error communicating with Gemini AI."));

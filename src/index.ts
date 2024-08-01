@@ -5,8 +5,6 @@ import { Message } from "whatsapp-web.js";
 import { MessageTypes } from "whatsapp-web.js";
 import { readAsciiArt } from "./utils/ascii-art.util";
 import { AppConfig } from "./configs/app.config";
-import { textToSpeech } from "./utils/text-to-speech.util";
-import { speechToText } from "./utils/speech-to-text.util";
 const { Client } = require("whatsapp-web.js");
 
 const client = new Client(ClientConfig);

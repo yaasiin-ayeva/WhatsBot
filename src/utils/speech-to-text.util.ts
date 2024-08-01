@@ -7,6 +7,6 @@ import { AssemblyAI } from 'assemblyai';
 
 export async function speechToText(file: string) {
     const client = new AssemblyAI({ apiKey: EnvConfig.ASSEMBLYAI_API_KEY });
-    let transcript = await client.transcripts.transcribe({ audio: file });
+    let transcript = await client.transcripts.transcribe({ audio: file, language_detection: true });
     return transcript;
 }

@@ -45,12 +45,12 @@ client.on('message_create', async (message: Message) => {
         if (message.type === MessageTypes.VOICE) {
             await commands[AppConfig.instance.getDefaultAudioAiCommand()].run(message, args);
             return;
-        }
-
-        if (command && command in commands) {
-            await commands[command].run(message, args);
-        } else {
-            message.reply(`> 🤖 Unknown command: ${command}, to see available commands, type ${prefix}help`);
+        } else if (message.type === MessageTypes.TEXT) {
+            if (command && command in commands) {
+                await commands[command].run(message, args);
+            } else {
+                message.reply(`> 🤖 Unknown command: ${command}, to see available commands, type ${prefix}help`);
+            }
         }
     } catch (error) {
         message.reply(`> 🤖 Oops, something went wrong, kindly retry.`);

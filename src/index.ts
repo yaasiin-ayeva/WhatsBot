@@ -32,7 +32,7 @@ client.on('message_create', async (message: Message) => {
     if ((message.type === MessageTypes.TEXT) && !content.startsWith(prefix)) return;
 
     // skip messages from myself
-    if (message.from === client.info.wid._serialized) return;
+    // if (message.from === client.info.wid._serialized) return;
 
     let user = await message.getContact();
     logger.info(`Message received from @${user.pushname} (${user.number}) : ${content}`);

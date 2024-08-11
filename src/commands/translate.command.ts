@@ -1,5 +1,5 @@
 import { Message } from "whatsapp-web.js";
-import { translateText } from "../utils/translate.util";
+import { languages, translateText } from "../utils/translate.util";
 import logger from "../configs/logger.config";
 import { AppConfig } from "../configs/app.config";
 
@@ -10,6 +10,10 @@ export const run = async (message: Message, args: string[]) => {
     if (!lang || !query) {
         message.reply('> WhatsBot 🤖 : Please provide a language code and a message to translate.');
         return;
+    }
+
+    if (!Object.keys(languages).includes(lang)) {
+        message.reply('> WhatsBot 🤖 : Language code not supported. Please use a valid language code.');
     }
 
     try {

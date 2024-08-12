@@ -34,9 +34,6 @@ Make sure the environment variables are set before starting the server
 A QR code will be generated in the terminal for you to scan.
 Kindly scan it with your whatsapp app and you're all set! 🎉
 
-
-In development mode, your bot prefix will be automatically set to `!`
-
 ### Configurations
 
 You can change the configurations in `src/configs/app.config.ts`
@@ -52,49 +49,51 @@ For third-party services used in the bot, kindly get the API keys and set them c
 
 ### Features
 
+In development mode, your bot prefix will be automatically set to `!`. Meanning that you can use `!help` to get the list of commands instead of `/help`.
+
 1. AI Completion with Gemini AI
 ```
-!chat [text] - Send a message to the AI
+/chat [text] - Send a message to the AI
 ```
 
-2. AI Completion with ChatGPT
+2. AI Completion with ChatGPT (Not available in the playground environment)
 ```
-!gpt [text] - Send a message to the AI
+/gpt [text] - Send a message to the AI
 ```
 
 3. Get
 ```
-!get <url> - Download file from a social media (Tiktok, Twitter, Instagram, Facebook, Pinterest, Youtube) without watermark
+/get <url> - Download file from a social media (Tiktok, Twitter, Instagram, Facebook, Pinterest, Youtube) without watermark
 ```
 
 4. Memes
 ```
-!meme - Get a random meme
+/meme - Get a random meme
 ```
 
 5. Jokes
 ```
-!joke - Get a random joke
+/joke - Get a random joke
 ```
 
 6. Help
 ```
-!help - Get help
+/help - Get help
 ```
 
 7. Ping
 ```
-!ping - Ping the bot
+/ping - Ping the bot
 ```
 
 8. Language Translation
 ```
-!translate [language-code] [text] - Translate text to the specified language
+/translate [language-code] [text] - Translate text to the specified language
 ```
 
 9. Weather
 ```
-!meteo <city> - Get current weather for a city
+/meteo <city> - Get current weather for a city
 ```
 
 ### Contributing

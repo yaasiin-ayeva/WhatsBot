@@ -40,7 +40,7 @@ You can change the configurations in `src/configs/app.config.ts`
 
 For third-party services used in the bot, kindly get the API keys and set them correctly. These are the one used in the bot, skipping them could lead to limitations :
 
-- [Gemini](https://gemini.com/api) : AI for text completion
+- [Gemini](https://aistudio.google.com/app/apikey) : AI for text completion
 - [ChatGPT](https://platform.openai.com/api-keys) : ChatGPT for text completion
 - [Open Weather API](https://www.weatherapi.com/my/) : Provides weather information
 - [Speechify](https://console.sws.speechify.com/api-keys) : Text-to-Speech tool used in this project

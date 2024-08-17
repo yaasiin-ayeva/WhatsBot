@@ -2,6 +2,7 @@ import { Message, MessageMedia } from "whatsapp-web.js";
 import { MAX_STREAMING_FILE_SIZE, downloadFile, downloader, identifySocialNetwork } from "../utils/get.util";
 import logger from "../configs/logger.config";
 import { del_file, isUrl } from "../utils/common.util";
+import { AppConfig } from "../configs/app.config";
 
 const path = require("path");
 const ffmpeg = require('fluent-ffmpeg');
@@ -9,13 +10,32 @@ const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 
 const DOWNLOAD_DIR = "public/downloads";
 
-export const run = async (message: Message, args: string[] = null) => {
+export const run = async (message: Message, args: string[] = null, _videoUrl = null, socialNetwork = null) => {
 
-    const url = args.join(" ");
+    if (!_videoUrl) {
+        const url = args.join(" ");
+        _videoUrl = url;
+        if (!url || !isUrl(url)) {
+            await message.reply(
+                MessageMedia.fromFilePath(AppConfig.instance.getBotAvatar("confused")),
+                null,
+                { sendVideoAsGif: true, caption: "> WhatsBot 🤖 Please provide a valid URL for the video." },
+            );
+            return;
+        }
+    }
 
-    if (!url || !isUrl(url)) {
-        message.reply(`> WhatsBot 🤖 Please provide a valid URL for the video.`);
-        return;
+    if (!socialNetwork) {
+
+        socialNetwork = identifySocialNetwork(_videoUrl);
+        if (!socialNetwork) {
+            await message.reply(
+                MessageMedia.fromFilePath(AppConfig.instance.getBotAvatar("confused")),
+                null,
+                { sendVideoAsGif: true, caption: "> WhatsBot 🤖 Unsupported social network." },
+            );
+            return;
+        }
     }
 
     let originalFilePath = null;
@@ -23,14 +43,7 @@ export const run = async (message: Message, args: string[] = null) => {
 
     try {
 
-        const socialNetwork = identifySocialNetwork(url);
-
-        if (!socialNetwork) {
-            message.reply(`> WhatsBot 🤖 Unsupported social network.`);
-            return
-        }
-
-        const videoUrl = await downloader(url, socialNetwork);
+        const videoUrl = await downloader(_videoUrl, socialNetwork);
 
         const uniqid = Date.now();
         originalFilePath = path.join(DOWNLOAD_DIR, `${uniqid}.original.mp4`);
@@ -57,7 +70,12 @@ export const run = async (message: Message, args: string[] = null) => {
 
     } catch (err) {
         logger.error(err);
-        message.reply('> WhatsBot 🤖 Error during file download.');
+        await message.reply(
+            MessageMedia.fromFilePath(AppConfig.instance.getBotAvatar("confused")),
+            null,
+            { sendVideoAsGif: true, caption: "> WhatsBot 🤖 Error during file download." },
+        );
+        return;
     } finally {
         del_file(originalFilePath);
         del_file(convertedFilePath);

@@ -7,7 +7,11 @@ export const run = async (message: Message, _args: string[] = null) => {
     const jokeData = await axios(AppConfig.instance.getJokeApiUrl()).then((res) => res.data);
 
     if (!jokeData) {
-        message.reply("> WhatsBot 🤖 : No joke found");
+        await message.reply(
+            MessageMedia.fromFilePath(AppConfig.instance.getBotAvatar("confused")),
+            null,
+            { sendVideoAsGif: true, caption: "> WhatsBot 🤖 : No joke found" },
+        );
         return;
     }
 
@@ -18,7 +22,7 @@ export const run = async (message: Message, _args: string[] = null) => {
         const setupJoke = await message.reply(
             media,
             null,
-            { caption: `> WhatsBot 🤖 : ${jokeData.setup}\n\n...` },
+            { sendVideoAsGif: true, caption: `> WhatsBot 🤖 : ${jokeData.setup}\n\n...` },
         );
 
         if (jokeData.delivery) {
@@ -31,10 +35,14 @@ export const run = async (message: Message, _args: string[] = null) => {
         await message.reply(
             media,
             null,
-            { caption: AppConfig.instance.printMessage(`${jokeData.joke} \n😂😂🤣`) },
+            { sendVideoAsGif: true, caption: AppConfig.instance.printMessage(`${jokeData.joke} \n😂😂🤣`) },
         );
     } else {
-        message.reply("> WhatsBot 🤖 : No joke found");
+        await message.reply(
+            MessageMedia.fromFilePath(AppConfig.instance.getBotAvatar("confused")),
+            null,
+            { sendVideoAsGif: true, caption: "> WhatsBot 🤖 : Error while getting jokes" },
+        );
         return;
     }
 };

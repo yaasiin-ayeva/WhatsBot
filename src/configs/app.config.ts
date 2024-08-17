@@ -3,6 +3,8 @@ import EnvConfig from "./env.config";
 const fs = require('fs');
 import { MessageTypes } from "whatsapp-web.js";
 
+export type BotReactionType = "neutral" | "friendly" | "celebrating" | "angry" | "sad" | "excited" | "confused";
+
 export class AppConfig {
 
     private static _instance: AppConfig;
@@ -28,8 +30,21 @@ export class AppConfig {
         return "🤖";
     }
 
-    public getBotAvatar(): string {
-        return "public/botavatar.gif";
+    public getBotAvatar(reaction: BotReactionType = "friendly"): string {
+        switch (reaction) {
+            case "neutral":
+                return "public/botavatar-neutral.mp4";
+            case "friendly":
+                return "public/botavatar-friendly.mp4";
+            case "celebrating":
+                return "public/botavatar-celebrating.mp4";
+            case "excited":
+                return "public/botavatar-excited.mp4";
+            case "confused":
+                return "public/botavatar-confused.mp4";
+            default:
+                return "public/botavatar-friendly.mp4";
+        }
     }
 
     public getBotMessageSignature(italic: boolean = true, margin: number = 3): string {

@@ -43,7 +43,11 @@ export const run = async (message: Message, args: string[]) => {
         query = transcript.text;
 
         if (!query || !query.length) {
-            message.reply(AppConfig.instance.printMessage("Something went wrong. Please try again later."));
+            await message.reply(
+                MessageMedia.fromFilePath(AppConfig.instance.getBotAvatar("confused")),
+                null,
+                { sendVideoAsGif: true, caption: AppConfig.instance.printMessage("Something went wrong. Please try again later.") },
+            );
             return;
         }
     }
@@ -75,6 +79,11 @@ export const run = async (message: Message, args: string[]) => {
 
     } catch (err) {
         logger.error(err);
-        message.reply(AppConfig.instance.printMessage("Error communicating with Gemini AI."));
+        await message.reply(
+            MessageMedia.fromFilePath(AppConfig.instance.getBotAvatar("confused")),
+            null,
+            { sendVideoAsGif: true, caption: AppConfig.instance.printMessage("Error communicating with Gemini AI.") },
+        );
+        return;
     }
 };

@@ -5,6 +5,8 @@ import { Message } from "whatsapp-web.js";
 import { MessageTypes } from "whatsapp-web.js";
 import { readAsciiArt } from "./utils/ascii-art.util";
 import { AppConfig } from "./configs/app.config";
+import { isUrl } from "./utils/common.util";
+import { identifySocialNetwork } from "./utils/get.util";
 const { Client } = require("whatsapp-web.js");
 
 const client = new Client(ClientConfig);
@@ -29,11 +31,6 @@ client.on('message_create', async (message: Message) => {
         return;
     }
 
-    if ((message.type === MessageTypes.TEXT) && !content.startsWith(prefix)) return;
-
-    // skip messages from myself
-    if (message.from === client.info.wid._serialized) return;
-
     let user = await message.getContact();
     logger.info(`Message received from @${user.pushname} (${user.number}) : ${content}`);
 
@@ -42,14 +39,33 @@ client.on('message_create', async (message: Message) => {
 
     try {
 
+        // ignoremessages from myself
+        if (message.from === client.info.wid._serialized) return;
+        // ignore status messages
+        if (message.isStatus) return
+
         if (message.type === MessageTypes.VOICE) {
             await commands[AppConfig.instance.getDefaultAudioAiCommand()].run(message, args);
             return;
         } else if (message.type === MessageTypes.TEXT) {
-            if (command && command in commands) {
-                await commands[command].run(message, args);
+
+            const url = content.trim().split(/ +/)[0];
+            const socialNetwork = identifySocialNetwork(url);
+
+            if (url && isUrl(url) && socialNetwork) {
+
+                await commands["get"].run(message, null, url, socialNetwork);
+                return;
+
             } else {
-                message.reply(`> 🤖 Unknown command: ${command}, to see available commands, type ${prefix}help`);
+
+                if (!content.startsWith(prefix)) return;
+
+                if (command && command in commands) {
+                    await commands[command].run(message, args);
+                } else {
+                    message.reply(`> 🤖 Unknown command: ${command}, to see available commands, type ${prefix}help`);
+                }
             }
         }
     } catch (error) {

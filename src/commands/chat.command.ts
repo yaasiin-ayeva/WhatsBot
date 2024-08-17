@@ -74,7 +74,7 @@ export const run = async (message: Message, args: string[]) => {
         await message.reply(
             media,
             null,
-            { caption: AppConfig.instance.printMessage(chatReply) },
+            { sendVideoAsGif: true, caption: AppConfig.instance.printMessage(chatReply) },
         );
 
     } catch (err) {

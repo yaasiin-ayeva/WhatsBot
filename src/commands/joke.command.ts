@@ -22,12 +22,12 @@ export const run = async (message: Message, _args: string[] = null) => {
         const setupJoke = await message.reply(
             media,
             null,
-            { sendVideoAsGif: true, caption: `> WhatsBot 🤖 : ${jokeData.setup}\n\n...` },
+            { sendVideoAsGif: true, caption: `> WhatsBot 🤖 1/2 :\n${jokeData.setup}\n\n...` },
         );
 
         if (jokeData.delivery) {
             setTimeout(async () => {
-                await setupJoke.reply(AppConfig.instance.printMessage(`${jokeData.delivery}\n😂😂🤣`));
+                await setupJoke.reply(AppConfig.instance.printMessage(`> WhatsBot 🤖 3/2 :\n${jokeData.delivery}\n😂😂🤣`));
             }, 5000);
         }
 

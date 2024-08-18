@@ -27,7 +27,7 @@ export const run = async (message: Message, _args: string[] = null) => {
 
         if (jokeData.delivery) {
             setTimeout(async () => {
-                await setupJoke.reply(AppConfig.instance.printMessage(`> WhatsBot 🤖 3/2 :\n${jokeData.delivery}\n😂😂🤣`));
+                await setupJoke.reply(AppConfig.instance.printMessage(`> WhatsBot 🤖 2/2 :\n${jokeData.delivery}\n😂😂🤣`));
             }, 5000);
         }
 

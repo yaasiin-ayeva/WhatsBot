@@ -115,7 +115,13 @@ export const translateText = async (text: string, lang: string) => {
     if (!Object.keys(languages).includes(lang)) throw new Error(`Language code not supported. Please use a valid language code.`);
 
     translate(text, { to: lang }).then((res: any) => {
-        return res.text;
+
+        if (res && res.text) {
+            return res.text;
+        }
+
+        return null
+
     }).catch((err: any) => {
         logger.error(err);
         throw new Error("Translation error.");

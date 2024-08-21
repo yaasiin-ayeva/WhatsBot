@@ -10,11 +10,11 @@
         <p>
             Simple WhatsApp bot from unofficial WhatsApp API, built in NodeJS &amp; TypeScript, using Gemini &amp; ChatGPT APIs for completion, with many cool features. You can interact with the bot using voice messages, and it will transcribe and respond. 🤖
         </p>
-        <p>
+        <!-- <p>
             Try it here: <a href="https://wa.me/qr/SBHRATABRAZVA1" target="_blank">WhatsBot Playground</a> or scan the QR code below:
         </p>
         <br>
-        <img src="public/qr.jpg" width="35%" alt="WhatsApp QR Code" style="margin-top: 20px;">
+        <img src="public/qr.jpg" width="35%" alt="WhatsApp QR Code" style="margin-top: 20px;"> -->
     </div>
 </body>
 

@@ -2,8 +2,9 @@ const { ttdl, igdl, twitter, fbdown, youtube } = require('btch-downloader');
 import axios from "axios";
 const fs = require("fs");
 import * as cheerio from 'cheerio';
+import logger from "../configs/logger.config";
 
-export type TSocialNetwork = "tiktok" | "instagram" | "twitter" | "facebook" | "pinterest" | "youtube";
+export type TSocialNetwork = "tiktok" | "instagram" | "twitter" | "facebook" | "pinterest" | "youtube" | "snapchat";
 
 export const MAX_STREAMING_FILE_SIZE = 75 * 1024 * 1024;    // 75 MB
 
@@ -82,6 +83,23 @@ const downloaders: { [key in TSocialNetwork]: (url: string) => Promise<string> }
     youtube: async (url: string) => {
         const result = await youtube(url) as IYoutubeResult;
         return result && result.mp4 ? result.mp4 : '';
+    },
+    snapchat: async (url: string) => {
+        try {
+            const response = await axios.get(url);
+            const $ = cheerio.load(response.data);
+
+            const videoUrl = $('link[rel="preload"][as="video"]').attr('href');
+            logger.debug(videoUrl);
+
+            if (!videoUrl) {
+                return '';
+            }
+
+            return videoUrl ? videoUrl : '';
+        } catch (error) {
+            return '';
+        }
     }
 };
 
@@ -92,6 +110,7 @@ const socialNetworkPatterns: { [key in TSocialNetwork]: RegExp } = {
     facebook: /^(?:https?:\/\/)?(?:www\.)?facebook\.com|m\.facebook|fb.watch\/.+$/i,
     pinterest: /^(?:https?:\/\/)?(?:www\.)?pinterest\.com|pin\.it\/.+$/i,
     youtube: /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/|youtu\.be\/).+$/i,
+    snapchat: /^(?:https?:\/\/)?(?:www\.)?snapchat\.com\/.+$/i
 };
 
 export const identifySocialNetwork = (url: string): TSocialNetwork | null => {

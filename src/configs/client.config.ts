@@ -26,7 +26,7 @@ export const ClientConfig = {
             '--password-store=basic',
             '--use-mock-keychain',
             '--no-zygote',
-            '--single-process',
+            // '--single-process',
             '--disable-gpu',
         ]
     },

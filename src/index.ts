@@ -75,3 +75,10 @@ client.on('message_create', async (message: Message) => {
 });
 
 client.initialize();
+
+client.on('disconnected', (reason) => {
+    logger.info('Client was logged out', reason);
+    setTimeout(() => {
+        client.initialize();
+    }, 5000);
+});

@@ -5,7 +5,7 @@ export const ClientConfig = {
     authStrategy: new LocalAuth(),
     puppeteer: {
         headless: true,
-        executablePath: EnvConfig.CHROME_PATH,
+        executablePath: EnvConfig.PUPPETEER_EXECUTABLE_PATH,
         args: [
             '--no-sandbox',
             '--disable-client-side-phishing-detection',

@@ -11,6 +11,8 @@ import { identifySocialNetwork } from "./utils/get.util";
 import EnvConfig from "./configs/env.config";
 
 const { Client } = require("whatsapp-web.js");
+const qrcode = require("qrcode-terminal");
+
 const client = new Client(ClientConfig);
 
 const app = express();
@@ -27,6 +29,7 @@ client.on('ready', () => {
 client.on('qr', (qr: any) => {
     qrCodeData = qr;
     qrScanned = false;
+    qrcode.generate(qr, { small: true });
 });
 
 const prefix = AppConfig.instance.getBotPrefix();

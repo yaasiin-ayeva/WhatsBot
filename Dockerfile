@@ -11,9 +11,11 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install --only=production && npm cache clean --force
+RUN npm install --only=production \
+    && npm cache clean --force
 
 COPY . .
+RUN cp /app/.env.example /app/.env
 
 EXPOSE 3000
 

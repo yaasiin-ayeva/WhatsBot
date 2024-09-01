@@ -48,7 +48,7 @@ npm run dev
 ```
 
 > [!NOTE]
-> Make sure the environment variables are set before starting the server
+> Make sure the environment variables are set in the `.env` file before starting the server
 > A QR code will be generated for you to scan.
 > Go to <a target="_blank" href="localhost:3000">localhost:3000</a>
 > Kindly scan it with your whatsapp app and you're all set! 🎉 
@@ -60,7 +60,7 @@ docker run -d -p 3000:3000 yaasiinayeva/whatsbot
 ```
 
 > [!NOTE]
-> Make sure the environment variables are set before starting the server
+> Make sure the environment variables are set in the `.env` file before starting the server
 > A QR code will be generated for you to scan.
 > Go to <a target="_blank" href="localhost:3000">localhost:3000</a>
 > Kindly scan it with your whatsapp app and you're all set! 🎉 

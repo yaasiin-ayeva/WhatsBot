@@ -1,3 +1,4 @@
+import express from "express";
 import logger from "./configs/logger.config";
 import commands from "./commands/index";
 import { ClientConfig } from "./configs/client.config";
@@ -7,10 +8,14 @@ import { readAsciiArt } from "./utils/ascii-art.util";
 import { AppConfig } from "./configs/app.config";
 import { isUrl } from "./utils/common.util";
 import { identifySocialNetwork } from "./utils/get.util";
-const { Client } = require("whatsapp-web.js");
+import EnvConfig from "./configs/env.config";
 
+const { Client } = require("whatsapp-web.js");
 const client = new Client(ClientConfig);
 const qrcode = require("qrcode-terminal");
+
+const app = express();
+const port = EnvConfig.PORT || 3000;
 
 client.on('ready', () => {
     const asciiArt = readAsciiArt();
@@ -81,4 +86,39 @@ client.on('disconnected', (reason) => {
     setTimeout(() => {
         client.initialize();
     }, 5000);
+});
+
+app.listen(port, () => {
+    logger.info(`Server is running on port ${port}, awaiting for client to be ready...`);
+});
+
+app.get("/", (req, res) => {
+    logger.info("GET /");
+    res.send(`
+        <h1>🤖 WhatsBot</h1>
+        <p>
+            <img src="https://github.com/yaasiin-ayeva/WhatsBot/blob/main/public/botavatar.gif?raw=true" alt="logo" width="300" height="300" />
+        </p>
+        <p>Get started: <a href="https://github.com/yaasiin-ayeva/WhatsBot/blob/main/README.md">https://github.com/yaasiin-ayeva/WhatsBot/blob/main/README.md</a></p>
+    `);
+});
+
+app.get("/health", async (_req, res) => {
+    try {
+        const isClientReady = client && client.info ? true : false;
+
+        const healthStatus = {
+            status: isClientReady ? "healthy" : "unhealthy",
+            clientReady: isClientReady,
+            uptime: process.uptime(),
+            memoryUsage: process.memoryUsage(),
+            version: process.version,
+        };
+
+        logger.info("GET /health");
+        res.status(200).json(healthStatus);
+    } catch (error) {
+        logger.error("Health check failed", error);
+        res.status(500).json({ status: "unhealthy", error: "Internal Server Error" });
+    }
 });

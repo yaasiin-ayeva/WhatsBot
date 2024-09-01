@@ -19,9 +19,27 @@
 </body>
 
 
+### Features
+
+In development mode, your bot prefix will be automatically set to `!`. Meanning that you can use `!help` to get the list of commands instead of `/help`.
+
+| Feature | Description | Example |
+| --- | --- | --- |
+| Voice Chat | Get voice chat transcript | Just send an audio message |
+| AI Completion with Gemini AI | Sends a message to the AI | `/chat [text]` |
+| AI Completion with ChatGPT | Sends a message to the AI | `/gpt [text]` |
+| Video Download from social media | Download file from social media | `/get <url>` or just send the link |
+| Memes | Get random meme | `/meme` |
+| Jokes | Get random joke | `/joke` |
+| Help | Get help | `/help` |
+| Ping | Ping the bot | `/ping` |
+| Language Translation | Translate text to the specified language | `/translate [language-code] [text]` |
+| Weather | Get current weather for a city | `/meteo <city>` |
+
+
 ### Getting Started
 
-Runninng Locally
+- Runninng Locally without docker
 
 ```bash
 npm install
@@ -46,55 +64,9 @@ For third-party services used in the bot, kindly get the API keys and set them c
 - [Speechify](https://console.sws.speechify.com/api-keys) : Text-to-Speech tool used in this project
 - [AssemblyAI](https://www.assemblyai.com/docs) : Speech to text tool used in this project 
 
-
-### Features
-
-In development mode, your bot prefix will be automatically set to `!`. Meanning that you can use `!help` to get the list of commands instead of `/help`.
-
-1. AI Completion with Gemini AI
-```
-/chat [text] - Send a message to the AI
-```
-
-2. AI Completion with ChatGPT (Not available in the playground environment)
-```
-/gpt [text] - Send a message to the AI
-```
-
-3. Get
-```
-/get <url> - Download file from a social media (Tiktok, Twitter, Instagram, Facebook, Pinterest, Youtube) without watermark
-```
-
-4. Memes
-```
-/meme - Get a random meme
-```
-
-5. Jokes
-```
-/joke - Get a random joke
-```
-
-6. Help
-```
-/help - Get help
-```
-
-7. Ping
-```
-/ping - Ping the bot
-```
-
-8. Language Translation
-```
-/translate [language-code] [text] - Translate text to the specified language
-```
-
-9. Weather
-```
-/meteo <city> - Get current weather for a city
-```
+### Disclaimer
+> [!IMPORTANT]
+> **It is not guaranteed you will not be blocked by using this method. WhatsApp does not allow bots or unofficial clients on their platform, so this shouldn't be considered totally safe.**
 
 ### Contributing
 

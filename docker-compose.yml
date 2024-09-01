@@ -1,0 +1,14 @@
+services:
+  app:
+    build: .
+    image: whatsbot
+    container_name: whatsbot
+    restart: unless-stopped
+    ports:
+      - 3000:3000
+    networks:
+      - whatsbot
+
+networks:
+  whatsbot:
+    driver: bridge

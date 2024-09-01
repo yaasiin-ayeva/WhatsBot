@@ -1,0 +1,11 @@
+.wwebjs_auth
+.wwebjs_cache
+node_modules
+.git
+.gitignore
+.vscode
+.vscodeignore
+# Dockerfile
+# docker-compose.yml
+.DS_Store
+logs

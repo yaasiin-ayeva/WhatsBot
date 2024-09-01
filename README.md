@@ -47,16 +47,23 @@ cp .env.example .env
 npm run dev
 ```
 
-Make sure the environment variables are set before starting the server
+> [!NOTE]
+> Make sure the environment variables are set before starting the server
+> A QR code will be generated for you to scan.
+> Go to <a target="_blank" href="localhost:3000">localhost:3000</a>
+> Kindly scan it with your whatsapp app and you're all set! 🎉 
 
 - Running on Docker
 ```bash	
-docker pull yaasiin-ayeva/whatsbot
-docker run -d -p 3000:3000 yaasiin-ayeva/whatsbot
+docker pull yaasiinayeva/whatsbot:latest
+docker run -d -p 3000:3000 yaasiinayeva/whatsbot
 ```
 
-A QR code will be generated in the terminal for you to scan.
-Kindly scan it with your whatsapp app and you're all set! 🎉
+> [!NOTE]
+> Make sure the environment variables are set before starting the server
+> A QR code will be generated for you to scan.
+> Go to <a target="_blank" href="localhost:3000">localhost:3000</a>
+> Kindly scan it with your whatsapp app and you're all set! 🎉 
 
 ### Configurations
 

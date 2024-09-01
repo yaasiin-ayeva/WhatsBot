@@ -12,12 +12,11 @@ RUN apt-get update  \
     --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*;
 
-# Install Chromium
+# Install Chromium for puppeteer 
 RUN apt-get update \
     && apt-get install -y chromium \
     --no-install-recommends \
-    && rm -rf /var/lib/apt/lists/*; \
-    fi
+    && rm -rf /var/lib/apt/lists/*;
 
 WORKDIR /app
 

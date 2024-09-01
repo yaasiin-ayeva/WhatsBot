@@ -49,6 +49,12 @@ npm run dev
 
 Make sure the environment variables are set before starting the server
 
+- Running on Docker
+```bash	
+docker pull yaasiin-ayeva/whatsbot
+docker run -d -p 3000:3000 yaasiin-ayeva/whatsbot
+```
+
 A QR code will be generated in the terminal for you to scan.
 Kindly scan it with your whatsapp app and you're all set! 🎉
 

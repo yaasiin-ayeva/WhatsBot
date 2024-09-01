@@ -1,5 +1,5 @@
-# .wwebjs_auth
-# .wwebjs_cache
+.wwebjs_auth
+.wwebjs_cache
 node_modules
 .git
 .gitignore

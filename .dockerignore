@@ -9,3 +9,4 @@ node_modules
 # docker-compose.yml
 .DS_Store
 logs
+.env

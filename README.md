@@ -38,6 +38,21 @@ In development mode, your bot prefix will be automatically set to `!`. Meanning 
 
 
 ### Getting Started
+
+- Runninng Locally without docker
+
+```bash
+npm install
+cp .env.example .env
+npm run dev
+```
+
+> [!NOTE]
+> Make sure the environment variables are set in the `.env` file before starting the server. The `PUPPETEER_EXECUTABLE_PATH` should be set to your chrome/chromium browser path.
+> A QR code will be generated for you to scan.
+> Go to <a target="_blank" href="localhost:3000">localhost:3000</a>
+> Kindly scan it with your whatsapp app and you're all set! 🎉 
+
 - Running on Docker
 ```bash	
 docker pull yaasiinayeva/whatsbot:latest

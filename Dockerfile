@@ -15,7 +15,7 @@ RUN npm install --only=production \
     && npm cache clean --force
 
 COPY . .
-RUN cp /app/.env.example /app/.env
+# RUN cp /app/.env.example /app/.env
 
 EXPOSE 3000
 

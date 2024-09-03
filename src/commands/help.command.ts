@@ -11,7 +11,7 @@ export const run = (message: Message, args: string[] = null) => {
         { name: "langlist", description: "Get list of available languages", eg: "langlist" }, { name: "translate", description: "Translate text", eg: "translate fr Hello guys!" },
         { name: "chat", description: "Chat with Gemini AI", eg: "chat Hello gemini!" }, { name: "gpt", description: "Chat with ChatGPT", eg: "gpt Hello chatgpt!" },
         { name: "meme", description: "Get random meme", eg: "meme" }, { name: "joke", description: "Get random joke", eg: "joke" },
-        { name: "get", description: "Download file from a social media (TikTok, Instagram, Twitter, Facebook, Pinterest)", eg: "get <social-media-video-url>" },
+        { name: "get", description: "Download file from a social media (TikTok, Instagram, Twitter, Facebook, Pinterest, Snapchat, Youtube, LinkedIn)", eg: "get <social-media-video-url>" },
         { name: "meteo", description: "Get the weather for a city", eg: "meteo New York" }
     ];
 

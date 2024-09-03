@@ -17,14 +17,14 @@ export const run = async (message: Message, args: string[]) => {
     }
 
     try {
-        const translatedText: any = await translateText(query, lang);
-
-        if (!translatedText) {
+        
+        const payload: any = await translateText(query, lang);
+        if (!payload) {
             message.reply('> WhatsBot : No Translation found.');
             return;
         }
 
-        message.reply(AppConfig.instance.printMessage(`Translated text : *${translatedText}*`));
+        message.reply(AppConfig.instance.printMessage(`Translated text : *${payload.text}*`));
     } catch (err) {
         logger.error(err);
         message.reply('> WhatsBot : Translation error.');

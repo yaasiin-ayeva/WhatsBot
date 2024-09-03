@@ -3,7 +3,6 @@ import axios from "axios";
 const fs = require("fs");
 import * as cheerio from 'cheerio';
 import logger from "../configs/logger.config";
-import { parse } from 'node-html-parser';
 
 export type TSocialNetwork = "tiktok" | "instagram" | "twitter" | "facebook" | "pinterest" | "youtube" | "snapchat" | "linkedin";
 
@@ -185,7 +184,10 @@ class LinkedIn {
     private async fetchHtml(): Promise<any> {
         try {
             const response = await axios.get(this.url);
-            const html = parse(response.data);
+
+            // use cheerio to parse HTML
+            const html = cheerio.load(response.data);
+
             if (!html) {
                 throw new Error("Invalid Content");
             }

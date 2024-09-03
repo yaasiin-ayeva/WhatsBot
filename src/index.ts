@@ -9,27 +9,32 @@ import { AppConfig } from "./configs/app.config";
 import { isUrl } from "./utils/common.util";
 import { identifySocialNetwork } from "./utils/get.util";
 import EnvConfig from "./configs/env.config";
+import apiRoutes from "./api/index.api";
 
 const { Client } = require("whatsapp-web.js");
-const qrcode = require("qrcode-terminal");
-
+const path = require("path");
 const client = new Client(ClientConfig);
-
 const app = express();
+
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
+app.use("/public", express.static("public"));
+
 const port = EnvConfig.PORT || 3000;
-let qrCodeData = "";
-let qrScanned = false;
+let qrData = {
+    qrCodeData: "",
+    qrScanned: false
+};
 
 client.on('ready', () => {
-    qrScanned = true;
+    qrData.qrScanned = true;
     const asciiArt = readAsciiArt();
     logger.info(asciiArt || "Ready!");
 });
 
 client.on('qr', (qr: any) => {
-    qrCodeData = qr;
-    qrScanned = false;
-    qrcode.generate(qr, { small: true });
+    qrData.qrCodeData = qr;
+    qrData.qrScanned = false;
 });
 
 const prefix = AppConfig.instance.getBotPrefix();
@@ -89,125 +94,7 @@ client.on('disconnected', (reason) => {
     }, 5000);
 });
 
-app.get("/", (req, res) => {
-    logger.info("GET /");
-    res.send(`
-        <div align="center">
-            <h3>🤖 WhatsBot Ready !</h3>
-            <p>
-                <img src="https://github.com/yaasiin-ayeva/WhatsBot/blob/main/public/botavatar.gif?raw=true" alt="logo" width="300" height="300" />
-            </p>
-            <p>Get started: <a target="_blank" href="https://github.com/yaasiin-ayeva/WhatsBot?tab=readme-ov-file#features">https://github.com/yaasiin-ayeva/WhatsBot?tab=readme-ov-file#features</a></p>
-            <div id="health">
-                <table border="1" cellspacing="0" cellpadding="5" align="center" width="50%">
-                    <thead><tr><th>Status</th><th>Value</th></tr></thead>
-                    <tbody>
-                        <tr align="center"><td>App state</td><td><span id="status">Loading...</span></td></tr>
-                        <tr align="center"><td>QR Scanned</td><td><span id="qrScanned">Loading...</span></td></tr>
-                        <tr align="center"><td>Bot Contact</td><td><span id="botContact">Loading...</span></td></tr>
-                        <tr align="center"><td>Bot Push Name</td><td><span id="botPushName">Loading...</span></td></tr>
-                        <tr align="center"><td>Bot Platform</td><td><span id="botPlatform">Loading...</span></td></tr>
-                        <tr align="center"><td>Uptime</td><td><span id="uptime">Loading...</span></td></tr>
-                        <tr align="center"><td>Version</td><td><span id="version">Loading...</span></td></tr>
-                    </tbody>
-                </table>
-            </div>
-            <script>
-                setInterval(() => {
-                    fetch('/health')
-                        .then(response => response.json())
-                        .then(data => {
-                            if (!data.qrScanned) {
-                                window.location.href = '/qr';
-                            }
-
-                            document.getElementById('qrScanned').innerHTML = data.qrScanned;
-                            document.getElementById('botContact').innerHTML = data.botContact;
-                            document.getElementById('botPushName').innerHTML = data.botPushName;
-                            document.getElementById('botPlatform').innerHTML = data.botPlatform;
-                            document.getElementById('status').innerHTML = data.status;
-
-                            if (data.status === 'healthy') {
-                                document.getElementById('status').style.color = 'green';
-                            } else {
-                                document.getElementById('status').style.color = 'red';
-                            }
-
-                            document.getElementById('uptime').innerHTML = data.uptime;
-                            document.getElementById('version').innerHTML = data.version;
-                        });
-                }, 1500);
-            </script>
-        </div>
-    `);
-});
-
-app.get("/qr", (req, res) => {
-    logger.info("GET /qr");
-
-    if (qrScanned) {
-        return res.redirect("/");
-    }
-
-    const qrCodeImage = qrCodeData
-        ? `<img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qrCodeData)}&size=300x300" alt="QR Code" />`
-        : '<img src="/public/loader.svg" alt="Loader" width="100" height="100" /><p>Hold on a sec while the QR code is being generated.</p>';
-    const htmlContent = `
-        <div align="center">
-            <div id="qrCodeData">
-                <h3>🤖 WhatsBot : Scan the QR Code to Continue! </h3>
-                ${qrCodeImage}
-            </div>
-            <script>
-                const checkQrStatus = () => {
-                    fetch('/qr-status')
-                        .then(response => response.json())
-                        .then(data => {
-                            if (!data.qrScanned) {
-                                location.reload();
-                            } else {
-                                window.location.href = '/';
-                            } 
-                        });
-                };
-                setInterval(checkQrStatus, 10000);
-            </script>
-        </div>
-    `;
-
-    res.send(htmlContent);
-});
-
-app.get("/qr-status", (req, res) => {
-    res.json({ qrScanned, qrCodeData });
-});
-
-
-app.get("/health", async (_req, res) => {
-    try {
-        const isClientReady = client && client.info ? true : false;
-
-        const healthStatus = {
-            status: isClientReady ? "healthy" : "unhealthy",
-            clientReady: isClientReady,
-            uptime: process.uptime(),
-            memoryUsage: process.memoryUsage(),
-            qrScanned: qrScanned,
-            botContact: client && client.info ? `<a target="_blank" href="https://wa.me/${client.info.wid.user}">wa.me/${client.info.wid.user}</a>` : null,
-            botPushName: client && client.info ? client.info.pushname : null,
-            botPlatform: client && client.info ? client.info.platform : null,
-            version: process.version,
-        };
-
-        logger.info("GET /health");
-        res.status(200).json(healthStatus);
-    } catch (error) {
-        logger.error("Health check failed", error);
-        res.status(500).json({ status: "unhealthy", error: "Internal Server Error" });
-    }
-});
-
-app.use("/public", express.static("public"));
+app.use("/", apiRoutes(client, qrData));
 
 app.listen(port, () => {
     logger.info(`Server is running on port ${port}, awaiting for client to be ready. Get started: http://localhost:${port}/`);

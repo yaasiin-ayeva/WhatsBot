@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>WhatsBot</title>
+    <link rel="icon" href="/public/favicon.png">
+</head>
+
+<body>
+    <div align="center">
+        <h3>🤖 WhatsBot Ready !</h3>
+        <p>
+            <img src="https://github.com/yaasiin-ayeva/WhatsBot/blob/main/public/botavatar.gif?raw=true" alt="logo"
+                width="300" height="300" />
+        </p>
+        <p>Get started: <a target="_blank"
+                href="https://github.com/yaasiin-ayeva/WhatsBot?tab=readme-ov-file#features">https://github.com/yaasiin-ayeva/WhatsBot?tab=readme-ov-file#features</a>
+        </p>
+        <div id="health">
+            <table border="1" cellspacing="0" cellpadding="5" align="center" width="50%">
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr align="center">
+                        <td>App state</td>
+                        <td><span id="status">Loading...</span></td>
+                    </tr>
+                    <tr align="center">
+                        <td>QR Scanned</td>
+                        <td><span id="qrScanned">Loading...</span></td>
+                    </tr>
+                    <tr align="center">
+                        <td>Bot Contact</td>
+                        <td><span id="botContact">Loading...</span></td>
+                    </tr>
+                    <tr align="center">
+                        <td>Bot Push Name</td>
+                        <td><span id="botPushName">Loading...</span></td>
+                    </tr>
+                    <tr align="center">
+                        <td>Bot Platform</td>
+                        <td><span id="botPlatform">Loading...</span></td>
+                    </tr>
+                    <tr align="center">
+                        <td>Uptime</td>
+                        <td><span id="uptime">Loading...</span></td>
+                    </tr>
+                    <tr align="center">
+                        <td>Version</td>
+                        <td><span id="version">Loading...</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <script>
+            setInterval(() => {
+                fetch('/health')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!data.qrScanned) {
+                            window.location.href = '/qr';
+                        }
+
+                        document.getElementById('qrScanned').innerHTML = data.qrScanned;
+                        document.getElementById('botContact').innerHTML = data.botContact;
+                        document.getElementById('botPushName').innerHTML = data.botPushName;
+                        document.getElementById('botPlatform').innerHTML = data.botPlatform;
+                        document.getElementById('status').innerHTML = data.status;
+
+                        if (data.status === 'healthy') {
+                            document.getElementById('status').style.color = 'green';
+                        } else {
+                            document.getElementById('status').style.color = 'red';
+                        }
+
+                        document.getElementById('uptime').innerHTML = data.uptime;
+                        document.getElementById('version').innerHTML = data.version;
+                    });
+            }, 1500);
+        </script>
+    </div>
+</body>
+
+</html>

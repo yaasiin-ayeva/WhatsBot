@@ -10,6 +10,7 @@ import { isUrl } from "./utils/common.util";
 import { identifySocialNetwork } from "./utils/get.util";
 import EnvConfig from "./configs/env.config";
 import apiRoutes from "./api/index.api";
+import { scheduleCrons } from "./crons/index.cron";
 
 const { Client } = require("whatsapp-web.js");
 const path = require("path");
@@ -30,9 +31,11 @@ client.on('ready', () => {
     qrData.qrScanned = true;
     const asciiArt = readAsciiArt();
     logger.info(asciiArt || "Ready!");
+    // scheduleCrons();
 });
 
 client.on('qr', (qr: any) => {
+    console.log('QR RECEIVED', qr);
     qrData.qrCodeData = qr;
     qrData.qrScanned = false;
 });
@@ -87,15 +90,14 @@ client.on('message_create', async (message: Message) => {
 
 client.initialize();
 
-client.on('disconnected', (reason) => {
-    logger.info('Client was logged out', reason);
+client.on('disconnected', (reason: any) => {
+    logger.info(`Client was logged out with ${reason}`);
     setTimeout(() => {
         client.initialize();
     }, 5000);
 });
 
 app.use("/", apiRoutes(client, qrData));
-
 app.listen(port, () => {
     logger.info(`Server is running on port ${port}, awaiting for client to be ready. Get started: http://localhost:${port}/`);
 });

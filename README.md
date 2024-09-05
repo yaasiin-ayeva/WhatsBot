@@ -25,7 +25,7 @@ In development mode, your bot prefix will be automatically set to `!`. Meanning 
 
 | Feature | Description | Example |
 | --- | --- | --- |
-| Voice Chat | Get voice chat transcript | Just send an audio message |
+| Voice Chat | Chat with AI and expect a audio/text response from the bot | Just send an audio message |
 | AI Completion with Gemini AI | Sends a message to the AI | `/chat [text]` |
 | AI Completion with ChatGPT | Sends a message to the AI | `/gpt [text]` |
 | Video Download from social media | Download file from social media | Just send the video link or `/get <url>` |

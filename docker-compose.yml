@@ -13,9 +13,6 @@ services:
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-    volumes:
-      - ./.wwebjs_auth:/app/.wwebjs_auth
-      - ./.wwebjs_cache:/app/.wwebjs_cache
 
   redis:
     image: redis:alpine

@@ -8,7 +8,7 @@ import { identifySocialNetwork } from './utils/get.util';
 import { cpus } from 'os';
 import EnvConfig from './configs/env.config';
 import { Message } from 'whatsapp-web.js';
-const messagePrototype = require('whatsapp-web.js/src/structures/Message');
+import { createMessageProto } from './protos/message.proto';
 
 const messageQueue = new Queue("message-queue", {
     redis: {
@@ -32,23 +32,17 @@ const NUM_WORKERS = Math.max(2, Math.min(4, cpus().length - 1)); // 2 - 4 worker
 
 export const addMessageToQueue = async (message: Message) => {
     logger.info(`Adding message to queue...`);
-
-    // save message prototype in redis
-    const messageProto = Object.getPrototypeOf(message);
-    console.log(messageProto);
-
-    await messageQueue.add({ message: message });
+    await messageQueue.add({ message: JSON.stringify(message) });
 };
 
 const processMessage = async (job: Job, client: any) => {
 
     logger.info(`Worker ${job.queue.name}-${job.id} processing message...`);
 
-    const message: Message = job.data.message;
+    const messageData = JSON.parse(job.data.message);
+    const message: Message = createMessageProto(messageData, client);
     const content = message.body.trim();
     const prefix = AppConfig.instance.getBotPrefix();
-
-    console.log(content, prefix);
 
     if (AppConfig.instance.getSupportedMessageTypes().indexOf(message.type) === -1) {
         return;
@@ -58,8 +52,6 @@ const processMessage = async (job: Job, client: any) => {
     const command = args.shift()?.toLowerCase();
 
     try {
-        if (message.from === client.info.wid._serialized) return;
-        if (message.isStatus) return;
 
         if (message.type === 'ptt') {
             await commands[AppConfig.instance.getDefaultAudioAiCommand()].run(message, args);

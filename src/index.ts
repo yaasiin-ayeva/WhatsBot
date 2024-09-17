@@ -38,8 +38,13 @@ const initializeWhatsAppClient = () => {
     });
 
     client.on('message_create', async (message: Message) => {
+
+        // ignore status updates and messages sent by the bot
+        if ((message.isStatus) || (message.from === client.info.wid._serialized)) return;
+
         let user = await message.getContact();
         logger.info(`Captured message from @${user.pushname} (${user.number}) : ${message.body}`);
+
         await addMessageToQueue(message);
     });
 

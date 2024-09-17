@@ -19,7 +19,7 @@
 </body>
 
 
-### Features
+## Features
 
 In development mode, your bot prefix will be automatically set to `!`. Meanning that you can use `!help` to get the list of commands instead of `/help`.
 
@@ -37,9 +37,37 @@ In development mode, your bot prefix will be automatically set to `!`. Meanning 
 | Weather | Get current weather for a city | `/meteo <city>` |
 
 
-### Getting Started
+## Getting Started
 
-- Runninng Locally without docker
+### I. Running on Docker (Recommended)
+
+
+1. From DockerHub image for a Quick Test
+```bash	
+docker pull yaasiinayeva/whatsbot:latest
+docker run -d -p 3000:3000 yaasiinayeva/whatsbot
+```
+
+2. From the Github Code
+- After cloning the project make sure to setup your environnment variables from the `.env.example` file
+```bash
+cp .env.example .env
+```
+
+- Then Build your container and start your project
+```bash	
+docker compose build ; docker compose up -d
+```
+
+A QR code will be generated for you to scan.
+Go to <a target="_blank" href="localhost:3000">localhost:3000</a>
+Kindly scan it with your whatsapp app and you're all set! 🎉 
+
+
+### II. Runninng Locally without docker (Not Recommended)
+
+> [!IMPORTANT]
+> Running locally requires you to do more configuration. You have to install `redis-server` on your machine. This project is based on `whatsappweb.js` which uses `Pupperteer`. It requires a brower driver to work. You have to install Chrome or Chromium on your machine. Make sure the environment variables are set in the `.env` file before starting the server. The `PUPPETEER_EXECUTABLE_PATH` should be set to your chrome/chromium browser path.
 
 ```bash
 npm install
@@ -47,25 +75,13 @@ cp .env.example .env
 npm run dev
 ```
 
-> [!NOTE]
-> Make sure the environment variables are set in the `.env` file before starting the server. The `PUPPETEER_EXECUTABLE_PATH` should be set to your chrome/chromium browser path.
-> A QR code will be generated for you to scan.
-> Go to <a target="_blank" href="localhost:3000">localhost:3000</a>
-> Kindly scan it with your whatsapp app and you're all set! 🎉 
 
-- Running on Docker
-```bash	
-docker pull yaasiinayeva/whatsbot:latest
-docker run -d -p 3000:3000 yaasiinayeva/whatsbot
-```
+A QR code will be generated for you to scan.
+Go to <a target="_blank" href="localhost:3000">localhost:3000</a>
+Kindly scan it with your whatsapp app and you're all set! 🎉 
 
-> [!NOTE]
-> Make sure the environment variables are set in the `.env` file before starting the server
-> A QR code will be generated for you to scan.
-> Go to <a target="_blank" href="localhost:3000">localhost:3000</a>
-> Kindly scan it with your whatsapp app and you're all set! 🎉 
 
-### Configurations
+## Configurations
 
 You can change the configurations in `src/configs/app.config.ts`
 
@@ -77,11 +93,11 @@ For third-party services used in the bot, kindly get the API keys and set them c
 - [Speechify](https://console.sws.speechify.com/api-keys) : Text-to-Speech tool used in this project
 - [AssemblyAI](https://www.assemblyai.com/docs) : Speech to text tool used in this project 
 
-### Disclaimer
-> [!IMPORTANT]
-> **It is not guaranteed you will not be blocked by using this method. WhatsApp does not allow bots or unofficial clients on their platform, so this shouldn't be considered totally safe.**
+## Disclaimer
+> [!WARNING]
+> **It is not guaranteed you will not be blocked by using this method. WhatsApp does not allow bots or unofficial clients on their platform, especially when it is used to spam people. So this shouldn't be considered totally safe.**
 
-### Contributing
+## Contributing
 
 If you'd like to contribute, please read the [Contributing Guide](CONTRIBUTING.md)
 

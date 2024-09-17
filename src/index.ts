@@ -1,16 +1,12 @@
 import express from "express";
 import logger from "./configs/logger.config";
-import commands from "./commands/index";
 import { ClientConfig } from "./configs/client.config";
 import { Message } from "whatsapp-web.js";
-import { MessageTypes } from "whatsapp-web.js";
 import { readAsciiArt } from "./utils/ascii-art.util";
-import { AppConfig } from "./configs/app.config";
-import { isUrl } from "./utils/common.util";
-import { identifySocialNetwork } from "./utils/get.util";
 import EnvConfig from "./configs/env.config";
 import apiRoutes from "./api/index.api";
-import { scheduleCrons } from "./crons/index.cron";
+// import { scheduleCrons } from "./crons/index.cron";
+import { addMessageToQueue, checkRedisConnection, initializeQueue } from "./queue";
 
 const { Client } = require("whatsapp-web.js");
 const path = require("path");
@@ -27,77 +23,54 @@ let qrData = {
     qrScanned: false
 };
 
-client.on('ready', () => {
-    qrData.qrScanned = true;
-    const asciiArt = readAsciiArt();
-    logger.info(asciiArt || "Ready!");
-    // scheduleCrons();
-});
+const initializeWhatsAppClient = () => {
+    client.on('ready', () => {
+        qrData.qrScanned = true;
+        const asciiArt = readAsciiArt();
+        logger.info(asciiArt || "Ready!");
+        initializeQueue(client);
+        // scheduleCrons();
+    });
 
-client.on('qr', (qr: any) => {
-    console.log('QR RECEIVED', qr);
-    qrData.qrCodeData = qr;
-    qrData.qrScanned = false;
-});
+    client.on('qr', (qr: any) => {
+        qrData.qrCodeData = qr;
+        qrData.qrScanned = false;
+    });
 
-const prefix = AppConfig.instance.getBotPrefix();
+    client.on('message_create', async (message: Message) => {
+        let user = await message.getContact();
+        logger.info(`Captured message from @${user.pushname} (${user.number}) : ${message.body}`);
+        await addMessageToQueue(message);
+    });
 
-client.on('message_create', async (message: Message) => {
-    const content = message.body.trim();
+    client.on('disconnected', (reason: any) => {
+        logger.info(`Client was logged out with ${reason}`);
+        setTimeout(() => {
+            client.initialize();
+        }, 5000);
+    });
 
-    if (AppConfig.instance.getSupportedMessageTypes().indexOf(message.type) === -1) {
-        return;
-    }
+    client.initialize();
+};
 
-    let user = await message.getContact();
-    logger.info(`Message received from @${user.pushname} (${user.number}) : ${content}`);
+const startServer = () => {
+    app.use("/", apiRoutes(client, qrData));
+    app.listen(port, () => {
+        logger.info(`Server is running on port ${port}, awaiting for client to be ready. Get started: http://localhost:${port}/`);
+    });
+};
 
-    const args = content.slice(prefix.length).trim().split(/ +/);
-    const command = args.shift()?.toLowerCase();
-
+const bootstrap = async () => {
     try {
+        await checkRedisConnection();
+        logger.info("Redis connection successful");
 
-        // ignore messages from myself
-        if (message.from === client.info.wid._serialized) return;
-        // ignore status messages
-        if (message.isStatus) return
-
-        if (message.type === MessageTypes.VOICE) {
-            await commands[AppConfig.instance.getDefaultAudioAiCommand()].run(message, args);
-            return;
-        } else if (message.type === MessageTypes.TEXT) {
-            const url = content.trim().split(/ +/)[0];
-            const socialNetwork = identifySocialNetwork(url);
-
-            if (url && isUrl(url) && socialNetwork) {
-                await commands["get"].run(message, null, url, socialNetwork);
-                return;
-            } else {
-                if (!content.startsWith(prefix)) return;
-
-                if (command && command in commands) {
-                    await commands[command].run(message, args);
-                } else {
-                    message.reply(`> 🤖 Unknown command: ${command}, to see available commands, type ${prefix}help`);
-                }
-            }
-        }
+        initializeWhatsAppClient();
+        startServer();
     } catch (error) {
-        message.reply(`> 🤖 Oops, something went wrong, kindly retry.`);
-        logger.error(error);
+        logger.error(`Failed to start the application: ${error}`);
+        process.exit(1);
     }
-});
+};
 
-client.initialize();
-
-client.on('disconnected', (reason: any) => {
-    logger.info(`Client was logged out with ${reason}`);
-    setTimeout(() => {
-        client.initialize();
-    }, 5000);
-});
-
-app.use("/", apiRoutes(client, qrData));
-app.listen(port, () => {
-    logger.info(`Server is running on port ${port}, awaiting for client to be ready. Get started: http://localhost:${port}/`);
-});
+bootstrap();

@@ -8,7 +8,27 @@ services:
       - 3000:3000
     networks:
       - whatsbot
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    volumes:
+      - ./.wwebjs_auth:/app/.wwebjs_auth
+      - ./.wwebjs_cache:/app/.wwebjs_cache
+
+  redis:
+    image: redis:alpine
+    container_name: whatsbot-redis
+    restart: unless-stopped
+    networks:
+      - whatsbot
+    volumes:
+      - redis-data:/data
 
 networks:
   whatsbot:
     driver: bridge
+
+volumes:
+  redis-data:

@@ -16,9 +16,7 @@ class EnvConfig {
     static SPEECHIFY_API_KEY = process.env.SPEECHIFY_API_KEY;
     static ASSEMBLYAI_API_KEY = process.env.ASSEMBLYAI_API_KEY;
     static ENV = process.env.ENV;
-    static PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
-    static REDIS_HOST = process.env.REDIS_HOST;
-    static REDIS_PORT = process.env.REDIS_PORT ? Number(process.env.REDIS_PORT) : 6379;
+    static PORT = process.env.PORT;
 
     static validate() {
 
@@ -55,12 +53,6 @@ class EnvConfig {
         }
         if (!this.PORT) {
             throw new Error("Environment variable PORT is missing. Please provide a valid PORT.");
-        }
-        if (!this.REDIS_HOST) {
-            throw new Error("Environment variable REDIS_HOST is missing. Please provide a valid REDIS_HOST.");
-        }
-        if (!this.REDIS_PORT) {
-            throw new Error("Environment variable REDIS_PORT is missing. Please provide a valid REDIS_PORT.");
         }
     }
 }

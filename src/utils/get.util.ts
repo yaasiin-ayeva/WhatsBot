@@ -208,11 +208,13 @@ class LinkedIn {
 
     public async extractVideos(): Promise<ILinkedInVideo[]> {
         const html = await this.fetchHtml();
-        const videoElements = html.querySelectorAll("video[data-sources]");
+        console.log(`URL: ${this.url}`);
+
+        const videoElements = html("video[data-sources]");
         const result: ILinkedInVideo[] = [];
 
-        videoElements.forEach((element) => {
-            const ve = element.getAttribute("data-sources");
+        videoElements.each((_, element) => {
+            const ve = html(element).attr("data-sources");
             if (ve) {
                 const parsedVideos = JSON.parse(ve);
                 parsedVideos.forEach((videoObj: { src: string }) => {

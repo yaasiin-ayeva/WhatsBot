@@ -66,7 +66,9 @@ export const run = async (message: Message, args: string[] = null, _videoUrl = n
         });
 
         const media = MessageMedia.fromFilePath(convertedFilePath);
-        await message.reply(media, null, { caption: `> WhatsBot 🤖 : ${socialNetwork} video downloaded` });
+        await message.reply(media, null, {
+            caption: `Download your TikTok, Instagram, twitter, Facebook, LinkedIn videos on WhatsApp without watermark. Just send the video link to this bot https://wa.me/qr/SBHRATABRAZVA1`,
+        });
 
     } catch (err) {
         logger.error(err);

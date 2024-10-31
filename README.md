@@ -65,7 +65,7 @@ cp .env.example .env
 
 - Then Build your container and start your project
 ```bash	
-docker build .; docker-compose up -d
+docker-compose up --build -d
 ```
 
 A QR code will be generated for you to scan.

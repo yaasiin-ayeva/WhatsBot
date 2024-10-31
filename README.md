@@ -1,20 +1,29 @@
 <body>
     <div align="center">
         <h1>
-            WhatsBot 
+            WhatsBot <br/>
             <a href="https://yaasiin-dev.vercel.app/" target="_blank">
-                <img src="https://vercelbadge.vercel.app/api/yaasiin-ayeva/yaasiin.dev" alt="Vercel deployment status" style="vertical-align: middle;">
+                <img alt="Static Badge" src="https://img.shields.io/badge/build-passing-brightgreen">
+                <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/yaasiin-ayeva/WhatsBot">
+            </a>
+            <a href="https://hub.docker.com/repository/docker/yaasiinayeva/whatsbot" target="_blank">
+                <img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/yaasiinayeva/whatsbot">
+            </a>
+            <a href="https://github.com/yaasiin-ayeva/WhatsBot" target="_blank">
+                <img alt="GitHub forks" src="https://img.shields.io/github/forks/yaasiin-ayeva/WhatsBot">
+                <img alt="GitHub watchers" src="https://img.shields.io/github/watchers/yaasiin-ayeva/WhatsBot">
+                <img alt="GitHub contributors" src="https://img.shields.io/github/contributors/yaasiin-ayeva/WhatsBot">
             </a>
         </h1>
         <img src="public/botavatar.gif" alt="Preview" width="40%" style="max-width: 300px; border-radius: 8px;">
         <p>
             Simple WhatsApp bot from unofficial WhatsApp API, built in NodeJS &amp; TypeScript, using Gemini &amp; ChatGPT APIs for completion, with many cool features. You can interact with the bot using voice messages, and it will transcribe and respond. 🤖
         </p>
-        <!-- <p>
+        <p>
             Try it here: <a href="https://wa.me/qr/SBHRATABRAZVA1" target="_blank">WhatsBot Playground</a> or scan the QR code below:
         </p>
         <br>
-        <img src="public/qr.jpg" width="35%" alt="WhatsApp QR Code" style="margin-top: 20px;"> -->
+        <img src="public/qr.jpg" width="35%" alt="WhatsApp QR Code" style="margin-top: 20px;">
     </div>
 </body>
 
@@ -56,7 +65,7 @@ cp .env.example .env
 
 - Then Build your container and start your project
 ```bash	
-docker compose build ; docker compose up -d
+docker build .; docker-compose up -d
 ```
 
 A QR code will be generated for you to scan.
@@ -67,14 +76,13 @@ Kindly scan it with your whatsapp app and you're all set! 🎉
 ### II. Runninng Locally without docker (Not Recommended)
 
 > [!IMPORTANT]
-> Running locally requires you to do more configuration. You have to install `redis-server` on your machine. This project is based on `whatsappweb.js` which uses `Pupperteer`. It requires a brower driver to work. You have to install Chrome or Chromium on your machine. Make sure the environment variables are set in the `.env` file before starting the server. The `PUPPETEER_EXECUTABLE_PATH` should be set to your chrome/chromium browser path.
+> Running locally requires you to do more configuration. This project is based on `whatsappweb.js` which uses `Pupperteer`. It requires a brower driver to work. You have to install Chrome or Chromium on your machine. Make sure the environment variables are set in the `.env` file before starting the server. The `PUPPETEER_EXECUTABLE_PATH` should be set to your chrome/chromium browser path.
 
 ```bash
 npm install
 cp .env.example .env
 npm run dev
 ```
-
 
 A QR code will be generated for you to scan.
 Go to <a target="_blank" href="localhost:3000">localhost:3000</a>

@@ -2,14 +2,10 @@
     <div align="center">
         <h1>
             WhatsBot <br/>
-            <a href="https://yaasiin-dev.vercel.app/" target="_blank">
-                <img alt="Static Badge" src="https://img.shields.io/badge/build-passing-brightgreen">
-                <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/yaasiin-ayeva/WhatsBot">
-            </a>
-            <a href="https://github.com/yaasiin-ayeva/WhatsBot" target="_blank">
-                <img alt="GitHub forks" src="https://img.shields.io/github/forks/yaasiin-ayeva/WhatsBot">
-                <img alt="GitHub watchers" src="https://img.shields.io/github/watchers/yaasiin-ayeva/WhatsBot">
-            </a>
+            <img alt="Static Badge" src="https://img.shields.io/badge/build-passing-brightgreen">
+            <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/yaasiin-ayeva/WhatsBot">
+            <img alt="GitHub forks" src="https://img.shields.io/github/forks/yaasiin-ayeva/WhatsBot">
+            <img alt="GitHub watchers" src="https://img.shields.io/github/watchers/yaasiin-ayeva/WhatsBot">
         </h1>
         <img src="public/botavatar.gif" alt="Preview" width="40%" style="max-width: 300px; border-radius: 8px;">
         <p>

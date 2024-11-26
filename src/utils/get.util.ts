@@ -1,39 +1,18 @@
-const { ttdl, igdl, twitter, fbdown, youtube } = require('btch-downloader');
+const { igdl, fbdown } = require('btch-downloader');
 import axios from "axios";
 const fs = require("fs");
 import * as cheerio from 'cheerio';
 import logger from "../configs/logger.config";
+import DlMate from 'dl-mate';
 
 export type TSocialNetwork = "tiktok" | "instagram" | "twitter" | "facebook" | "pinterest" | "youtube" | "snapchat" | "linkedin";
-
-export const MAX_STREAMING_FILE_SIZE = 75 * 1024 * 1024;    // 75 MB
-
-export interface ILinkedInVideo {
-    url: string;
-    quality: string | null;
-}
-
-export interface ITikTokResult {
-    title: string;
-    title_audio: string;
-    thumbnail: string;
-    video: string[];
-    audio: string[];
-    creator: string;
-}
+export const MAX_STREAMING_FILE_SIZE = 80 * 1024 * 1024;    // 80 MB
+const mate = new DlMate();
 
 export interface IInstagramResult {
     wm?: string;
     url: string;
     thumbnail?: string;
-}
-
-export interface ITwitterResult {
-    title: string;
-    url: {
-        hd?: string;
-        sd?: string;
-    }[];
 }
 
 export interface IFacebookResult {
@@ -42,19 +21,9 @@ export interface IFacebookResult {
     audio: string;
 }
 
-export interface IPinterestResult {
-    video: string;
-}
-
-export interface IYoutubeResult {
-    id: string | null;
-    mp4: string;
-    mp3: string;
-}
-
 const downloaders: { [key in TSocialNetwork]: (url: string) => Promise<string> } = {
     tiktok: async (url: string) => {
-        const result = await ttdl(url) as ITikTokResult;
+        const result = await mate.downloadTikTok(url);
         return result.video.length > 0 ? result.video[0] : '';
     },
     instagram: async (url: string) => {
@@ -62,37 +31,24 @@ const downloaders: { [key in TSocialNetwork]: (url: string) => Promise<string> }
         return result.length > 0 && result[0].url ? result[0].url : '';
     },
     twitter: async (url: string) => {
-        const result = await twitter(url) as ITwitterResult;
-        return result.url?.[0]?.hd ?? result.url?.[0]?.sd ?? '';
+        const result = await mate.downloadX(url);
+        return result.downloads.length > 0 ? result.downloads[0]?.url : '';
     },
     facebook: async (url: string) => {
         const result = await fbdown(url) as IFacebookResult;
         return result.HD ?? result.Normal_video ?? result.audio ?? '';
     },
     pinterest: async (url: string) => {
-        try {
-            const response = await axios.get(url);
-            const $ = cheerio.load(response.data);
-
-            const video = $('video[src]').attr('src');
-            if (!video) {
-                return '';
-            }
-
-            const videoUrl = video.replace("/hls/", "/720p/").replace(".m3u8", ".mp4");
-            return videoUrl ? videoUrl : '';
-        } catch (error) {
-            return '';
-        }
+        const result = await mate.downloadPinterest(url);
+        return result.video || '';
     },
     youtube: async (url: string) => {
-        const result = await youtube(url) as IYoutubeResult;
-        return result && result.mp4 ? result.mp4 : '';
+        const result = await mate.downloadYouTube(url);
+        return result && result.formats && result.formats.length > 0 ? result.formats[0]?.url : '';
     },
     linkedin: async (url: string) => {
-        const linkedIn = new LinkedIn(url);
-        const videos = await linkedIn.extractVideos();
-        return videos.length > 0 ? videos[0].url : '';
+        const result = await mate.downloadLinkedIn(url);
+        return result.downloads.length > 0 ? result.downloads[0]?.url : '';
     },
     snapchat: async (url: string) => {
         try {
@@ -172,60 +128,3 @@ export const downloadFile = async (url: string, filePath: string, maxSize: numbe
         throw error;
     }
 };
-
-
-class LinkedIn {
-    url: string;
-
-    constructor(url: string) {
-        this.url = url;
-    }
-
-    private async fetchHtml(): Promise<any> {
-        try {
-            const response = await axios.get(this.url);
-
-            // use cheerio to parse HTML
-            const html = cheerio.load(response.data);
-
-            if (!html) {
-                throw new Error("Invalid Content");
-            }
-            return html;
-        } catch (error) {
-            logger.error(`Error fetching LinkedIn HTML: ${error.message}`);
-            throw new Error(`Unable to fetch content from LinkedIn`);
-        }
-    }
-
-    private getMetadata(url: string): { quality: string | null } {
-        const pattern = /\/(\w*?)-(\w*?)-(\w*?)-/;
-        const matches = url.match(pattern);
-        return {
-            quality: matches ? matches[2] : null,
-        };
-    }
-
-    public async extractVideos(): Promise<ILinkedInVideo[]> {
-        const html = await this.fetchHtml();
-        console.log(`URL: ${this.url}`);
-
-        const videoElements = html("video[data-sources]");
-        const result: ILinkedInVideo[] = [];
-
-        videoElements.each((_, element) => {
-            const ve = html(element).attr("data-sources");
-            if (ve) {
-                const parsedVideos = JSON.parse(ve);
-                parsedVideos.forEach((videoObj: { src: string }) => {
-                    result.push({
-                        url: videoObj.src,
-                        quality: this.getMetadata(videoObj.src).quality,
-                    });
-                });
-            }
-        });
-
-        return result;
-    }
-}

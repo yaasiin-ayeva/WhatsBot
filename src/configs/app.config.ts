@@ -8,7 +8,6 @@ export type BotReactionType = "neutral" | "friendly" | "celebrating" | "angry" |
 export class AppConfig {
 
     private static _instance: AppConfig;
-
     private constructor() { }
 
     public static get instance(): AppConfig {

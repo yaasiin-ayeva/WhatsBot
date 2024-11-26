@@ -97,7 +97,7 @@ For third-party services used in the bot, kindly get the API keys and set them c
 > **It is not guaranteed you will not be blocked by using this method. WhatsApp does not allow bots or unofficial clients on their platform, especially when it is used to spam people. So this shouldn't be considered totally safe.**
 
 ## TODO
-- [ ] Refactor the code to not use `btch-downloader` anymore and build a custom downloader to make it compatible with `axios` rather than `got`. Kindly check [dl-mate](https://github.com/yaasiin-ayeva/dl-mate)
+- [ ] (WIP) Refactor the code to not use `btch-downloader` anymore and build a custom downloader to make it compatible with `axios` rather than `got`. Kindly check [dl-mate](https://github.com/yaasiin-ayeva/dl-mate)
 - [ ] Implement a queue system to handle multiple concurrent video download requests at the same time and make the bot more responsive
 - [ ] Refactor the code to not use third-party services for speech-to-text and use `whisper-node` instead
 - [ ] Add support for more social media platforms

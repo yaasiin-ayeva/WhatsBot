@@ -10,7 +10,6 @@ import { isUrl } from "./utils/common.util";
 import { identifySocialNetwork } from "./utils/get.util";
 import EnvConfig from "./configs/env.config";
 import apiRoutes from "./api/index.api";
-import { scheduleCrons } from "./crons/index.cron";
 
 const { Client } = require("whatsapp-web.js");
 const path = require("path");
@@ -57,10 +56,8 @@ client.on('message_create', async (message: Message) => {
 
     try {
 
-        // ignore messages from myself
         if (message.from === client.info.wid._serialized) return;
-        // ignore status messages
-        if (message.isStatus) return
+        if (message.isStatus) return;
 
         if (message.type === MessageTypes.VOICE) {
             await commands[AppConfig.instance.getDefaultAudioAiCommand()].run(message, args);

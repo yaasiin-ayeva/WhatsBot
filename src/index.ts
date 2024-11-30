@@ -10,6 +10,7 @@ import { isUrl } from "./utils/common.util";
 import { identifySocialNetwork } from "./utils/get.util";
 import EnvConfig from "./configs/env.config";
 import apiRoutes from "./api/index.api";
+import { onboard } from "./utils/onboarding.util";
 
 const { Client } = require("whatsapp-web.js");
 const path = require("path");
@@ -43,6 +44,7 @@ const prefix = AppConfig.instance.getBotPrefix();
 
 client.on('message_create', async (message: Message) => {
     const content = message.body.trim();
+    await onboard(message);
 
     if (AppConfig.instance.getSupportedMessageTypes().indexOf(message.type) === -1) {
         return;
@@ -53,6 +55,8 @@ client.on('message_create', async (message: Message) => {
 
     const args = content.slice(prefix.length).trim().split(/ +/);
     const command = args.shift()?.toLowerCase();
+
+    const chat = await message.getChat();
 
     try {
 
@@ -73,6 +77,7 @@ client.on('message_create', async (message: Message) => {
                 if (!content.startsWith(prefix)) return;
 
                 if (command && command in commands) {
+                    await chat.sendStateTyping();
                     await commands[command].run(message, args);
                 } else {
                     message.reply(`> 🤖 Unknown command: ${command}, to see available commands, type ${prefix}help`);
@@ -82,10 +87,16 @@ client.on('message_create', async (message: Message) => {
     } catch (error) {
         message.reply(`> 🤖 Oops, something went wrong, kindly retry.`);
         logger.error(error);
+    } finally {
+        if (chat) await chat.clearState();
     }
 });
 
-client.initialize();
+try {
+    client.initialize();
+} catch (error) {
+    logger.error(`Error when initializing client: ${error}`);
+}
 
 client.on('disconnected', (reason: any) => {
     logger.info(`Client was logged out with ${reason}`);

@@ -21,6 +21,10 @@ export class AppConfig {
         return EnvConfig.ENV === "production" ? "/" : "!";
     }
 
+    public getHelpCommand(): string {
+        return "help";
+    }
+
     public getBotName(): string {
         return "WhatsBot";
     }
@@ -88,5 +92,9 @@ export class AppConfig {
             MessageTypes.TEXT,
             MessageTypes.VOICE
         ]
+    }
+
+    public getOnboardingVideoPath(): string {
+        return "public/onboarding.mp4";
     }
 }

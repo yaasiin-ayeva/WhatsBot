@@ -7,8 +7,8 @@ export const run = (message: Message, args: string[] = null) => {
     const query = args.join(" ").trim();
 
     const commands = [
-        { name: "help", description: "Get command Description", eg: "help ping" },
         { name: "onboard", description: "Get an onboarding video to understand how the bot works", eg: "onboard" },
+        { name: "help", description: "Get command Description", eg: "help ping" },
         { name: "ping", description: "Ping the bot", eg: "ping" },
         { name: "langlist", description: "Get list of available languages", eg: "langlist" },
         { name: "translate", description: "Translate text", eg: "translate fr Hello guys!" },

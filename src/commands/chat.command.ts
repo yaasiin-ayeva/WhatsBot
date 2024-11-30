@@ -11,6 +11,7 @@ const path = require('path');
 
 export const run = async (message: Message, args: string[]) => {
     let query = args.join(" ");
+    const chat = await message.getChat();
 
     if (!query && message.type !== MessageTypes.VOICE) {
         message.reply(AppConfig.instance.printMessage("Please provide a message for Gemini AI."));
@@ -57,6 +58,8 @@ export const run = async (message: Message, args: string[]) => {
         const chatReply = result.response.text() || 'No reply';
 
         if (message.type === MessageTypes.VOICE) {
+            await chat.sendStateRecording();
+
             try {
                 const filePath = await textToSpeech(chatReply, `${message.id.id}.wav`);
                 const voice = await MessageMedia.fromFilePath(filePath);
@@ -65,6 +68,13 @@ export const run = async (message: Message, args: string[]) => {
                 return;
             } catch (error) {
                 logger.error(error);
+                chat.clearState().then(() => {
+                    // wait for 1.5 seconds before sending typing to avoid ban :)
+                    setTimeout(() => {
+                        chat.sendStateTyping();
+                    }, 1500);
+                });
+                await chat.sendStateTyping();
                 message.reply(AppConfig.instance.printMessage(`${chatReply}\n\n_Sorry btw but i was unable to send this as voice._`));
                 return;
             }

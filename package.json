@@ -27,18 +27,20 @@
         "puppeteer": "^22.11.2",
         "ts-node": "^10.9.2",
         "typescript": "^5.4.5",
-        "whatsapp-web.js": "^1.26.0",
+        "whatsapp-web.js": "^1.26.1-alpha.3",
         "winston": "^3.13.0"
     },
     "scripts": {
         "start": "ts-node src/index.ts",
         "dev": "nodemon src/index.ts",
+        "dev:refresh": "npm run clean:all && npm install && npm run dev",
         "test": "echo \"Error: no test specified\" && exit 1",
         "build": "rimraf build && node esbuild.config.js && npm run copy-files",
         "deploy": "node ./index.js",
         "type-check": "tsc --noEmit",
         "lint": "eslint src --ext .ts",
         "clean": "rimraf build",
+        "clean:all": "rimraf build && rimraf node_modules",
         "prepare": "husky install",
         "copy-files": "copyfiles -u 0 ./package.json ./.env ./package-lock.json public/**/* build"
     },

@@ -44,7 +44,6 @@ const prefix = AppConfig.instance.getBotPrefix();
 
 client.on('message_create', async (message: Message) => {
     const content = message.body.trim();
-    await onboard(message);
 
     if (AppConfig.instance.getSupportedMessageTypes().indexOf(message.type) === -1) {
         return;
@@ -62,6 +61,8 @@ client.on('message_create', async (message: Message) => {
 
         if (message.from === client.info.wid._serialized) return;
         if (message.isStatus) return;
+
+        await onboard(message);
 
         if (message.type === MessageTypes.VOICE) {
             await commands[AppConfig.instance.getDefaultAudioAiCommand()].run(message, args);

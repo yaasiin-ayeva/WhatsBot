@@ -14,7 +14,7 @@ export const run = async (message: Message, args: string[]) => {
     const chat = await message.getChat();
 
     if (!query && message.type !== MessageTypes.VOICE) {
-        message.reply(AppConfig.instance.printMessage("Please provide a message for Gemini AI."));
+        chat.sendMessage(AppConfig.instance.printMessage("Please provide a message for Gemini AI."));
         return;
     }
 

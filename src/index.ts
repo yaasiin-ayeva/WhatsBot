@@ -83,7 +83,7 @@ client.on('message_create', async (message: Message) => {
                     await chat.sendStateTyping();
                     await commands[command].run(message, args);
                 } else {
-                    message.reply(`> 🤖 Unknown command: ${command}, to see available commands, type ${prefix}help`);
+                    chat.sendMessage(`> 🤖 Unknown command: ${command}, to see available commands, type ${prefix}help`);
                 }
             }
         }

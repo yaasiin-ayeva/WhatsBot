@@ -44,21 +44,22 @@ const prefix = AppConfig.instance.getBotPrefix();
 
 client.on('message_create', async (message: Message) => {
     let chat = null;
+
+    const content = message.body.trim();
+
+    if (AppConfig.instance.getSupportedMessageTypes().indexOf(message.type) === -1) {
+        return;
+    }
+
+    let user = await message.getContact();
+    logger.info(`Message received from @${user.pushname} (${user.number}) : ${content}`);
+
+    const args = content.slice(prefix.length).trim().split(/ +/);
+    const command = args.shift()?.toLowerCase();
+
+    chat = await message.getChat();
+
     try {
-
-        const content = message.body.trim();
-
-        if (AppConfig.instance.getSupportedMessageTypes().indexOf(message.type) === -1) {
-            return;
-        }
-
-        let user = await message.getContact();
-        logger.info(`Message received from @${user.pushname} (${user.number}) : ${content}`);
-
-        const args = content.slice(prefix.length).trim().split(/ +/);
-        const command = args.shift()?.toLowerCase();
-
-        chat = await message.getChat();
 
         if (message.from === client.info.wid._serialized) return;
         if (message.isStatus) return;
@@ -87,7 +88,7 @@ client.on('message_create', async (message: Message) => {
             }
         }
     } catch (error) {
-        message.reply(`> 🤖 Oops, something went wrong, kindly retry.`);
+        if (chat) chat.sendMessage(`> 🤖 Oops, something went wrong, kindly retry.`);
         logger.error(error);
     } finally {
         if (chat) await chat.clearState();

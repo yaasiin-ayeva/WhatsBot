@@ -43,21 +43,22 @@ client.on('qr', (qr: any) => {
 const prefix = AppConfig.instance.getBotPrefix();
 
 client.on('message_create', async (message: Message) => {
-    const content = message.body.trim();
-
-    if (AppConfig.instance.getSupportedMessageTypes().indexOf(message.type) === -1) {
-        return;
-    }
-
-    let user = await message.getContact();
-    logger.info(`Message received from @${user.pushname} (${user.number}) : ${content}`);
-
-    const args = content.slice(prefix.length).trim().split(/ +/);
-    const command = args.shift()?.toLowerCase();
-
-    const chat = await message.getChat();
-
+    let chat = null;
     try {
+
+        const content = message.body.trim();
+
+        if (AppConfig.instance.getSupportedMessageTypes().indexOf(message.type) === -1) {
+            return;
+        }
+
+        let user = await message.getContact();
+        logger.info(`Message received from @${user.pushname} (${user.number}) : ${content}`);
+
+        const args = content.slice(prefix.length).trim().split(/ +/);
+        const command = args.shift()?.toLowerCase();
+
+        chat = await message.getChat();
 
         if (message.from === client.info.wid._serialized) return;
         if (message.isStatus) return;

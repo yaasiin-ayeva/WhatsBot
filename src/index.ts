@@ -88,7 +88,6 @@ client.on('message_create', async (message: Message) => {
             }
         }
     } catch (error) {
-        console.log("@@@ here");
         if (chat) chat.sendMessage(`> 🤖 Oops, something went wrong, kindly retry.`);
         logger.error(error);
     } finally {

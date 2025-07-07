@@ -2,8 +2,9 @@ import { Message } from "whatsapp-web.js";
 import { languages, translateText } from "../utils/translate.util";
 import logger from "../configs/logger.config";
 import { AppConfig } from "../configs/app.config";
+import { UserI18n } from "../utils/i18n.util";
 
-export const run = async (message: Message, args: string[]) => {
+export const run = async (message: Message, args: string[], userI18n: UserI18n) => {
     const lang = args.shift()?.toLowerCase();
     const query = args.join(" ");
 

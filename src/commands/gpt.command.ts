@@ -2,8 +2,9 @@ import { Message } from "whatsapp-web.js";
 import { chatGptCompletion } from "../utils/chat-gpt.util";
 import logger from "../configs/logger.config";
 import { AppConfig } from "../configs/app.config";
+import { UserI18n } from "../utils/i18n.util";
 
-export const run = async (message: Message, args: string[]) => {
+export const run = async (message: Message, args: string[], userI18n: UserI18n) => {
     const query = args.join(" ");
 
     if (!query) {

@@ -1,5 +1,6 @@
 import { Chat, Message, MessageMedia } from "whatsapp-web.js"
 import { AppConfig } from "../configs/app.config";
+import { UserI18n } from "./i18n.util";
 
 const isUserOnboarded = async (chat: Chat) => {
     const messages: Message[] = await chat.fetchMessages({
@@ -9,7 +10,7 @@ const isUserOnboarded = async (chat: Chat) => {
     return messages.length != 0;
 }
 
-export const onboard = async (message: Message, autoOnboard: boolean = true, filePath = AppConfig.instance.getOnboardingVideoPath()) => {
+export const onboard = async (message: Message, userI18n: UserI18n, autoOnboard: boolean = true, filePath = AppConfig.instance.getOnboardingVideoPath()) => {
     const chat = await message.getChat();
 
     if (autoOnboard && await isUserOnboarded(chat)) {
@@ -18,7 +19,11 @@ export const onboard = async (message: Message, autoOnboard: boolean = true, fil
 
     await chat.sendStateTyping();
     const media = MessageMedia.fromFilePath(filePath);
+    const caption = userI18n.t('onboardMessages.caption', { botName: AppConfig.instance.getBotName() });
+    const pleaseHelp = userI18n.t('onboardMessages.pleaseHelp', { prefix: AppConfig.instance.getBotPrefix() });
+
     await message.reply(media, null, {
-        caption: `🤖 Welcome to WhatsBot! \n\n Please watch this video to get started quickly \n\nPlease send "${AppConfig.instance.getBotPrefix()}${AppConfig.instance.getHelpCommand()}" to see available commands.`,
+        caption: `${caption}\n\n${pleaseHelp}`,
     });
+
 }

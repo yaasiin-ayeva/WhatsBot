@@ -11,6 +11,7 @@ import { identifySocialNetwork } from "./utils/get.util";
 import EnvConfig from "./configs/env.config";
 import apiRoutes from "./api/index.api";
 import { onboard } from "./utils/onboarding.util";
+import { UserI18n } from "./utils/i18n.util";
 
 const { Client } = require("whatsapp-web.js");
 const path = require("path");
@@ -26,6 +27,8 @@ let qrData = {
     qrCodeData: "",
     qrScanned: false
 };
+
+const userI18nCache = new Map<string, UserI18n>();
 
 client.on('ready', () => {
     qrData.qrScanned = true;
@@ -44,6 +47,7 @@ const prefix = AppConfig.instance.getBotPrefix();
 
 client.on('message_create', async (message: Message) => {
     let chat = null;
+    let userI18n: UserI18n;
 
     const content = message.body.trim();
 
@@ -53,6 +57,14 @@ client.on('message_create', async (message: Message) => {
 
     let user = await message.getContact();
     logger.info(`Message received from @${user.pushname} (${user.number}) : ${content}`);
+
+    if (userI18nCache.has(user.number)) {
+        userI18n = userI18nCache.get(user.number)!;
+    } else {
+        userI18n = new UserI18n(user.number);
+        userI18nCache.set(user.number, userI18n);
+        logger.info(`User ${user.number} detected as ${userI18n.getLanguage()} speaker from ${userI18n.getCountry()?.name || 'Unknown country'}`);
+    }
 
     const args = content.slice(prefix.length).trim().split(/ +/);
     const command = args.shift()?.toLowerCase();
@@ -64,31 +76,38 @@ client.on('message_create', async (message: Message) => {
         if (message.from === client.info.wid._serialized) return;
         if (message.isStatus) return;
 
-        await onboard(message);
+        await onboard(message, userI18n);
 
         if (message.type === MessageTypes.VOICE) {
-            await commands[AppConfig.instance.getDefaultAudioAiCommand()].run(message, args);
+            await commands[AppConfig.instance.getDefaultAudioAiCommand()].run(message, args, userI18n);
             return;
         } else if (message.type === MessageTypes.TEXT) {
             const url = content.trim().split(/ +/)[0];
             const socialNetwork = identifySocialNetwork(url);
 
             if (url && isUrl(url) && socialNetwork) {
-                await commands["get"].run(message, null, url, socialNetwork);
+                await commands["get"].run(message, null, url, socialNetwork, userI18n);
                 return;
             } else {
                 if (!content.startsWith(prefix)) return;
 
                 if (command && command in commands) {
                     await chat.sendStateTyping();
-                    await commands[command].run(message, args);
+                    await commands[command].run(message, args, userI18n);
                 } else {
-                    chat.sendMessage(`> 🤖 Unknown command: ${command}, to see available commands, type ${prefix}help`);
+                    const errorMessage = userI18n.t('unknownCommand', {
+                        command: command || '',
+                        prefix: prefix
+                    });
+                    chat.sendMessage(`> 🤖 ${errorMessage}`);
                 }
             }
         }
     } catch (error) {
-        if (chat) chat.sendMessage(`> 🤖 Oops, something went wrong, kindly retry.`);
+        if (chat) {
+            const errorMessage = userI18n.t('errorOccurred');
+            chat.sendMessage(`> 🤖 ${errorMessage}`);
+        }
         logger.error(error);
     } finally {
         if (chat) await chat.clearState();

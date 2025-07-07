@@ -5,11 +5,12 @@ import { AppConfig } from "../configs/app.config";
 import { speechToText } from "../utils/speech-to-text.util";
 import { textToSpeech } from "../utils/text-to-speech.util";
 import { del_file } from "../utils/common.util";
+import { UserI18n } from "../utils/i18n.util";
 
 const fs = require('fs');
 const path = require('path');
 
-export const run = async (message: Message, args: string[]) => {
+export const run = async (message: Message, args: string[], userI18n: UserI18n) => {
     let query = args.join(" ");
     const chat = await message.getChat();
 

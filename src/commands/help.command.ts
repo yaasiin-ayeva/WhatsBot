@@ -1,37 +1,37 @@
 import { Message } from "whatsapp-web.js";
 import { AppConfig } from "../configs/app.config";
+import { UserI18n } from "../utils/i18n.util";
 
-export const run = (message: Message, args: string[] = null) => {
+export const run = (message: Message, args: string[] = null, userI18n: UserI18n) => {
 
     const prefix = AppConfig.instance.getBotPrefix();
     const query = args.join(" ").trim();
 
-    const commands = [
-        { name: "onboard", description: "Get an onboarding video to understand how the bot works", eg: "onboard" },
-        { name: "help", description: "Get command Description", eg: "help ping" },
-        { name: "ping", description: "Ping the bot", eg: "ping" },
-        { name: "langlist", description: "Get list of available languages", eg: "langlist" },
-        { name: "translate", description: "Translate text", eg: "translate fr Hello guys!" },
-        { name: "chat", description: "Chat with Gemini AI", eg: "chat Hello gemini!" },
-        // { name: "gpt", description: "Chat with ChatGPT", eg: "gpt Hello chatgpt!" },
-        { name: "meme", description: "Get random meme", eg: "meme" },
-        { name: "joke", description: "Get random joke", eg: "joke" },
-        { name: "get", description: "Download file from a social media (TikTok, Twitter, LinkedIn, Pinterest, Snapchat, Youtube, Instagram, Facebook)", eg: "get <social-media-video-url>" },
-        { name: "meteo", description: "Get the weather for a city", eg: "meteo New York" }
+    const commandKeys = [
+        'onboard', 'help', 'ping', 'langlist', 'translate',
+        'chat', 'meme', 'joke', 'get', 'meteo'
     ];
 
     let content = "";
 
     if (query && query.length > 0) {
-        commands.forEach((command) => {
-            if (command.name === query) {
-                content = `*${prefix}${command.name}* - ${command.description}.\nExample:\n> ${prefix}${command.eg}`;
-            }
-        });
+        const foundCommand = commandKeys.find(cmd => cmd === query);
+        if (foundCommand) {
+            const commandInfo = userI18n.t(`commands.${foundCommand}.description`);
+            const commandExample = userI18n.t(`commands.${foundCommand}.example`);
+            content = `*${prefix}${foundCommand}* - ${commandInfo}.\n${userI18n.isFrench() ? 'Exemple' : 'Example'}:\n> ${prefix}${commandExample}`;
+        }
     } else {
-        content = `List of available commands : \n_(To run a command, kindly start it with the prefix ${prefix})_`;
-        commands.forEach((command) => {
-            content += `\n\n*${prefix}${command.name}* - ${command.description}. \nExample:\n> ${prefix}${command.eg}`;
+        const headerText = userI18n.t('helpHeader');
+        const footerText = userI18n.t('helpFooter', { prefix });
+
+        content = `${headerText} \n _${footerText}_`;
+
+        commandKeys.forEach((commandKey) => {
+            const commandInfo = userI18n.t(`commands.${commandKey}.description`);
+            const commandExample = userI18n.t(`commands.${commandKey}.example`);
+            const exampleLabel = userI18n.isFrench() ? 'Exemple' : 'Example';
+            content += `\n\n*${prefix}${commandKey}* - ${commandInfo}. \n${exampleLabel}:\n> ${prefix}${commandExample}`;
         });
     }
 

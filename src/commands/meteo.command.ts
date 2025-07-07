@@ -7,8 +7,9 @@ import { format_localtime } from '../utils/common.util';
 import logger from '../configs/logger.config';
 import EnvConfig from '../configs/env.config';
 import { AppConfig } from '../configs/app.config';
+import { UserI18n } from '../utils/i18n.util';
 
-export const run = async (message: Message, args: string[] = null) => {
+export const run = async (message: Message, args: string[] = null, userI18n: UserI18n) => {
 
     const city = args.join(" ");
 

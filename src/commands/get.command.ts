@@ -3,6 +3,7 @@ import { MAX_STREAMING_FILE_SIZE, downloadFile, downloader, identifySocialNetwor
 import logger from "../configs/logger.config";
 import { del_file, isUrl } from "../utils/common.util";
 import { AppConfig } from "../configs/app.config";
+import { UserI18n } from "../utils/i18n.util";
 
 const path = require("path");
 const ffmpeg = require('fluent-ffmpeg');
@@ -10,29 +11,30 @@ const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 
 const DOWNLOAD_DIR = "public/downloads";
 
-export const run = async (message: Message, args: string[] = null, _videoUrl = null, socialNetwork = null) => {
+export const run = async (message: Message, args: string[] = null, _videoUrl = null, socialNetwork = null, userI18n: UserI18n) => {
 
     if (!_videoUrl) {
         const url = args.join(" ");
         _videoUrl = url;
         if (!url || !isUrl(url)) {
+            const errorMessage = userI18n.t('getMessages.invalidUrl');
             await message.reply(
                 MessageMedia.fromFilePath(AppConfig.instance.getBotAvatar("confused")),
                 null,
-                { sendVideoAsGif: true, caption: "> WhatsBot 🤖 Please provide a valid URL for the video." },
+                { sendVideoAsGif: true, caption: `> WhatsBot 🤖 ${errorMessage}` },
             );
             return;
         }
     }
 
     if (!socialNetwork) {
-
         socialNetwork = identifySocialNetwork(_videoUrl);
         if (!socialNetwork) {
+            const errorMessage = userI18n.t('getMessages.unsupportedNetwork');
             await message.reply(
                 MessageMedia.fromFilePath(AppConfig.instance.getBotAvatar("confused")),
                 null,
-                { sendVideoAsGif: true, caption: "> WhatsBot 🤖 Unsupported social network." },
+                { sendVideoAsGif: true, caption: `> WhatsBot 🤖 ${errorMessage}` },
             );
             return;
         }
@@ -51,7 +53,11 @@ export const run = async (message: Message, args: string[] = null, _videoUrl = n
 
         ffmpeg.setFfmpegPath(ffmpegPath);
 
-        message.reply(`> WhatsBot 🤖 Getting your file from ${socialNetwork} (Max file size allowed ${MAX_STREAMING_FILE_SIZE / 1024 / 1024} Mb)...`);
+        const downloadingMessage = userI18n.t('getMessages.downloading', {
+            network: socialNetwork,
+            size: (MAX_STREAMING_FILE_SIZE / 1024 / 1024).toString()
+        });
+        message.reply(`> WhatsBot 🤖 ${downloadingMessage}`);
 
         await downloadFile(videoUrl, originalFilePath);
 
@@ -66,16 +72,18 @@ export const run = async (message: Message, args: string[] = null, _videoUrl = n
         });
 
         const media = MessageMedia.fromFilePath(convertedFilePath);
+        const caption = userI18n.t('getMessages.caption');
         await message.reply(media, null, {
-            caption: `Download your TikTok, Instagram, twitter, Facebook, LinkedIn videos on WhatsApp without watermark. Just send the video link to this bot https://wa.me/qr/SBHRATABRAZVA1`,
+            caption: caption,
         });
 
     } catch (err) {
         logger.error(err);
+        const errorMessage = userI18n.t('getMessages.downloadError');
         await message.reply(
             MessageMedia.fromFilePath(AppConfig.instance.getBotAvatar("confused")),
             null,
-            { sendVideoAsGif: true, caption: "> WhatsBot 🤖 Error during file download." },
+            { sendVideoAsGif: true, caption: `> WhatsBot 🤖 ${errorMessage}` },
         );
         return;
     } finally {

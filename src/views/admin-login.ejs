@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsBot CRM - Login</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    body {
+      background-color: #f8fafc;
+    }
+
+    .login-card {
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .input-field {
+      transition: all 0.2s ease;
+      border: 1px solid #e2e8f0;
+    }
+
+    .input-field:focus {
+      border-color: #cbd5e0;
+      box-shadow: 0 0 0 3px rgba(203, 213, 224, 0.2);
+    }
+  </style>
+</head>
+
+<body class="min-h-screen flex items-center justify-center p-4">
+  <div class="login-card bg-white p-10 rounded-lg w-full max-w-md">
+    <div class="text-center mb-8">
+      <div class="flex justify-center mb-4">
+        <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+          <i class="fas fa-robot text-gray-500 text-xl"></i>
+        </div>
+      </div>
+      <h1 class="text-2xl font-light text-gray-800">WhatsBot CRM</h1>
+      <p class="text-gray-500 mt-1">Administration Panel</p>
+    </div>
+
+    <form id="login-form" class="space-y-5">
+      <div>
+        <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <i class="fas fa-user text-gray-400"></i>
+          </div>
+          <input type="text" id="username" name="username" required
+            class="input-field pl-10 w-full rounded-md px-3 py-2 focus:outline-none">
+        </div>
+      </div>
+
+      <div>
+        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <i class="fas fa-lock text-gray-400"></i>
+          </div>
+          <input type="password" id="password" name="password" required
+            class="input-field pl-10 w-full rounded-md px-3 py-2 focus:outline-none">
+        </div>
+      </div>
+
+      <button type="submit"
+        class="w-full bg-gray-800 hover:bg-gray-700 text-white py-2 rounded-md transition duration-150 ease-in-out">
+        Sign In
+      </button>
+
+      <div id="error-message" class="text-red-500 text-center text-sm hidden py-2 px-3 bg-red-50 rounded-md"></div>
+    </form>
+  </div>
+
+  <script>
+    document.getElementById('login-form').addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const errorElement = document.getElementById('error-message');
+
+      try {
+        const response = await fetch('/crm/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Login failed');
+        }
+
+        const { token } = await response.json();
+        localStorage.setItem('token', token);
+        window.location.href = '/admin';
+      } catch (error) {
+        errorElement.textContent = error.message;
+        errorElement.classList.remove('hidden');
+        setTimeout(() => {
+          errorElement.classList.add('hidden');
+        }, 5000);
+      }
+    });
+  </script>
+</body>
+
+</html>

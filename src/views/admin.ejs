@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsBot CRM</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-light: #6366f1;
+      --sidebar-width: 240px;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #f8fafc;
+    }
+
+    .sidebar {
+      width: var(--sidebar-width);
+      transition: all 0.3s ease;
+    }
+
+    .main-content {
+      margin-left: var(--sidebar-width);
+      transition: all 0.3s ease;
+    }
+
+    .nav-item.active {
+      background-color: #f1f5f9;
+      border-left: 3px solid var(--primary);
+      color: var(--primary);
+    }
+
+    .nav-item:hover:not(.active) {
+      background-color: #f8fafc;
+    }
+
+    .table-row:hover {
+      background-color: #f8fafc;
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.375rem;
+    }
+
+    .badge-sent {
+      background-color: #ecfdf5;
+      color: #059669;
+    }
+
+    .badge-scheduled {
+      background-color: #eff6ff;
+      color: #2563eb;
+    }
+
+    .badge-failed {
+      background-color: #fef2f2;
+      color: #dc2626;
+    }
+
+    .badge-draft {
+      background-color: #f5f5f4;
+      color: #57534e;
+    }
+
+    input:focus,
+    textarea:focus {
+      box-shadow: 0 0 0 3px rgba(210, 214, 218, 0.3);
+    }
+
+    .contact-checkbox:checked+.contact-label {
+      background-color: #f1f5f9;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen flex">
+  <!-- Sidebar -->
+  <aside class="sidebar fixed h-full bg-white border-r border-gray-200 shadow-sm">
+    <div class="p-4 border-b border-gray-200">
+      <div class="flex items-center space-x-3">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-700" fill="none" viewBox="0 0 24 24"
+          stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        </svg>
+        <h1 class="text-xl font-medium text-gray-800">WhatsBot CRM</h1>
+      </div>
+    </div>
+    <nav class="p-4">
+      <ul class="space-y-1">
+        <li>
+          <a href="#" id="contacts-tab"
+            class="nav-item active flex items-center space-x-3 px-3 py-2.5 rounded-lg text-gray-700 font-medium">
+            <i class="fas fa-users w-5 text-center"></i>
+            <span>Contacts</span>
+          </a>
+        </li>
+        <li>
+          <a href="#" id="campaigns-tab"
+            class="nav-item flex items-center space-x-3 px-3 py-2.5 rounded-lg text-gray-700 font-medium">
+            <i class="fas fa-bullhorn w-5 text-center"></i>
+            <span>Campaigns</span>
+          </a>
+        </li>
+        <li>
+          <a href="#" id="new-campaign-tab"
+            class="nav-item flex items-center space-x-3 px-3 py-2.5 rounded-lg text-gray-700 font-medium">
+            <i class="fas fa-plus-circle w-5 text-center"></i>
+            <span>New Campaign</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+    <div class="absolute bottom-0 w-full p-4 border-t border-gray-200">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+            <i class="fas fa-user text-gray-600"></i>
+          </div>
+          <span id="username" class="text-gray-700 font-medium">Admin</span>
+        </div>
+        <button id="logout" class="text-gray-500 hover:text-gray-700">
+          <i class="fas fa-sign-out-alt"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content flex-grow">
+    <!-- Contacts Section -->
+    <div id="contacts-section" class="section-content p-6">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="p-5 border-b border-gray-200">
+          <div class="flex justify-between items-center">
+            <h2 class="text-lg font-medium text-gray-800">Contacts</h2>
+            <div class="relative w-64">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i class="fas fa-search text-gray-400"></i>
+              </div>
+              <input type="text" id="contact-search" placeholder="Search contacts..."
+                class="pl-10 w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-gray-300 transition-colors">
+            </div>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Phone</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Name</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Language</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Last Interaction</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions</th>
+              </tr>
+            </thead>
+            <tbody id="contacts-table-body" class="bg-white divide-y divide-gray-200">
+              <!-- Contacts will be loaded here -->
+            </tbody>
+          </table>
+        </div>
+        <div class="px-5 py-3 border-t border-gray-200 flex items-center justify-between">
+          <div class="text-sm text-gray-500" id="contacts-pagination-info">
+            Showing <span id="contacts-start">0</span> to <span id="contacts-end">0</span> of <span
+              id="contacts-total">0</span> contacts
+          </div>
+          <div id="contacts-pagination" class="flex space-x-1">
+            <!-- Pagination will be loaded here -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Campaigns Section -->
+    <div id="campaigns-section" class="section-content hidden p-6">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="p-5 border-b border-gray-200">
+          <h2 class="text-lg font-medium text-gray-800">Campaigns</h2>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Name</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Scheduled</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Sent</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Failed</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions</th>
+              </tr>
+            </thead>
+            <tbody id="campaigns-table-body" class="bg-white divide-y divide-gray-200">
+              <!-- Campaigns will be loaded here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- New Campaign Section -->
+    <div id="new-campaign-section" class="section-content hidden p-6">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="p-5 border-b border-gray-200">
+          <h2 class="text-lg font-medium text-gray-800">Create New Campaign</h2>
+        </div>
+        <form id="campaign-form" class="p-5">
+          <div class="space-y-5">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Campaign Name</label>
+              <input type="text" name="name" required
+                class="w-full border border-gray-200 rounded-lg px-4 py-2.5 focus:outline-none focus:border-gray-300 transition-colors">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Message</label>
+              <textarea name="message" rows="5" required
+                class="w-full border border-gray-200 rounded-lg px-4 py-2.5 focus:outline-none focus:border-gray-300 transition-colors"></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Schedule (leave empty for immediate
+                send)</label>
+              <input type="datetime-local" name="scheduledAt"
+                class="border border-gray-200 rounded-lg px-4 py-2.5 focus:outline-none focus:border-gray-300 transition-colors">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Select Contacts</label>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <div class="border border-gray-200 rounded-lg p-3 h-96 overflow-y-auto">
+                    <h3 class="font-medium text-gray-700 mb-3">Available Contacts</h3>
+                    <div id="available-contacts" class="space-y-2">
+                      <!-- Contacts will be loaded here -->
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <div class="border border-gray-200 rounded-lg p-3 h-96 overflow-y-auto" id="selected-contacts">
+                    <h3 class="font-medium text-gray-700 mb-3">Selected Contacts</h3>
+                    <p class="text-gray-400 text-sm" id="no-contacts-message">No contacts selected</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="pt-2">
+              <button type="submit"
+                class="bg-gray-800 hover:bg-gray-700 text-white px-5 py-2.5 rounded-lg font-medium transition-colors">
+                <i class="fas fa-paper-plane mr-2"></i> Send Campaign
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <script src="/public/js/admin.js"></script>
+</body>
+
+</html>

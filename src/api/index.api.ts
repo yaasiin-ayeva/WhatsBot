@@ -1,10 +1,15 @@
 import express from "express";
-import { Client } from "whatsapp-web.js";
 import logger from "../configs/logger.config";
+import { BotManager } from "../bot.manager";
+import crmRouter from "../crm/api/crm.api";
 
 const router = express.Router();
 
-export default function (client: Client, qrData: { qrScanned: boolean; qrCodeData: string }) {
+export default function (botManager: BotManager) {
+
+    const client = botManager.client;
+    const qrData = botManager.qrData;
+    
     router.get("/", (_req, res) => {
         logger.info("GET /");
         res.render("index", {
@@ -52,6 +57,8 @@ export default function (client: Client, qrData: { qrScanned: boolean; qrCodeDat
             res.status(500).json({ status: "unhealthy", error: "Internal Server Error" });
         }
     });
+
+    router.use("/crm", crmRouter(botManager));
 
     return router;
 }

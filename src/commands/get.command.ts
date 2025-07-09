@@ -27,6 +27,7 @@ export const run = async (message: Message, args: string[] = null, _videoUrl = n
     }
 
     let mediaPath: string | null = null;
+    let convertedPath: string | null = null;
 
     try {
         const downloadingMessage = userI18n.t('getMessages.downloading', {
@@ -36,10 +37,9 @@ export const run = async (message: Message, args: string[] = null, _videoUrl = n
         await message.reply(`> WhatsBot 🤖 ${downloadingMessage}`);
 
         mediaPath = await downloader(_videoUrl, socialNetwork);
+        convertedPath = await convertMedia(mediaPath);
 
-        const convertedPath = await convertMedia(mediaPath);
-
-        const media = MessageMedia.fromFilePath(convertedPath || mediaPath);
+        const media = await MessageMedia.fromFilePath(convertedPath || mediaPath);
         await message.reply(media, null, {
             caption: userI18n.t('getMessages.caption')
         });
@@ -49,24 +49,28 @@ export const run = async (message: Message, args: string[] = null, _videoUrl = n
         await sendErrorMessage(message, userI18n.t('getMessages.downloadError'), userI18n);
     } finally {
         if (mediaPath) del_file(mediaPath);
+        if (convertedPath) del_file(convertedPath);
     }
 };
 
-async function convertMedia(inputPath: string): Promise<string | null> {
-    if (inputPath.endsWith('.mp4')) return null;
-
-    const outputPath = inputPath.replace(path.extname(inputPath), '.mp4');
+async function convertMedia(inputPath: string): Promise<string> {
+    const outputPath = inputPath.replace(path.extname(inputPath), '_converted.mp4');
 
     return new Promise((resolve, reject) => {
         ffmpeg(inputPath)
             .setFfmpegPath(ffmpegPath)
             .videoCodec('libx264')
             .audioCodec('aac')
+            .outputOptions([
+                '-preset fast',
+                '-movflags faststart',
+                '-pix_fmt yuv420p'
+            ])
             .output(outputPath)
             .on('end', () => resolve(outputPath))
             .on('error', (err) => {
                 logger.error('Conversion failed:', err);
-                resolve(null);
+                reject(err);
             })
             .run();
     });

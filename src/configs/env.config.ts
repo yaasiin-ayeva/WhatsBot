@@ -17,6 +17,8 @@ class EnvConfig {
     static ASSEMBLYAI_API_KEY = process.env.ASSEMBLYAI_API_KEY;
     static ENV = process.env.ENV;
     static PORT = process.env.PORT;
+    static MONGODB_URI = process.env.MONGODB_URI;
+    static JWT_SECRET = process.env.JWT_SECRET;
 
     static validate() {
 
@@ -53,6 +55,12 @@ class EnvConfig {
         }
         if (!this.PORT) {
             throw new Error("Environment variable PORT is missing. Please provide a valid PORT.");
+        }
+        if (!this.MONGODB_URI) {
+            throw new Error("Environment variable MONGODB_URI is missing. Please provide a valid MONGODB_URI.");
+        }
+        if (!this.JWT_SECRET) {
+            throw new Error("Environment variable JWT_SECRET is missing. Please provide a valid JWT_SECRET.");
         }
     }
 }

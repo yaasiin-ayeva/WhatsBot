@@ -7,6 +7,7 @@ import commands from "./commands";
 import { isUrl } from "./utils/common.util";
 import { identifySocialNetwork, YtDlpDownloader } from "./utils/get.util";
 import { onboard } from "./utils/onboarding.util";
+import { ContactModel } from "./crm/models/contact.model";
 
 export class BotManager {
     private static instance: BotManager;
@@ -70,6 +71,28 @@ export class BotManager {
         }
     }
 
+    private async trackContact(message: Message, userI18n: UserI18n) {
+        try {
+            const user = await message.getContact();
+
+            await ContactModel.findOneAndUpdate(
+                { phoneNumber: user.number },
+                {
+                    $set: {
+                        name: user.name || user.pushname,
+                        pushName: user.pushname,
+                        language: userI18n.getLanguage(),
+                        lastInteraction: new Date()
+                    },
+                    $inc: { interactionsCount: 1 }
+                },
+                { upsert: true, new: true }
+            );
+        } catch (error) {
+            logger.error('Failed to track contact:', error);
+        }
+    }
+
     private async handleMessage(message: Message) {
         let chat = null;
         let userI18n: UserI18n;
@@ -85,14 +108,21 @@ export class BotManager {
             logger.info(`Message from @${user.pushname} (${user.number}): ${content}`);
 
             userI18n = this.getUserI18n(user.number);
+
+            if (!user.isMe) await this.trackContact(message, userI18n);
             chat = await message.getChat();
 
             if (message.from === this.client.info.wid._serialized || message.isStatus) {
                 return;
             }
 
-            await onboard(message, userI18n);
-            await this.processMessageContent(message, content, userI18n, chat);
+            await Promise.all([
+                onboard(message, userI18n),
+                this.processMessageContent(message, content, userI18n, chat)
+            ]);
+
+            // await onboard(message, userI18n);
+            // await this.processMessageContent(message, content, userI18n, chat);
 
         } catch (error) {
             logger.error(`Message handling error: ${error}`);

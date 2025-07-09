@@ -40,7 +40,7 @@ export const TRANSLATIONS = {
                 example: "joke"
             },
             get: {
-                description: "Télécharger un fichier depuis les réseaux sociaux (TikTok, Instagram, X (Twitter), Pinterest)",
+                description: "Télécharger un fichier depuis les réseaux sociaux (TikTok, Instagram, Twitter, Facebook, LinkedIn)",
                 example: "get https://www.tiktok.com/@tiktok/video/7521819790185434398"
             },
             meteo: {
@@ -57,7 +57,7 @@ export const TRANSLATIONS = {
             unsupportedNetwork: "Réseau social non pris en charge.",
             downloading: "Récupération de votre fichier depuis {network} (Taille maximale autorisée {size} Mo)...",
             downloadError: "Erreur lors du téléchargement du fichier.",
-            caption: "Téléchargez vos vidéos TikTok, Instagram, Twitter, Pinterest sur WhatsApp sans filigrane. Envoyez simplement le lien de la vidéo à ce bot https://wa.me/qr/SBHRATABRAZVA1"
+            caption: "Téléchargez vos vidéos TikTok, Instagram, Twitter, Facebook, LinkedIn sur WhatsApp sans filigrane. Envoyez simplement le lien de la vidéo à ce bot https://wa.me/qr/SBHRATABRAZVA1"
         },
 
         onboardMessages: {
@@ -121,7 +121,7 @@ export const TRANSLATIONS = {
             unsupportedNetwork: "Unsupported social network.",
             downloading: "Getting your file from {network} (Max file size allowed {size} MB)...",
             downloadError: "Error during file download.",
-            caption: "Download your TikTok, Instagram, twitter, Facebook, LinkedIn videos on WhatsApp without watermark. Just send the video link to this bot https://wa.me/qr/SBHRATABRAZVA1"
+            caption: "Download your TikTok, Instagram, Twitter, Facebook, LinkedIn videos on WhatsApp without watermark. Just send the video link to this bot https://wa.me/qr/SBHRATABRAZVA1"
         },
 
         onboardMessages: {

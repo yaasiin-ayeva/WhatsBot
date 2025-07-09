@@ -60,19 +60,11 @@ async function convertMedia(inputPath: string): Promise<string> {
         ffmpeg(inputPath)
             .setFfmpegPath(ffmpegPath)
             .videoCodec('libx264')
-            .audioCodec('aac')
-            .outputOptions([
-                '-preset fast',
-                '-movflags faststart',
-                '-pix_fmt yuv420p'
-            ])
-            .output(outputPath)
-            .on('end', () => resolve(outputPath))
-            .on('error', (err) => {
-                logger.error('Conversion failed:', err);
-                reject(err);
-            })
-            .run();
+            .outputOptions('-preset', 'fast')
+            .outputOptions('-crf', '22')
+            .on('end', resolve)
+            .on('error', reject)
+            .save(outputPath);
     });
 }
 

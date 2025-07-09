@@ -3,7 +3,6 @@ import logger from "../configs/logger.config";
 import fs from 'fs';
 import path from 'path';
 import axios from "axios";
-import EnvConfig from '../configs/env.config';
 
 export const YTDL_DIR = path.join(__dirname, '../../.bot');
 export const YTDL_PATH = path.join(YTDL_DIR, 'yt-dlp');

@@ -1,28 +1,19 @@
 import { Message, MessageMedia } from "whatsapp-web.js";
-import { MAX_STREAMING_FILE_SIZE, downloadFile, downloader, identifySocialNetwork } from "../utils/get.util";
+import { downloader, identifySocialNetwork, MAX_STREAMING_FILE_SIZE } from "../utils/get.util";
 import logger from "../configs/logger.config";
 import { del_file, isUrl } from "../utils/common.util";
 import { AppConfig } from "../configs/app.config";
 import { UserI18n } from "../utils/i18n.util";
-
 const path = require("path");
 const ffmpeg = require('fluent-ffmpeg');
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 
-const DOWNLOAD_DIR = "public/downloads";
-
 export const run = async (message: Message, args: string[] = null, _videoUrl = null, socialNetwork = null, userI18n: UserI18n) => {
-
     if (!_videoUrl) {
-        const url = args.join(" ");
+        const url = args?.join(" ") || '';
         _videoUrl = url;
         if (!url || !isUrl(url)) {
-            const errorMessage = userI18n.t('getMessages.invalidUrl');
-            await message.reply(
-                MessageMedia.fromFilePath(AppConfig.instance.getBotAvatar("confused")),
-                null,
-                { sendVideoAsGif: true, caption: `> WhatsBot 🤖 ${errorMessage}` },
-            );
+            await sendErrorMessage(message, userI18n.t('getMessages.invalidUrl'), userI18n);
             return;
         }
     }
@@ -30,64 +21,64 @@ export const run = async (message: Message, args: string[] = null, _videoUrl = n
     if (!socialNetwork) {
         socialNetwork = identifySocialNetwork(_videoUrl);
         if (!socialNetwork) {
-            const errorMessage = userI18n.t('getMessages.unsupportedNetwork');
-            await message.reply(
-                MessageMedia.fromFilePath(AppConfig.instance.getBotAvatar("confused")),
-                null,
-                { sendVideoAsGif: true, caption: `> WhatsBot 🤖 ${errorMessage}` },
-            );
+            await sendErrorMessage(message, userI18n.t('getMessages.unsupportedNetwork'), userI18n);
             return;
         }
     }
 
-    let originalFilePath = null;
-    let convertedFilePath = null;
+    let mediaPath: string | null = null;
 
     try {
-
-        const videoUrl = await downloader(_videoUrl, socialNetwork);
-
-        const uniqid = Date.now();
-        originalFilePath = path.join(DOWNLOAD_DIR, `${uniqid}.original.mp4`);
-        convertedFilePath = path.join(DOWNLOAD_DIR, `${uniqid}.mp4`);
-
-        ffmpeg.setFfmpegPath(ffmpegPath);
-
         const downloadingMessage = userI18n.t('getMessages.downloading', {
             network: socialNetwork,
             size: (MAX_STREAMING_FILE_SIZE / 1024 / 1024).toString()
         });
-        message.reply(`> WhatsBot 🤖 ${downloadingMessage}`);
+        await message.reply(`> WhatsBot 🤖 ${downloadingMessage}`);
 
-        await downloadFile(videoUrl, originalFilePath);
+        mediaPath = await downloader(_videoUrl, socialNetwork);
 
-        await new Promise((resolve, reject) => {
-            ffmpeg(originalFilePath)
-                .videoCodec('libx264')
-                .outputOptions('-preset', 'slow')
-                .outputOptions('-crf', '22')
-                .on('end', resolve)
-                .on('error', reject)
-                .save(convertedFilePath);
-        });
+        const convertedPath = await convertMedia(mediaPath);
 
-        const media = MessageMedia.fromFilePath(convertedFilePath);
-        const caption = userI18n.t('getMessages.caption');
+        const media = MessageMedia.fromFilePath(convertedPath || mediaPath);
         await message.reply(media, null, {
-            caption: caption,
+            caption: userI18n.t('getMessages.caption')
         });
 
     } catch (err) {
-        logger.error(err);
-        const errorMessage = userI18n.t('getMessages.downloadError');
-        await message.reply(
-            MessageMedia.fromFilePath(AppConfig.instance.getBotAvatar("confused")),
-            null,
-            { sendVideoAsGif: true, caption: `> WhatsBot 🤖 ${errorMessage}` },
-        );
-        return;
+        logger.error('Download failed:', err);
+        await sendErrorMessage(message, userI18n.t('getMessages.downloadError'), userI18n);
     } finally {
-        del_file(originalFilePath);
-        del_file(convertedFilePath);
+        if (mediaPath) del_file(mediaPath);
     }
 };
+
+async function convertMedia(inputPath: string): Promise<string | null> {
+    if (inputPath.endsWith('.mp4')) return null;
+
+    const outputPath = inputPath.replace(path.extname(inputPath), '.mp4');
+
+    return new Promise((resolve, reject) => {
+        ffmpeg(inputPath)
+            .setFfmpegPath(ffmpegPath)
+            .videoCodec('libx264')
+            .audioCodec('aac')
+            .output(outputPath)
+            .on('end', () => resolve(outputPath))
+            .on('error', (err) => {
+                logger.error('Conversion failed:', err);
+                resolve(null);
+            })
+            .run();
+    });
+}
+
+async function sendErrorMessage(message: Message, text: string, userI18n: UserI18n) {
+    await message.reply(
+        MessageMedia.fromFilePath(AppConfig.instance.getBotAvatar("confused")),
+        null,
+        {
+            sendVideoAsGif: true,
+            caption: `> WhatsBot 🤖 ${text}`
+        }
+    );
+}

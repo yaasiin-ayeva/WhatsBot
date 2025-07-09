@@ -1,9 +1,10 @@
 import { Message, MessageMedia } from "whatsapp-web.js";
-import { downloader, identifySocialNetwork, MAX_STREAMING_FILE_SIZE } from "../utils/get.util";
+import { DOWNLOAD_DIR, downloader, identifySocialNetwork, MAX_STREAMING_FILE_SIZE } from "../utils/get.util";
 import logger from "../configs/logger.config";
 import { del_file, isUrl } from "../utils/common.util";
 import { AppConfig } from "../configs/app.config";
 import { UserI18n } from "../utils/i18n.util";
+
 const path = require("path");
 const ffmpeg = require('fluent-ffmpeg');
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
@@ -28,18 +29,34 @@ export const run = async (message: Message, args: string[] = null, _videoUrl = n
 
     let mediaPath: string | null = null;
     let convertedPath: string | null = null;
+    let convertedFilePath: string | null = null;
 
     try {
+
         const downloadingMessage = userI18n.t('getMessages.downloading', {
             network: socialNetwork,
             size: (MAX_STREAMING_FILE_SIZE / 1024 / 1024).toString()
         });
+
         await message.reply(`> WhatsBot 🤖 ${downloadingMessage}`);
 
         mediaPath = await downloader(_videoUrl, socialNetwork);
-        convertedPath = await convertMedia(mediaPath);
+        const uniqid = Date.now();
+        convertedFilePath = path.join(DOWNLOAD_DIR, `${uniqid}.mp4`);
 
-        const media = await MessageMedia.fromFilePath(convertedPath || mediaPath);
+        ffmpeg.setFfmpegPath(ffmpegPath);
+
+        await new Promise((resolve, reject) => {
+            ffmpeg(mediaPath)
+                .videoCodec('libx264')
+                .outputOptions('-preset', 'slow')
+                .outputOptions('-crf', '22')
+                .on('end', resolve)
+                .on('error', reject)
+                .save(convertedFilePath);
+        });
+
+        const media = await MessageMedia.fromFilePath(convertedFilePath || mediaPath);
         await message.reply(media, null, {
             caption: userI18n.t('getMessages.caption')
         });
@@ -50,6 +67,7 @@ export const run = async (message: Message, args: string[] = null, _videoUrl = n
     } finally {
         if (mediaPath) del_file(mediaPath);
         if (convertedPath) del_file(convertedPath);
+        if (convertedFilePath) del_file(convertedFilePath);
     }
 };
 

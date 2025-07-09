@@ -65,7 +65,7 @@ export class YtDlpDownloader {
             this.ytDlp
                 .exec([url, '-f', format, '-o', outputPath, '--no-playlist'])
                 .on('progress', (progress) => {
-                    if (EnvConfig.ENV === 'development') logger.debug(`Download progress: ${progress.percent}%`);
+                    logger.debug(`Download progress: ${progress.percent}%`);
                 })
                 .on('error', (error) => {
                     logger.error('Downloader error:', error);

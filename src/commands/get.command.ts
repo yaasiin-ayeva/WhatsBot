@@ -45,8 +45,7 @@ export const run = async (message: Message, args: string[] = null, _videoUrl = n
 
         if (fs.existsSync(downloadResult)) {
             mediaPath = downloadResult;
-        }
-        else {
+        } else {
             const uniqid = Date.now();
             mediaPath = path.join(DOWNLOAD_DIR, `${uniqid}_temp.mp4`);
             await downloadFile(downloadResult, mediaPath);

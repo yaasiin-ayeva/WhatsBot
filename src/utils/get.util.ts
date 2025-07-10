@@ -186,7 +186,7 @@ class LinkedIn {
 }
 
 const socialNetworkPatterns: { [key in TSocialNetwork]: RegExp } = {
-    tiktok: /^(?:https?:\/\/)?(?:www\.)?(tiktok\.com|vm\.tiktok\.com|vt\.tiktok\.com|t\.tiktok\.com)\/.+$/i,
+    tiktok: /^(?:https?:\/\/)?(?:www\.)?(tiktok\.com|vm\.tiktok\.com|vt\.tiktok\.com|t\.tiktok\.com|m\.tiktok\.com)\/.+$/i,
     instagram: /^(?:https?:\/\/)?(?:www\.)?instagram\.com\/.+$/i,
     twitter: /^(?:https?:\/\/)?(?:www\.)?(twitter\.com|x\.com)\/.+$/i,
     facebook: /^(?:https?:\/\/)?(?:www\.|m\.|web\.)?facebook\.com\/.+|fb\.watch\/.+$/i,

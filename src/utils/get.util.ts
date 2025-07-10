@@ -44,6 +44,19 @@ export class YtDlpDownloader {
         }
     }
 
+    public async getMetadata(url: string): Promise<any> {
+        //         let metadata = await ytDlpWrap.getVideoInfo(
+        //     'https://www.youtube.com/watch?v=aqz-KE-bpKQ'
+        // );
+        // console.log(metadata.title);
+
+        if (!this.ytDlp) {
+            await this.initialize();
+        }
+
+        return this.ytDlp.getVideoInfo(url);
+    }
+
     public async download(url: string, format = 'best'): Promise<string> {
         if (!this.ytDlp) {
             await this.initialize();
@@ -62,7 +75,7 @@ export class YtDlpDownloader {
             }
 
             this.ytDlp
-                .exec([url, '-f', format, '-o', outputPath, '--no-playlist'])
+                .exec([url, '-f', format, '-o', outputPath, '--no-playlist', '--concurrent-fragments', '1'])
                 .on('progress', (progress) => {
                     logger.debug(`Download progress: ${progress.percent}%`);
                 })
@@ -110,7 +123,11 @@ const downloaders: { [key in TSocialNetwork]: (url: string) => Promise<string> }
     twitter: (url) => YtDlpDownloader.getInstance().download(url),
     facebook: (url) => YtDlpDownloader.getInstance().download(url),
     linkedin: (url) => YtDlpDownloader.getInstance().download(url),
-    youtube: (url) => YtDlpDownloader.getInstance().download(url),
+    youtube: (url) => {
+        // const data = await YtDlpDownloader.getInstance().getMetadata(url);
+        // console.log("data", data);
+        return YtDlpDownloader.getInstance().download(url, "best[ext=mp4]")
+    },
     snapchat: (url) => YtDlpDownloader.getInstance().download(url),
     pinterest: (url) => YtDlpDownloader.getInstance().download(url),
 };

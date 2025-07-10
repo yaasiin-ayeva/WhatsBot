@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   let currentUser = null;
   let currentPage = 'contacts';
   let contactsPage = 1;
@@ -9,24 +9,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Tab switching - Nouvelle version pour la sidebar
   document.querySelectorAll('.nav-item').forEach(item => {
-    item.addEventListener('click', function(e) {
+    item.addEventListener('click', function (e) {
       e.preventDefault();
-      
+
       // Retirer la classe active de tous les onglets
       document.querySelectorAll('.nav-item').forEach(navItem => {
         navItem.classList.remove('active');
         navItem.classList.remove('bg-gray-100');
         navItem.classList.remove('text-primary');
       });
-      
+
       // Ajouter la classe active à l'onglet cliqué
       this.classList.add('active');
-      
+
       // Masquer toutes les sections
       document.querySelectorAll('.section-content').forEach(section => {
         section.classList.add('hidden');
       });
-      
+
       // Afficher la section correspondante
       if (this.id === 'contacts-tab') {
         document.getElementById('contacts-section').classList.remove('hidden');
@@ -45,19 +45,19 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // Search contacts
-  document.getElementById('contact-search')?.addEventListener('input', function() {
+  document.getElementById('contact-search')?.addEventListener('input', function () {
     contactsSearch = this.value;
     loadContacts();
   });
 
   // Logout
-  document.getElementById('logout').addEventListener('click', function() {
+  document.getElementById('logout').addEventListener('click', function () {
     localStorage.removeItem('token');
     window.location.href = '/admin/login';
   });
 
   // Campaign form
-  document.getElementById('campaign-form')?.addEventListener('submit', function(e) {
+  document.getElementById('campaign-form')?.addEventListener('submit', function (e) {
     e.preventDefault();
     createCampaign();
   });
@@ -133,8 +133,9 @@ document.addEventListener('DOMContentLoaded', function() {
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${contact.language || '-'}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatDate(contact.lastInteraction)}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-          <button class="text-gray-600 hover:text-gray-900" onclick="sendMessageTo('${contact.phoneNumber}')">
-            <i class="fas fa-paper-plane"></i>
+          <button onclick="openMessageModal('${contact.phoneNumber}')" 
+            class="message-btn inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+            <i class="fas fa-paper-plane mr-1"></i> Envoyer
           </button>
         </td>
       `;
@@ -158,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Previous button
     const prevButton = document.createElement('button');
-    prevButton.className = 'px-3 py-1 border border-gray-300 rounded-md' + 
+    prevButton.className = 'px-3 py-1 border border-gray-300 rounded-md' +
       (meta.page === 1 ? ' opacity-50 cursor-not-allowed' : ' hover:bg-gray-50');
     prevButton.innerHTML = '<i class="fas fa-chevron-left"></i>';
     prevButton.disabled = meta.page === 1;
@@ -191,7 +192,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     for (let i = startPage; i <= endPage; i++) {
       const pageButton = document.createElement('button');
-      pageButton.className = 'px-3 py-1 border border-gray-300 rounded-md' + 
+      pageButton.className = 'px-3 py-1 border border-gray-300 rounded-md' +
         (i === meta.page ? ' bg-gray-800 text-white' : ' hover:bg-gray-50');
       pageButton.textContent = i;
       pageButton.addEventListener('click', () => loadContacts(i));
@@ -215,7 +216,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Next button
     const nextButton = document.createElement('button');
-    nextButton.className = 'px-3 py-1 border border-gray-300 rounded-md' + 
+    nextButton.className = 'px-3 py-1 border border-gray-300 rounded-md' +
       (meta.page === meta.pages ? ' opacity-50 cursor-not-allowed' : ' hover:bg-gray-50');
     nextButton.innerHTML = '<i class="fas fa-chevron-right"></i>';
     nextButton.disabled = meta.page === meta.pages;
@@ -256,12 +257,11 @@ document.addEventListener('DOMContentLoaded', function() {
       tr.innerHTML = `
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">${campaign.name}</td>
         <td class="px-6 py-4 whitespace-nowrap">
-          <span class="badge ${
-            campaign.status === 'sent' ? 'badge-sent' :
-            campaign.status === 'scheduled' ? 'badge-scheduled' :
+          <span class="badge ${campaign.status === 'sent' ? 'badge-sent' :
+          campaign.status === 'scheduled' ? 'badge-scheduled' :
             campaign.status === 'failed' ? 'badge-failed' :
-            'badge-draft'
-          }">${campaign.status}</span>
+              'badge-draft'
+        }">${campaign.status}</span>
         </td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${campaign.scheduledAt ? formatDate(campaign.scheduledAt) : '-'}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${campaign.sentCount || 0}</td>
@@ -308,7 +308,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <span class="text-xs text-gray-500">${contact.phoneNumber}</span>
         </label>
       `;
-      div.querySelector('input').addEventListener('change', function() {
+      div.querySelector('input').addEventListener('change', function () {
         if (this.checked) {
           addContactToCampaign(contact.phoneNumber, contact.name || contact.phoneNumber);
         } else {
@@ -322,7 +322,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function addContactToCampaign(phoneNumber, name) {
     const selectedContactsDiv = document.getElementById('selected-contacts');
     const noContactsMessage = document.getElementById('no-contacts-message');
-    
+
     // Check if already added
     if (document.querySelector(`[data-phone="${phoneNumber}"]`)) {
       return;
@@ -338,11 +338,11 @@ document.addEventListener('DOMContentLoaded', function() {
         <i class="fas fa-times"></i>
       </button>
     `;
-    
+
     if (noContactsMessage) {
       noContactsMessage.remove();
     }
-    
+
     selectedContactsDiv.appendChild(contactDiv);
   }
 
@@ -361,7 +361,7 @@ document.addEventListener('DOMContentLoaded', function() {
   async function createCampaign() {
     const form = document.getElementById('campaign-form');
     const formData = new FormData(form);
-    
+
     const selectedContacts = Array.from(
       document.querySelectorAll('#selected-contacts [data-phone]')
     ).map(el => el.dataset.phone);
@@ -404,11 +404,11 @@ document.addEventListener('DOMContentLoaded', function() {
   function formatDate(dateString) {
     if (!dateString) return '-';
     const date = new Date(dateString);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
   // Global functions
-  window.sendMessageTo = function(phoneNumber) {
+  window.sendMessageTo = function (phoneNumber) {
     const message = prompt('Enter message to send:');
     if (message) {
       fetch('/crm/send-message', {
@@ -419,18 +419,18 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         body: JSON.stringify({ phoneNumber, message })
       })
-      .then(response => {
-        if (!response.ok) throw new Error('Failed to send message');
-        alert('Message sent successfully!');
-      })
-      .catch(error => {
-        console.error('Error sending message:', error);
-        alert('Failed to send message');
-      });
+        .then(response => {
+          if (!response.ok) throw new Error('Failed to send message');
+          alert('Message sent successfully!');
+        })
+        .catch(error => {
+          console.error('Error sending message:', error);
+          alert('Failed to send message');
+        });
     }
   };
 
-  window.viewCampaign = function(campaignId) {
+  window.viewCampaign = function (campaignId) {
     // Implement campaign details view
     alert('View campaign details: ' + campaignId);
   };

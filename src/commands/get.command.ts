@@ -1,5 +1,6 @@
 import { Message, MessageMedia } from "whatsapp-web.js";
 import { DOWNLOAD_DIR, downloader, identifySocialNetwork, MAX_STREAMING_FILE_SIZE } from "../utils/get.util";
+
 import logger from "../configs/logger.config";
 import { del_file, isUrl } from "../utils/common.util";
 import { AppConfig } from "../configs/app.config";
@@ -28,7 +29,6 @@ export const run = async (message: Message, args: string[] = null, _videoUrl = n
     }
 
     let mediaPath: string | null = null;
-    let convertedPath: string | null = null;
     let convertedFilePath: string | null = null;
 
     try {
@@ -66,7 +66,6 @@ export const run = async (message: Message, args: string[] = null, _videoUrl = n
         await sendErrorMessage(message, userI18n.t('getMessages.downloadError'), userI18n);
     } finally {
         if (mediaPath) del_file(mediaPath);
-        if (convertedPath) del_file(convertedPath);
         if (convertedFilePath) del_file(convertedFilePath);
     }
 };

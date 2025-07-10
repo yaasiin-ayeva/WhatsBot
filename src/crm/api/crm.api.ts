@@ -5,6 +5,7 @@ import { authenticate, authorizeAdmin } from '../middlewares/auth.middleware';
 import { CampaignModel } from '../models/campaign.model';
 import { ContactModel } from '../models/contact.model';
 import { AuthService } from '../utils/auth.util';
+import { TemplateModel } from '../models/template.model';
 
 export const router = express.Router();
 
@@ -12,7 +13,7 @@ export default function (botManager: BotManager) {
     // Contacts API
     router.get('/contacts', authenticate, authorizeAdmin, async (req, res) => {
         try {
-            const { page = 1, limit = 20, search = '' } = req.query;
+            const { page = 1, limit = 20, search = '', sort = '-lastInteraction' } = req.query;
             const skip = (Number(page) - 1) * Number(limit);
 
             const query = search
@@ -26,7 +27,7 @@ export default function (botManager: BotManager) {
                 : {};
 
             const contacts = await ContactModel.find(query)
-                .sort({ lastInteraction: -1 })
+                .sort(sort)
                 .skip(skip)
                 .limit(Number(limit));
 
@@ -88,7 +89,75 @@ export default function (botManager: BotManager) {
         }
     });
 
+    // Templates API
+    router.get('/templates', authenticate, authorizeAdmin, async (req, res) => {
+        try {
+            const templates = await TemplateModel.find().sort({ createdAt: -1 });
+            res.json(templates);
+        } catch (error) {
+            logger.error('Failed to fetch templates:', error);
+            res.status(500).json({ error: 'Failed to fetch templates' });
+        }
+    });
 
+    router.post('/templates', authenticate, authorizeAdmin, async (req, res) => {
+        try {
+            const { name, content } = req.body;
+
+            const template = new TemplateModel({
+                name,
+                content,
+                createdBy: req.user.userId
+            });
+
+            await template.save();
+            res.status(201).json(template);
+        } catch (error) {
+            logger.error('Failed to create template:', error);
+            res.status(500).json({ error: 'Failed to create template' });
+        }
+    });
+
+    router.put('/templates/:id', authenticate, authorizeAdmin, async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { name, content } = req.body;
+
+            const template = await TemplateModel.findByIdAndUpdate(
+                id,
+                { name, content },
+                { new: true }
+            );
+
+            if (!template) {
+                return res.status(404).json({ error: 'Template not found' });
+            }
+
+            res.json(template);
+        } catch (error) {
+            logger.error('Failed to update template:', error);
+            res.status(500).json({ error: 'Failed to update template' });
+        }
+    });
+
+    router.delete('/templates/:id', authenticate, authorizeAdmin, async (req, res) => {
+        try {
+            const { id } = req.params;
+
+            const template = await TemplateModel.findByIdAndDelete(id);
+
+            if (!template) {
+                return res.status(404).json({ error: 'Template not found' });
+            }
+
+            res.json({ success: true });
+        } catch (error) {
+            logger.error('Failed to delete template:', error);
+            res.status(500).json({ error: 'Failed to delete template' });
+        }
+    });
+
+    // Auth API
     router.post('/auth/register', async (req, res) => {
         try {
             const { username, password } = req.body;
@@ -103,10 +172,6 @@ export default function (botManager: BotManager) {
     router.post('/auth/login', async (req, res) => {
         try {
             const { username, password } = req.body;
-            console.log("Username:", username);
-            console.log("Password:", password);
-
-
             const { token, user } = await AuthService.login(username, password);
             res.json({ token, user });
         } catch (error) {
@@ -148,7 +213,6 @@ async function sendCampaignMessages(botManager: BotManager, campaign: any) {
 
         for (const phoneNumber of campaign.contacts) {
             try {
-                // Format phone number if needed (add country code, etc.)
                 const formattedNumber = phoneNumber.includes('@')
                     ? phoneNumber
                     : `${phoneNumber}@c.us`;
@@ -173,4 +237,3 @@ async function sendCampaignMessages(botManager: BotManager, campaign: any) {
         await campaign.save();
     }
 }
-

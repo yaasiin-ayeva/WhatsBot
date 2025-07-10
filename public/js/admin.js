@@ -3,32 +3,37 @@ document.addEventListener('DOMContentLoaded', function () {
   let currentPage = 'contacts';
   let contactsPage = 1;
   let contactsSearch = '';
+  let templates = [];
 
   // Check authentication
   checkAuth();
 
-  // Tab switching - Nouvelle version pour la sidebar
+  // Tab switching
   document.querySelectorAll('.nav-item').forEach(item => {
     item.addEventListener('click', function (e) {
       e.preventDefault();
 
-      // Retirer la classe active de tous les onglets
+      // Remove active class from all tabs
       document.querySelectorAll('.nav-item').forEach(navItem => {
         navItem.classList.remove('active');
         navItem.classList.remove('bg-gray-100');
         navItem.classList.remove('text-primary');
       });
 
-      // Ajouter la classe active à l'onglet cliqué
+      // Add active class to clicked tab
       this.classList.add('active');
 
-      // Masquer toutes les sections
+      // Hide all sections
       document.querySelectorAll('.section-content').forEach(section => {
         section.classList.add('hidden');
       });
 
-      // Afficher la section correspondante
-      if (this.id === 'contacts-tab') {
+      // Show corresponding section
+      if (this.id === 'dashboard-tab') {
+        document.getElementById('dashboard-section').classList.remove('hidden');
+        currentPage = 'dashboard';
+        loadDashboardData();
+      } else if (this.id === 'contacts-tab') {
         document.getElementById('contacts-section').classList.remove('hidden');
         currentPage = 'contacts';
         loadContacts();
@@ -40,6 +45,10 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('new-campaign-section').classList.remove('hidden');
         currentPage = 'new-campaign';
         loadAvailableContacts();
+      } else if (this.id === 'templates-tab') {
+        document.getElementById('templates-section').classList.remove('hidden');
+        currentPage = 'templates';
+        loadTemplates();
       }
     });
   });
@@ -94,6 +103,63 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  async function loadDashboardData() {
+    try {
+      const [contactsRes, campaignsRes] = await Promise.all([
+        fetch('/crm/contacts?limit=1', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        }),
+        fetch('/crm/campaigns', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        })
+      ]);
+
+      if (!contactsRes.ok || !campaignsRes.ok) throw new Error('Failed to load data');
+
+      const contactsData = await contactsRes.json();
+      const campaigns = await campaignsRes.json();
+
+      // Update stats
+      document.getElementById('total-contacts').textContent = contactsData.meta.total;
+      document.getElementById('total-campaigns').textContent = campaigns.length;
+
+      // Calculate total messages sent
+      const totalMessages = campaigns.reduce((sum, campaign) => sum + (campaign.sentCount || 0), 0);
+      document.getElementById('total-messages').textContent = totalMessages;
+
+      // Load recent contacts
+      const recentContacts = await fetch('/crm/contacts?limit=5&sort=-lastInteraction', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      }).then(res => res.json());
+
+      renderRecentContacts(recentContacts.data);
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+    }
+  }
+
+  function renderRecentContacts(contacts) {
+    const container = document.getElementById('recent-contacts');
+    container.innerHTML = '';
+
+    contacts.forEach(contact => {
+      const tr = document.createElement('tr');
+      tr.className = 'hover:bg-gray-50';
+      tr.innerHTML = `
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+          ${contact.name || contact.pushName || 'Unknown'}
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+          ${contact.phoneNumber}
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+          ${formatDate(contact.lastInteraction)}
+        </td>
+      `;
+      container.appendChild(tr);
+    });
+  }
+
   async function loadContacts(page = 1) {
     contactsPage = page;
     try {
@@ -135,7 +201,7 @@ document.addEventListener('DOMContentLoaded', function () {
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
           <button onclick="openMessageModal('${contact.phoneNumber}')" 
             class="message-btn inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
-            <i class="fas fa-paper-plane mr-1"></i> Envoyer
+            <i class="fas fa-paper-plane mr-1"></i> Send
           </button>
         </td>
       `;
@@ -319,6 +385,62 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  async function loadTemplates() {
+    try {
+      const response = await fetch('/crm/templates', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+
+      if (!response.ok) throw new Error('Failed to load templates');
+
+      templates = await response.json();
+      renderTemplates(templates);
+    } catch (error) {
+      console.error('Error loading templates:', error);
+      alert('Failed to load templates');
+    }
+  }
+
+  function renderTemplates(templates) {
+    const container = document.getElementById('templates-container');
+    container.innerHTML = '';
+
+    if (templates.length === 0) {
+      container.innerHTML = `
+        <div class="col-span-full text-center py-8 text-gray-500">
+          No templates found
+        </div>
+      `;
+      return;
+    }
+
+    templates.forEach(template => {
+      const div = document.createElement('div');
+      div.className = 'border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow';
+      div.dataset.templateId = template._id;
+      div.innerHTML = `
+        <div class="p-4 border-b border-gray-200">
+          <h3 class="font-medium text-gray-800">${template.name}</h3>
+        </div>
+        <div class="p-4 bg-gray-50">
+          <p class="text-sm text-gray-600 mb-4 whitespace-pre-line">${template.content}</p>
+          <div class="flex justify-end space-x-2">
+            <button onclick="useTemplate('${template._id}')" class="text-sm text-green-600 hover:text-green-800">
+              Use
+            </button>
+            <button onclick="openEditTemplateModal('${template._id}', '${template.name.replace(/'/g, "\\'")}', '${template.content.replace(/'/g, "\\'")}')" class="text-sm text-blue-600 hover:text-blue-800">
+              Edit
+            </button>
+            <button onclick="deleteTemplate('${template._id}')" class="text-sm text-red-600 hover:text-red-800">
+              Delete
+            </button>
+          </div>
+        </div>
+      `;
+      container.appendChild(div);
+    });
+  }
+
   function addContactToCampaign(phoneNumber, name) {
     const selectedContactsDiv = document.getElementById('selected-contacts');
     const noContactsMessage = document.getElementById('no-contacts-message');
@@ -408,28 +530,6 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // Global functions
-  window.sendMessageTo = function (phoneNumber) {
-    const message = prompt('Enter message to send:');
-    if (message) {
-      fetch('/crm/send-message', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ phoneNumber, message })
-      })
-        .then(response => {
-          if (!response.ok) throw new Error('Failed to send message');
-          alert('Message sent successfully!');
-        })
-        .catch(error => {
-          console.error('Error sending message:', error);
-          alert('Failed to send message');
-        });
-    }
-  };
-
   window.viewCampaign = function (campaignId) {
     // Implement campaign details view
     alert('View campaign details: ' + campaignId);

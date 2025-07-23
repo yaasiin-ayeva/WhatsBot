@@ -8,7 +8,7 @@
         "@google/generative-ai": "^0.12.0",
         "@iamtraction/google-translate": "^2.0.1",
         "assemblyai": "^4.6.1",
-        "axios": "^1.7.2",
+        "axios": "^1.11.0",
         "bcrypt": "^6.0.0",
         "btch-downloader": "^4.0.15",
         "cheerio": "^1.1.0",

@@ -192,7 +192,7 @@ const socialNetworkPatterns: { [key in TSocialNetwork]: RegExp } = {
     facebook: /^(?:https?:\/\/)?(?:www\.|m\.|web\.)?facebook\.com\/.+|fb\.watch\/.+$/i,
     pinterest: /^(?:https?:\/\/)?(?:www\.)?pinterest\.com|pin\.it\/.+$/i,
     youtube: /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/|youtu\.be\/).+$/i,
-    snapchat: /^(?:https?:\/\/)?(?:www\.)?snapchat\.com\/.+$/i,
+    snapchat: /^(?:https?:\/\/)?(?:www\.)?(snapchat\.com|t\.snapchat\.com)\/.+$/i,
     linkedin: /^(?:https?:\/\/)?(?:www\.)?linkedin\.com\/.+$/i
 };
 

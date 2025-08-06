@@ -3,7 +3,7 @@ import { COUNTRIES, CountryConfig } from "./countries.util";
 export const TRANSLATIONS = {
     fr: {
         unknownCommand: "Commande inconnue: {command}, pour voir les commandes disponibles, tapez {prefix}help",
-        errorOccurred: "Oops, quelque chose s'est mal passé, veuillez réessayer.",
+        errorOccurred: "Oops, une erreur s'est produite lors de l'exécution de la commande, veuillez réessayer.",
         botReady: "Prêt!",
 
         commands: {
@@ -57,7 +57,13 @@ export const TRANSLATIONS = {
             unsupportedNetwork: "Réseau social non pris en charge.",
             downloading: "Récupération de votre fichier depuis {network} (Taille maximale autorisée {size} Mo)...",
             downloadError: "Erreur lors du téléchargement du fichier.",
-            caption: "Téléchargez vos vidéos TikTok, Instagram, Twitter, Facebook, LinkedIn sur WhatsApp sans filigrane. Envoyez simplement le lien de la vidéo à ce bot https://wa.me/qr/SBHRATABRAZVA1"
+            caption: "Téléchargez vos vidéos TikTok, Instagram, Twitter, Facebook, LinkedIn sur WhatsApp sans filigrane. Envoyez simplement le lien de la vidéo à ce bot https://wa.me/qr/SBHRATABRAZVA1",
+            captions: [
+                "Téléchargez vos vidéos TikTok, Instagram, Twitter, Facebook, LinkedIn sur WhatsApp sans filigrane. Envoyez simplement le lien de la vidéo à ce bot https://wa.me/qr/SBHRATABRAZVA1",
+                "Vous n'avez toujours pas enregistré WhatsBot dans votre liste de contacts? Faites le vite et maintenant ! Sinon vous ne pourrez pas utiliser le bot à l'avenir !",
+                "Imaginez un bot qui vous permet de télécharger vos vidéos TikTok, Instagram, Twitter, Facebook, LinkedIn sans filigrane sur WhatsApp. Envoie simplement le lien de la vidéo à ce bot https://wa.me/qr/SBHRATABRAZVA1",
+                "Vous ignorez certainement quelques fonctionnalités de WhatsBot. Tapez {prefix}help pour voir ce que WhatsBot peut faire !"
+            ],
         },
 
         onboardMessages: {
@@ -121,7 +127,13 @@ export const TRANSLATIONS = {
             unsupportedNetwork: "Unsupported social network.",
             downloading: "Getting your file from {network} (Max file size allowed {size} MB)...",
             downloadError: "Error during file download.",
-            caption: "Download your TikTok, Instagram, Twitter, Facebook, LinkedIn videos on WhatsApp without watermark. Just send the video link to this bot https://wa.me/qr/SBHRATABRAZVA1"
+            caption: "Download your TikTok, Instagram, Twitter, Facebook, LinkedIn videos on WhatsApp without watermark. Just send the video link to this bot https://wa.me/qr/SBHRATABRAZVA1",
+            captions: [
+                "Download your TikTok, Instagram, Twitter, Facebook, and LinkedIn videos to WhatsApp without a watermark. Simply send the video link to this bot https://wa.me/qr/SBHRATABRAZVA1",
+                "Still haven't saved WhatsBot to your contact list? Do it quickly and now! Otherwise, you won't be able to use the bot in the future!",
+                "Imagine a bot that lets you download your TikTok, Instagram, Twitter, Facebook, and LinkedIn videos to WhatsApp without a watermark. Simply send the video link to this bot https://wa.me/qr/SBHRATABRAZVA1",
+                "You probably don't know some of WhatsBot's features. Type {prefix}help to see what WhatsBot can do!"
+            ],
         },
 
         onboardMessages: {
@@ -205,6 +217,43 @@ export class UserI18n {
     t(key: string, params: Record<string, string> = {}): string {
         return translate(this.language, key, params);
     }
+
+    random(key: string, params: Record<string, string> = {}): string {
+        const translations = TRANSLATIONS[this.language] || TRANSLATIONS['en'];
+
+        const keys = key.split('.');
+        let value: any = translations;
+
+        for (const k of keys) {
+            if (value && typeof value === 'object' && k in value) {
+                value = value[k];
+            } else {
+                value = TRANSLATIONS['en'];
+                for (const fallbackKey of keys) {
+                    if (value && typeof value === 'object' && fallbackKey in value) {
+                        value = value[fallbackKey];
+                    } else {
+                        return '';
+                    }
+                }
+                break;
+            }
+        }
+
+        if (!Array.isArray(value) || value.length === 0) {
+            return '';
+        }
+
+        const randomIndex = Math.floor(Math.random() * value.length);
+        let message = value[randomIndex];
+
+        for (const [param, replacement] of Object.entries(params)) {
+            message = message.replace(new RegExp(`{${param}}`, 'g'), replacement);
+        }
+
+        return message;
+    }
+
 
     getLanguage(): string {
         return this.language;

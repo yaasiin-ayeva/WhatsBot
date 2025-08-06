@@ -76,7 +76,7 @@ export const run = async (message: Message, args: string[] = null, _videoUrl = n
 
         const media = await MessageMedia.fromFilePath(convertedFilePath);
         await message.reply(media, null, {
-            caption: userI18n.random('getMessages.captions', { prefix: '!' })
+            caption: userI18n.random('getMessages.captions', { prefix: '/' })
         });
 
         shouldCleanup = false;

@@ -107,6 +107,10 @@ export class BotManager {
             const user = await message.getContact();
             logger.info(`Message from @${user.pushname} (${user.number}): ${content}`);
 
+            if (!user.number) {
+                return;
+            }
+
             userI18n = this.getUserI18n(user.number);
 
             if (!user.isMe) await this.trackContact(message, userI18n);

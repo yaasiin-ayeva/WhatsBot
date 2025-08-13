@@ -59,7 +59,7 @@ export const run = async (message: Message, args: string[], userI18n: UserI18n) 
         const chatReply = result.response.text() || 'No reply';
 
         if (message.type === MessageTypes.VOICE) {
-            await chat.sendStateRecording();
+            if (!chat) await chat.sendStateRecording();
 
             try {
                 const filePath = await textToSpeech(chatReply, `${message.id.id}.wav`);
@@ -69,13 +69,13 @@ export const run = async (message: Message, args: string[], userI18n: UserI18n) 
                 return;
             } catch (error) {
                 logger.error(error);
-                chat.clearState().then(() => {
+                if (chat) chat.clearState().then(() => {
                     // wait for 1.5 seconds before sending typing to avoid ban :)
                     setTimeout(() => {
                         chat.sendStateTyping();
                     }, 1500);
                 });
-                await chat.sendStateTyping();
+                if (chat) await chat.sendStateTyping();
                 message.reply(AppConfig.instance.printMessage(`${chatReply}\n\n_Sorry btw but i was unable to send this as voice._`));
                 return;
             }

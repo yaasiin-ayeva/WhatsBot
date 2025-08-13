@@ -254,7 +254,6 @@ export class UserI18n {
         return message;
     }
 
-
     getLanguage(): string {
         return this.language;
     }

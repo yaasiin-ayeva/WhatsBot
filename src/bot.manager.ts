@@ -107,7 +107,7 @@ export class BotManager {
             const user = await message.getContact();
             logger.info(`Message from @${user.pushname} (${user.number}): ${content}`);
 
-            if (!user.number) {
+            if (!user || !user.number) {
                 return;
             }
 
@@ -179,7 +179,7 @@ export class BotManager {
         const command = args.shift()?.toLowerCase();
 
         if (command && command in commands) {
-            await chat.sendStateTyping();
+            if (chat) await chat.sendStateTyping();
             await commands[command].run(message, args, userI18n);
         } else {
             const errorMessage = userI18n.t('unknownCommand', {

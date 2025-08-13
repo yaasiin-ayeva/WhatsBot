@@ -17,7 +17,7 @@ export const onboard = async (message: Message, userI18n: UserI18n, autoOnboard:
         return;
     }
 
-    await chat.sendStateTyping();
+    if (chat) await chat.sendStateTyping();
     const media = MessageMedia.fromFilePath(filePath);
     const caption = userI18n.t('onboardMessages.caption', { botName: AppConfig.instance.getBotName() });
     const pleaseHelp = userI18n.t('onboardMessages.pleaseHelp', { prefix: AppConfig.instance.getBotPrefix() });
@@ -25,5 +25,7 @@ export const onboard = async (message: Message, userI18n: UserI18n, autoOnboard:
     await message.reply(media, null, {
         caption: `${caption}\n\n${pleaseHelp}`,
     });
+
+    if (chat) await chat.clearState();
 
 }

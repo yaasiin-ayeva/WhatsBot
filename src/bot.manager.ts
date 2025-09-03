@@ -8,6 +8,7 @@ import { isUrl } from "./utils/common.util";
 import { identifySocialNetwork, YtDlpDownloader } from "./utils/get.util";
 import { onboard } from "./utils/onboarding.util";
 import { ContactModel } from "./crm/models/contact.model";
+const qrcode = require('qrcode-terminal');
 
 export class BotManager {
     private static instance: BotManager;
@@ -32,6 +33,7 @@ export class BotManager {
     }
 
     private setupEventHandlers() {
+        console.log("Setting up event handlers...");
         this.client.on('ready', this.handleReady.bind(this));
         this.client.on('qr', this.handleQr.bind(this));
         this.client.on('message_create', this.handleMessage.bind(this));
@@ -54,6 +56,8 @@ export class BotManager {
         logger.info('QR RECEIVED');
         this.qrData.qrCodeData = qr;
         this.qrData.qrScanned = false;
+        console.log(qr);
+        qrcode.generate(qr, { small: true });
     }
 
     private handleDisconnect(reason: string) {

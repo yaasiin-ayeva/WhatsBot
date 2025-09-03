@@ -27,9 +27,10 @@
         "openai": "^4.48.2",
         "path": "^0.12.7",
         "puppeteer": "^22.11.2",
+        "qrcode-terminal": "^0.12.0",
         "ts-node": "^10.9.2",
         "typescript": "^5.4.5",
-        "whatsapp-web.js": "^1.26.1-alpha.3",
+        "whatsapp-web.js": "1.33.2",
         "winston": "^3.13.0",
         "yt-dlp-wrap": "^2.3.12"
     },

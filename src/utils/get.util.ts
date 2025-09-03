@@ -9,7 +9,7 @@ import logger from "../configs/logger.config";
 export const YTDL_DIR = path.join(__dirname, '../../.bot');
 export const YTDL_PATH = path.join(YTDL_DIR, 'yt-dlp');
 export const YTDL_BINARY_PATH = path.join(YTDL_DIR, 'yt-dlp-bin');
-export const MAX_STREAMING_FILE_SIZE = 95 * 1024 * 1024; // 85 MB
+export const MAX_STREAMING_FILE_SIZE = 100 * 1024 * 1024; // 100 MB
 export const DOWNLOAD_DIR = path.join(__dirname, '../../public/downloads');
 
 export type TSocialNetwork = "tiktok" | "instagram" | "twitter" | "facebook" | "pinterest" | "youtube" | "snapchat" | "linkedin";
@@ -207,19 +207,19 @@ export const identifySocialNetwork = (url: string): TSocialNetwork | null => {
 
 const btchDownloaders: { [key in TSocialNetwork]: (url: string) => Promise<string> } = {
     tiktok: async (url: string) => {
-        const result = await ttdl(url) as ITikTokResult;
+        const result = await ttdl(url) as unknown as ITikTokResult;
         return result.video.length > 0 ? result.video[0] : '';
     },
     instagram: async (url: string) => {
-        const result = await igdl(url) as IInstagramResult[];
+        const result = await igdl(url) as unknown as IInstagramResult[];
         return result.length > 0 && result[0].url ? result[0].url : '';
     },
     twitter: async (url: string) => {
-        const result = await twitterDL(url) as ITwitterResult;
+        const result = await twitterDL(url) as unknown as ITwitterResult;
         return result.url?.[0]?.hd ?? result.url?.[0]?.sd ?? '';
     },
     facebook: async (url: string) => {
-        const result = await fbdown(url) as IFacebookResult;
+        const result = await fbdown(url) as unknown as IFacebookResult;
         return result.HD ?? result.Normal_video ?? result.audio ?? '';
     },
     pinterest: async (url: string) => {
@@ -239,7 +239,7 @@ const btchDownloaders: { [key in TSocialNetwork]: (url: string) => Promise<strin
         }
     },
     youtube: async (url: string) => {
-        const result = await youtubeDL(url) as IYoutubeResult;
+        const result = await youtubeDL(url) as unknown as IYoutubeResult;
         return result && result.mp4 ? result.mp4 : '';
     },
     linkedin: async (url: string) => {

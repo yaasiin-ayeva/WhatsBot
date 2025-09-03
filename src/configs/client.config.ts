@@ -2,7 +2,10 @@ import { LocalAuth } from "whatsapp-web.js";
 import EnvConfig from "./env.config";
 
 export const ClientConfig = {
-    authStrategy: new LocalAuth(),
+    authStrategy: new LocalAuth({
+        clientId: "client-one",
+        rmMaxRetries: 5
+    }),
     puppeteer: {
         headless: true,
         executablePath: EnvConfig.PUPPETEER_EXECUTABLE_PATH,

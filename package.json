@@ -32,6 +32,7 @@
         "typescript": "^5.4.5",
         "whatsapp-web.js": "1.33.2",
         "winston": "^3.13.0",
+        "wwebjs-mongo": "^1.1.0",
         "yt-dlp-wrap": "^2.3.12"
     },
     "scripts": {

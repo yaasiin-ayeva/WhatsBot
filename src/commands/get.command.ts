@@ -31,7 +31,6 @@ export const run = async (message: Message, args: string[] = null, _videoUrl = n
 
     let mediaPath: string | null = null;
     let convertedFilePath: string | null = null;
-    let shouldCleanup = true;
 
     try {
         const downloadingMessage = userI18n.t('getMessages.downloading', {
@@ -79,30 +78,43 @@ export const run = async (message: Message, args: string[] = null, _videoUrl = n
             caption: userI18n.random('getMessages.captions', { prefix: '/' })
         });
 
-        shouldCleanup = false;
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
     } catch (err) {
         logger.error('Download failed:', err);
         await sendErrorMessage(message, userI18n.t('getMessages.downloadError'), userI18n);
     } finally {
-        if (shouldCleanup) {
-            const cleanFile = async (filePath: string | null) => {
-                if (filePath && fs.existsSync(filePath)) {
-                    try {
-                        await del_file(filePath);
-                    } catch (cleanErr) {
-                        logger.warn(`Failed to clean file ${filePath}:`, cleanErr);
-                    }
-                }
-            };
-
-            await Promise.all([
-                cleanFile(mediaPath),
-                cleanFile(convertedFilePath)
-            ]);
-        }
+        await cleanupFiles(mediaPath, convertedFilePath);
     }
 };
+
+async function cleanupFiles(mediaPath: string | null, convertedFilePath: string | null) {
+    const cleanFile = async (filePath: string | null, retries = 3) => {
+        if (!filePath || !fs.existsSync(filePath)) {
+            return;
+        }
+
+        for (let i = 0; i < retries; i++) {
+            try {
+                await del_file(filePath);
+                logger.debug(`Successfully deleted: ${filePath}`);
+                return;
+            } catch (cleanErr) {
+                if (i === retries - 1) {
+                    logger.warn(`Failed to clean file ${filePath} after ${retries} attempts:`, cleanErr);
+                } else {
+                    // Wait before retry
+                    await new Promise(resolve => setTimeout(resolve, 500 * (i + 1)));
+                }
+            }
+        }
+    };
+
+    await Promise.all([
+        cleanFile(mediaPath),
+        cleanFile(convertedFilePath)
+    ]);
+}
 
 async function sendErrorMessage(message: Message, text: string, _userI18n: UserI18n) {
     await message.reply(

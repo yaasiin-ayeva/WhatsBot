@@ -111,7 +111,15 @@ export class YtDlpDownloader {
 
         return new Promise((resolve, reject) => {
             this.ytDlp!
-                .exec([url, '-f', format, '-o', outputPath, '--no-playlist', '--concurrent-fragments', '1', "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/237.84.2.178 Safari/537.36"])
+                .exec([
+                    url,
+                    '-f', format,
+                    '-o', outputPath,
+                    '--no-playlist',
+                    '--merge-output-format', 'mp4',
+                    '--concurrent-fragments', '1',
+                    "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/237.84.2.178 Safari/537.36"
+                ])
                 .on('progress', (progress) => {
                     logger.debug(`Download progress: ${progress.percent}%`);
                 })
@@ -268,11 +276,12 @@ const btchDownloaders: { [key in TSocialNetwork]: (url: string) => Promise<strin
 
 const ytdlpDownloaders: { [key in TSocialNetwork]: (url: string) => Promise<string> } = {
     tiktok: (url) => YtDlpDownloader.getInstance().download(url),
-    instagram: (url) => YtDlpDownloader.getInstance().download(url, 'bestvideo+bestaudio/best'),
+    // instagram: (url) => YtDlpDownloader.getInstance().download(url, 'bestvideo+bestaudio/best'),
+    instagram: (url) => YtDlpDownloader.getInstance().download(url, 'best[ext=mp4]/best'),
     twitter: (url) => YtDlpDownloader.getInstance().download(url),
     facebook: (url) => YtDlpDownloader.getInstance().download(url),
     linkedin: (url) => YtDlpDownloader.getInstance().download(url),
-    youtube: (url) => YtDlpDownloader.getInstance().download(url, "best[ext=mp4]"),
+    youtube: (url) => YtDlpDownloader.getInstance().download(url, 'best[ext=mp4]/best'),
     snapchat: (url) => YtDlpDownloader.getInstance().download(url),
     pinterest: (url) => YtDlpDownloader.getInstance().download(url),
 };
@@ -288,7 +297,12 @@ export const downloader = async (
         if (method) {
             downloadFunction = method === "btch" ? btchDownloaders[type] : ytdlpDownloaders[type];
         } else {
-            if (["tiktok", "instagram", "pinterest"].includes(type)) {
+            const exceptedProviders = [
+                // "tiktok", 
+                // "instagram", 
+                "pinterest"
+            ];
+            if (exceptedProviders.includes(type)) {
                 downloadFunction = btchDownloaders[type];
             }
         }

@@ -6,6 +6,7 @@ import { CampaignModel } from '../models/campaign.model';
 import { ContactModel } from '../models/contact.model';
 import { AuthService } from '../utils/auth.util';
 import { TemplateModel } from '../models/template.model';
+import { PhoneDetectionUtil } from '../../utils/phone-detection.util';
 
 export const router = express.Router();
 
@@ -13,25 +14,46 @@ export default function (botManager: BotManager) {
     // Contacts API
     router.get('/contacts', authenticate, authorizeAdmin, async (req, res) => {
         try {
-            const { page = 1, limit = 20, search = '', sort = '-lastInteraction' } = req.query;
+            const { page = 1, limit = 20, search = '', sort = '-lastInteraction', language = '' } = req.query;
             const skip = (Number(page) - 1) * Number(limit);
 
-            const query = search
-                ? {
-                    $or: [
-                        { phoneNumber: { $regex: search, $options: 'i' } },
-                        { name: { $regex: search, $options: 'i' } },
-                        { pushName: { $regex: search, $options: 'i' } }
-                    ]
-                }
-                : {};
+            let query: any = {};
+
+            if (search) {
+                query.$or = [
+                    { phoneNumber: { $regex: search, $options: 'i' } },
+                    { name: { $regex: search, $options: 'i' } },
+                    { pushName: { $regex: search, $options: 'i' } }
+                ];
+            }
+
+            if (language === 'en' || language === 'fr' || language === 'other') {
+                query.detectedLanguage = language;
+            }
 
             const contacts = await ContactModel.find(query)
-                .sort(sort)
+                .sort(sort as string)
                 .skip(skip)
                 .limit(Number(limit));
 
+            for (const contact of contacts) {
+                if (!contact.detectedLanguage) {
+                    const detection = PhoneDetectionUtil.detectLanguageFromPhone(contact.phoneNumber);
+                    contact.detectedLanguage = detection.primaryLanguage;
+                    contact.detectedCountry = detection.countryCode;
+                    contact.detectedRegion = detection.region;
+                    await contact.save();
+                }
+            }
+
             const total = await ContactModel.countDocuments(query);
+
+            const stats = {
+                total: await ContactModel.countDocuments(),
+                english: await ContactModel.countDocuments({ detectedLanguage: 'en' }),
+                french: await ContactModel.countDocuments({ detectedLanguage: 'fr' }),
+                other: await ContactModel.countDocuments({ detectedLanguage: 'other' })
+            };
 
             res.json({
                 data: contacts,
@@ -40,7 +62,8 @@ export default function (botManager: BotManager) {
                     page: Number(page),
                     limit: Number(limit),
                     pages: Math.ceil(total / Number(limit))
-                }
+                },
+                stats
             });
         } catch (error) {
             logger.error('Failed to fetch contacts:', error);

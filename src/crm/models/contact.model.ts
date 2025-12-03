@@ -5,6 +5,9 @@ export interface IContact extends Document {
     name?: string;
     pushName?: string;
     language?: string;
+    detectedLanguage?: 'en' | 'fr' | 'other';
+    detectedCountry?: string;
+    detectedRegion?: string;
     lastInteraction: Date;
     interactionsCount: number;
     tags: string[];
@@ -15,6 +18,9 @@ const ContactSchema = new Schema<IContact>({
     name: String,
     pushName: String,
     language: String,
+    detectedLanguage: { type: String, enum: ['en', 'fr', 'other'] },
+    detectedCountry: String,
+    detectedRegion: String,
     lastInteraction: { type: Date, default: Date.now },
     interactionsCount: { type: Number, default: 1 },
     tags: [{ type: String }]

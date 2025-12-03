@@ -1,36 +1,99 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WhatsBot QR Code</title>
     <link rel="icon" href="/public/favicon.png">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        #status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .checking {
+            background-color: #f0f0f0;
+            color: #666;
+        }
+
+        .waiting {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+    </style>
 </head>
+
 <body>
     <div align="center">
         <div id="qrCodeData">
             <h3>🤖 WhatsBot : Scan the QR Code to Continue! </h3>
             <% if (qrCodeData) { %>
-                <img src="https://api.qrserver.com/v1/create-qr-code/?data=<%= encodeURIComponent(qrCodeData) %>&size=300x300" alt="QR Code" />
-            <% } else { %>
-                <img src="/public/loader.svg" alt="Loader" width="100" height="100" />
-                <p>Hold on a sec while the QR code is being generated.</p>
-            <% } %>
+                <img src="https://api.qrserver.com/v1/create-qr-code/?data=<%= encodeURIComponent(qrCodeData) %>&size=300x300"
+                    alt="QR Code" />
+                <p>📱 Open WhatsApp on your phone and scan this QR code</p>
+                <% } else { %>
+                    <img src="/public/loader.svg" alt="Loader" width="100" height="100" />
+                    <p>Hold on a sec while the QR code is being generated.</p>
+                    <% } %>
+                        <div id="status" class="checking">Checking status...</div>
         </div>
         <script>
+            let lastQrCode = '';
+            const statusDiv = document.getElementById('status');
+
             const checkQrStatus = () => {
                 fetch('/qr-status')
                     .then(response => response.json())
                     .then(data => {
-                        if (!data.qrScanned) {
+                        console.log('QR Status:', data);
+
+                        // If the QR code has changed, reload the page to show the new one
+                        if (data.qrCodeData && data.qrCodeData !== lastQrCode) {
+                            lastQrCode = data.qrCodeData;
+                            statusDiv.className = 'waiting';
+                            statusDiv.textContent = '⏳ Waiting for QR code scan...';
                             location.reload();
-                        } else {
-                            window.location.href = '/';
-                        } 
+                        }
+
+                        // If authenticated successfully, redirect to the main page
+                        if (data.qrScanned) {
+                            console.log('QR scanned! Redirecting...');
+                            statusDiv.className = 'success';
+                            statusDiv.textContent = '✅ Authentication successful! Redirecting...';
+                            setTimeout(() => {
+                                window.location.href = '/';
+                            }, 1000);
+                        } else if (data.qrCodeData) {
+                            statusDiv.className = 'waiting';
+                            statusDiv.textContent = '⏳ Waiting for QR code scan...';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error checking QR status:', error);
+                        statusDiv.className = 'checking';
+                        statusDiv.textContent = '⚠️ Connection error, retrying...';
                     });
             };
-            setInterval(checkQrStatus, 10000);
+
+            // Check status every 3 seconds
+            setInterval(checkQrStatus, 3000);
+
+            // Check immediately on load
+            checkQrStatus();
         </script>
     </div>
 </body>
+
 </html>

@@ -298,8 +298,8 @@ export const downloader = async (
             downloadFunction = method === "btch" ? btchDownloaders[type] : ytdlpDownloaders[type];
         } else {
             const exceptedProviders = [
-                // "tiktok", 
-                // "instagram", 
+                // "tiktok",
+                "instagram",
                 "pinterest"
             ];
             if (exceptedProviders.includes(type)) {

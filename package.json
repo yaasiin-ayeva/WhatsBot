@@ -30,7 +30,7 @@
         "qrcode-terminal": "^0.12.0",
         "ts-node": "^10.9.2",
         "typescript": "^5.4.5",
-        "whatsapp-web.js": "1.33.2",
+        "whatsapp-web.js": "github:BenyFilho/whatsapp-web.js#fix-getContact",
         "winston": "^3.13.0",
         "wwebjs-mongo": "^1.1.0",
         "yt-dlp-wrap": "^2.3.12"

@@ -1,4 +1,4 @@
-import { Client, Message, MessageTypes } from "whatsapp-web.js";
+import WAWebJS, { Client, Message, MessageTypes } from "whatsapp-web.js";
 import { AppConfig } from "./configs/app.config";
 import { ClientConfig } from "./configs/client.config";
 import logger from "./configs/logger.config";
@@ -15,7 +15,8 @@ export class BotManager {
     public client: any;
     public qrData = {
         qrCodeData: "",
-        qrScanned: false
+        qrScanned: false,
+        authenticated: false
     };
     private userI18nCache = new Map<string, UserI18n>();
     private prefix = AppConfig.instance.getBotPrefix();
@@ -35,6 +36,8 @@ export class BotManager {
     private setupEventHandlers() {
         console.log("Setting up event handlers...");
         this.client.on('ready', this.handleReady.bind(this));
+        this.client.on('authenticated', this.handleAuthenticated.bind(this));
+        this.client.on('auth_failure', this.handleAuthFailure.bind(this));
         this.client.on('qr', this.handleQr.bind(this));
         this.client.on('message_create', this.handleMessage.bind(this));
         this.client.on('disconnected', this.handleDisconnect.bind(this));
@@ -43,6 +46,7 @@ export class BotManager {
 
     private async handleReady() {
         this.qrData.qrScanned = true;
+        this.qrData.authenticated = true;
         logger.info("Client is ready!");
 
         try {
@@ -52,17 +56,36 @@ export class BotManager {
         }
     }
 
+    private handleAuthenticated() {
+        logger.info('Client authenticated successfully!');
+        this.qrData.authenticated = true;
+        this.qrData.qrScanned = true;
+    }
+
+    private handleAuthFailure(message: string) {
+        logger.error('Authentication failed:', message);
+        this.qrData.authenticated = false;
+        this.qrData.qrScanned = false;
+        this.qrData.qrCodeData = "";
+    }
+
     private handleQr(qr: string) {
         logger.info('QR RECEIVED');
         this.qrData.qrCodeData = qr;
         this.qrData.qrScanned = false;
+        this.qrData.authenticated = false;
         console.log(qr);
         qrcode.generate(qr, { small: true });
     }
 
     private handleDisconnect(reason: string) {
         logger.info(`Client disconnected: ${reason}`);
+        this.qrData.qrScanned = false;
+        this.qrData.authenticated = false;
+        this.qrData.qrCodeData = "";
+
         setTimeout(() => {
+            logger.info('Attempting to reconnect...');
             this.client.initialize();
         }, 5000);
     }
@@ -75,10 +98,8 @@ export class BotManager {
         }
     }
 
-    private async trackContact(message: Message, userI18n: UserI18n) {
+    private async trackContact(user: WAWebJS.Contact, message: Message, userI18n: UserI18n) {
         try {
-            const user = await message.getContact();
-
             await ContactModel.findOneAndUpdate(
                 { phoneNumber: user.number },
                 {
@@ -117,7 +138,7 @@ export class BotManager {
 
             userI18n = this.getUserI18n(user.number);
 
-            if (!user.isMe) await this.trackContact(message, userI18n);
+            if (!user.isMe) await this.trackContact(user, message, userI18n);
             chat = await message.getChat();
 
             if (message.from === this.client.info.wid._serialized || message.isStatus) {
@@ -128,9 +149,6 @@ export class BotManager {
                 onboard(message, userI18n),
                 this.processMessageContent(message, content, userI18n, chat)
             ]);
-
-            // await onboard(message, userI18n);
-            // await this.processMessageContent(message, content, userI18n, chat);
 
         } catch (error) {
             logger.error(`Message handling error: ${error}`);

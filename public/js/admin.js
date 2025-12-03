@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', function () {
   let contactsPage = 1;
   let contactsSearch = '';
   let templates = [];
+  let allContacts = [];
+  let languageStats = { english: 0, french: 0, other: 0 };
 
   // Check authentication
   checkAuth();
@@ -185,7 +187,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (contacts.length === 0) {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td colspan="5" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">No contacts found</td>`;
+      tr.innerHTML = `<td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">No contacts found</td>`;
       tbody.appendChild(tr);
       return;
     }
@@ -193,13 +195,24 @@ document.addEventListener('DOMContentLoaded', function () {
     contacts.forEach(contact => {
       const tr = document.createElement('tr');
       tr.className = 'table-row';
+
+      let languageBadge = '';
+      if (contact.detectedLanguage === 'en') {
+        languageBadge = '<span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">English</span>';
+      } else if (contact.detectedLanguage === 'fr') {
+        languageBadge = '<span class="px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-700">French</span>';
+      } else {
+        languageBadge = '<span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">Other</span>';
+      }
+
       tr.innerHTML = `
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">${contact.phoneNumber}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">${contact.name || contact.pushName || '-'}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${contact.language || '-'}</td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${languageBadge}</td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${contact.detectedRegion || '-'}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatDate(contact.lastInteraction)}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-          <button onclick="openMessageModal('${contact.phoneNumber}')" 
+          <button onclick="openMessageModal('${contact.phoneNumber}')"
             class="message-btn inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
             <i class="fas fa-paper-plane mr-1"></i> Send
           </button>
@@ -342,15 +355,30 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  async function loadAvailableContacts() {
+  async function loadAvailableContacts(languageFilter = '') {
     try {
-      const response = await fetch('/crm/contacts?limit=1000', {
+      const url = languageFilter
+        ? `/crm/contacts?limit=10000&language=${languageFilter}`
+        : '/crm/contacts?limit=10000';
+
+      const response = await fetch(url, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
 
       if (!response.ok) throw new Error('Failed to load contacts');
 
-      const { data } = await response.json();
+      const { data, stats } = await response.json();
+      allContacts = data;
+
+      if (stats) {
+        languageStats = {
+          english: stats.english || 0,
+          french: stats.french || 0,
+          other: stats.other || 0
+        };
+        updateLanguageStats();
+      }
+
       renderAvailableContacts(data);
     } catch (error) {
       console.error('Error loading contacts:', error);
@@ -362,24 +390,41 @@ document.addEventListener('DOMContentLoaded', function () {
     const container = document.getElementById('available-contacts');
     container.innerHTML = '';
 
+    if (contacts.length === 0) {
+      container.innerHTML = '<p class="text-gray-400 text-sm text-center py-4">No contacts found</p>';
+      return;
+    }
+
     contacts.forEach(contact => {
       const div = document.createElement('div');
       div.className = 'flex items-center p-2 hover:bg-gray-50 rounded-lg cursor-pointer';
+      div.dataset.language = contact.detectedLanguage || 'other';
+      div.dataset.phoneNumber = contact.phoneNumber;
+
+      let languageIcon = '';
+      if (contact.detectedLanguage === 'en') {
+        languageIcon = '<span class="text-xs mr-1">🇬🇧</span>';
+      } else if (contact.detectedLanguage === 'fr') {
+        languageIcon = '<span class="text-xs mr-1">🇫🇷</span>';
+      }
+
       div.innerHTML = `
-        <input type="checkbox" id="contact-${contact.phoneNumber}" 
-          class="contact-checkbox hidden" value="${contact.phoneNumber}">
-        <label for="contact-${contact.phoneNumber}" 
-          class="contact-label flex-grow flex items-center justify-between p-2 rounded-lg cursor-pointer">
-          <span class="text-sm text-gray-800">${contact.name || contact.phoneNumber}</span>
-          <span class="text-xs text-gray-500">${contact.phoneNumber}</span>
+        <input type="checkbox" id="contact-${contact.phoneNumber}"
+          class="contact-checkbox mr-2" value="${contact.phoneNumber}"
+          data-language="${contact.detectedLanguage || 'other'}">
+        <label for="contact-${contact.phoneNumber}"
+          class="contact-label flex-grow flex items-center justify-between cursor-pointer">
+          <span class="text-sm text-gray-800">${languageIcon}${contact.name || contact.pushName || contact.phoneNumber}</span>
+          <span class="text-xs text-gray-500">${contact.detectedRegion || ''}</span>
         </label>
       `;
       div.querySelector('input').addEventListener('change', function () {
         if (this.checked) {
-          addContactToCampaign(contact.phoneNumber, contact.name || contact.phoneNumber);
+          addContactToCampaign(contact.phoneNumber, contact.name || contact.pushName || contact.phoneNumber, contact.detectedLanguage);
         } else {
           removeContactFromCampaign(contact.phoneNumber);
         }
+        updateSelectedCount();
       });
       container.appendChild(div);
     });
@@ -441,21 +486,27 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  function addContactToCampaign(phoneNumber, name) {
+  function addContactToCampaign(phoneNumber, name, language) {
     const selectedContactsDiv = document.getElementById('selected-contacts');
     const noContactsMessage = document.getElementById('no-contacts-message');
 
-    // Check if already added
     if (document.querySelector(`[data-phone="${phoneNumber}"]`)) {
       return;
+    }
+
+    let languageIcon = '';
+    if (language === 'en') {
+      languageIcon = '<span class="text-xs mr-1">🇬🇧</span>';
+    } else if (language === 'fr') {
+      languageIcon = '<span class="text-xs mr-1">🇫🇷</span>';
     }
 
     const contactDiv = document.createElement('div');
     contactDiv.className = 'flex justify-between items-center p-2 hover:bg-gray-50 rounded-lg';
     contactDiv.dataset.phone = phoneNumber;
     contactDiv.innerHTML = `
-      <span class="text-sm text-gray-800">${name}</span>
-      <button class="text-gray-500 hover:text-gray-700" 
+      <span class="text-sm text-gray-800">${languageIcon}${name}</span>
+      <button class="text-gray-500 hover:text-gray-700"
         onclick="removeContactFromCampaign('${phoneNumber}')">
         <i class="fas fa-times"></i>
       </button>
@@ -474,10 +525,26 @@ document.addEventListener('DOMContentLoaded', function () {
       contactDiv.remove();
     }
 
-    const selectedContactsDiv = document.getElementById('selected-contacts');
-    if (selectedContactsDiv.children.length === 0) {
-      selectedContactsDiv.innerHTML = '<p class="text-gray-400 text-sm" id="no-contacts-message">No contacts selected</p>';
+    const checkbox = document.getElementById(`contact-${phoneNumber}`);
+    if (checkbox) {
+      checkbox.checked = false;
     }
+
+    const selectedContactsDiv = document.getElementById('selected-contacts');
+    const childDivs = Array.from(selectedContactsDiv.children).filter(child => child.tagName === 'DIV' && child.dataset.phone);
+
+    if (childDivs.length === 0) {
+      const header = selectedContactsDiv.querySelector('.flex.justify-between');
+      selectedContactsDiv.innerHTML = '';
+      if (header) selectedContactsDiv.appendChild(header);
+      const noContactsMsg = document.createElement('p');
+      noContactsMsg.className = 'text-gray-400 text-sm';
+      noContactsMsg.id = 'no-contacts-message';
+      noContactsMsg.textContent = 'No contacts selected';
+      selectedContactsDiv.appendChild(noContactsMsg);
+    }
+
+    updateSelectedCount();
   }
 
   async function createCampaign() {
@@ -528,6 +595,63 @@ document.addEventListener('DOMContentLoaded', function () {
     const date = new Date(dateString);
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
+
+  // New helper functions for campaign creation
+  function updateLanguageStats() {
+    document.getElementById('english-count').textContent = languageStats.english;
+    document.getElementById('french-count').textContent = languageStats.french;
+    document.getElementById('other-count').textContent = languageStats.other;
+  }
+
+  function updateSelectedCount() {
+    const selectedContacts = document.querySelectorAll('#selected-contacts [data-phone]');
+    const count = selectedContacts.length;
+    const countElement = document.getElementById('selected-count');
+    if (countElement) {
+      countElement.textContent = `${count} selected`;
+    }
+  }
+
+  window.selectAllContacts = function () {
+    const checkboxes = document.querySelectorAll('#available-contacts .contact-checkbox');
+    checkboxes.forEach(checkbox => {
+      if (!checkbox.checked) {
+        checkbox.checked = true;
+        checkbox.dispatchEvent(new Event('change'));
+      }
+    });
+  };
+
+  window.selectEnglishSpeakers = function () {
+    deselectAllContacts();
+    const checkboxes = document.querySelectorAll('#available-contacts .contact-checkbox[data-language="en"]');
+    checkboxes.forEach(checkbox => {
+      checkbox.checked = true;
+      checkbox.dispatchEvent(new Event('change'));
+    });
+  };
+
+  window.selectFrenchSpeakers = function () {
+    deselectAllContacts();
+    const checkboxes = document.querySelectorAll('#available-contacts .contact-checkbox[data-language="fr"]');
+    checkboxes.forEach(checkbox => {
+      checkbox.checked = true;
+      checkbox.dispatchEvent(new Event('change'));
+    });
+  };
+
+  window.deselectAllContacts = function () {
+    const checkboxes = document.querySelectorAll('#available-contacts .contact-checkbox:checked');
+    checkboxes.forEach(checkbox => {
+      checkbox.checked = false;
+      checkbox.dispatchEvent(new Event('change'));
+    });
+  };
+
+  window.filterContactsByLanguage = function () {
+    const languageFilter = document.getElementById('language-filter').value;
+    loadAvailableContacts(languageFilter);
+  };
 
   // Global functions
   window.viewCampaign = function (campaignId) {

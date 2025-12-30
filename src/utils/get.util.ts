@@ -6,10 +6,13 @@ import path from 'path';
 import * as cheerio from 'cheerio';
 import logger from "../configs/logger.config";
 
+axios.defaults.timeout = 30000;
+axios.defaults.headers.common['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
 export const YTDL_DIR = path.join(__dirname, '../../.bot');
 export const YTDL_PATH = path.join(YTDL_DIR, 'yt-dlp');
 export const YTDL_BINARY_PATH = path.join(YTDL_DIR, 'yt-dlp-bin');
-export const MAX_STREAMING_FILE_SIZE = 100 * 1024 * 1024; // 100 MB
+export const MAX_STREAMING_FILE_SIZE = 150 * 1024 * 1024; // 150 MB
 export const DOWNLOAD_DIR = path.join(__dirname, '../../public/downloads');
 
 export type TSocialNetwork = "tiktok" | "instagram" | "twitter" | "facebook" | "pinterest" | "youtube" | "snapchat" | "linkedin";
@@ -318,26 +321,76 @@ export const downloadFile = async (
     filePath: string,
     maxSize: number = MAX_STREAMING_FILE_SIZE
 ): Promise<string> => {
+    let fileStream: fs.WriteStream | null = null;
+    let responseStream: any = null;
+
     try {
-        const response = await axios.get(url, { responseType: 'stream' });
-        const fileStream = fs.createWriteStream(filePath);
+        const response = await axios.get(url, {
+            responseType: 'stream',
+            timeout: 60000, // 60s for file downloads (longer than default)
+            maxRedirects: 5
+        });
+        responseStream = response.data;
+        fileStream = fs.createWriteStream(filePath);
 
         let downloadedSize = 0;
 
         return new Promise((resolve, reject) => {
-            response.data.on('data', (chunk: Buffer) => {
+            const cleanup = () => {
+                if (responseStream && !responseStream.destroyed) {
+                    responseStream.destroy();
+                }
+                if (fileStream && !fileStream.destroyed) {
+                    fileStream.destroy();
+                }
+                if (fs.existsSync(filePath)) {
+                    try {
+                        fs.unlinkSync(filePath);
+                    } catch (err) {
+                        logger.error(`Failed to delete partial file ${filePath}:`, err);
+                    }
+                }
+            };
+
+            responseStream.on('data', (chunk: Buffer) => {
                 downloadedSize += chunk.length;
                 if (downloadedSize > maxSize) {
-                    response.data.destroy();
+                    cleanup();
                     reject(new Error(`File size exceeds the maximum limit of ${maxSize / 1024 / 1024} MB`));
                 }
             });
 
-            response.data.pipe(fileStream);
-            fileStream.on('finish', () => resolve(filePath));
-            fileStream.on('error', (err: Error) => reject(err));
+            responseStream.pipe(fileStream);
+
+            fileStream.on('finish', () => {
+                fileStream = null;
+                resolve(filePath);
+            });
+
+            fileStream.on('error', (err: Error) => {
+                cleanup();
+                reject(err);
+            });
+
+            responseStream.on('error', (err: Error) => {
+                cleanup();
+                reject(err);
+            });
         });
     } catch (error) {
+        if (responseStream && !responseStream.destroyed) {
+            responseStream.destroy();
+        }
+        if (fileStream && !fileStream.destroyed) {
+            fileStream.destroy();
+        }
+        if (fs.existsSync(filePath)) {
+            try {
+                fs.unlinkSync(filePath);
+            } catch (err) {
+                logger.error(`Failed to delete partial file ${filePath}:`, err);
+            }
+        }
         throw error;
     }
 };

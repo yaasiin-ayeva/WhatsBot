@@ -48,7 +48,14 @@
         "clean": "rimraf build",
         "clean:all": "rimraf build && rimraf node_modules",
         "prepare": "husky install",
-        "copy-files": "copyfiles -u 0 ./package.json ./.env ./package-lock.json public/**/* build"
+        "copy-files": "copyfiles -u 0 ./package.json ./.env ./package-lock.json public/**/* build && copyfiles -u 1 src/views/**/* build",
+        "pm2:start": "npm run build && pm2 start ecosystem.config.js",
+        "pm2:stop": "pm2 stop whatsbot",
+        "pm2:restart": "pm2 restart whatsbot",
+        "pm2:reload": "npm run build && pm2 reload ecosystem.config.js",
+        "pm2:logs": "pm2 logs whatsbot",
+        "pm2:monitor": "pm2 monit",
+        "pm2:delete": "pm2 delete whatsbot"
     },
     "repository": {
         "type": "git",

@@ -42,6 +42,11 @@ export const run = async (message: Message, args: string[] = null, _videoUrl = n
 
         const downloadResult = await downloader(_videoUrl, socialNetwork);
 
+        // Validate download result
+        if (!downloadResult) {
+            throw new Error('Download failed: No result returned');
+        }
+
         if (fs.existsSync(downloadResult)) {
             mediaPath = downloadResult;
         } else {
@@ -50,12 +55,22 @@ export const run = async (message: Message, args: string[] = null, _videoUrl = n
             await downloadFile(downloadResult, mediaPath);
         }
 
+        // Verify downloaded file exists and has content
+        if (!mediaPath || !fs.existsSync(mediaPath)) {
+            throw new Error('Download failed: File not found after download');
+        }
+
+        const fileStats = fs.statSync(mediaPath);
+        if (fileStats.size === 0) {
+            throw new Error('Download failed: Downloaded file is empty');
+        }
+
         const uniqid = Date.now();
         convertedFilePath = path.join(DOWNLOAD_DIR, `${uniqid}.mp4`);
         ffmpeg.setFfmpegPath(ffmpegPath);
 
         await new Promise((resolve, reject) => {
-            ffmpeg(mediaPath)
+            const ffmpegProcess = ffmpeg(mediaPath)
                 .videoCodec('libx264')
                 .outputOptions('-preset', 'slow')
                 .outputOptions('-crf', '22')
@@ -68,9 +83,18 @@ export const run = async (message: Message, args: string[] = null, _videoUrl = n
                 })
                 .on('error', (err) => {
                     logger.error('FFmpeg error:', err);
-                    reject(err);
+                    reject(new Error(`FFmpeg conversion failed: ${err.message}`));
                 })
                 .save(convertedFilePath);
+
+            // Add timeout for FFmpeg conversion (3 minutes max)
+            const timeout = setTimeout(() => {
+                ffmpegProcess.kill('SIGKILL');
+                reject(new Error('FFmpeg conversion timeout after 3 minutes'));
+            }, 3 * 60 * 1000);
+
+            ffmpegProcess.on('end', () => clearTimeout(timeout));
+            ffmpegProcess.on('error', () => clearTimeout(timeout));
         });
 
         const media = await MessageMedia.fromFilePath(convertedFilePath);
@@ -103,7 +127,7 @@ async function cleanupFiles(mediaPath: string | null, convertedFilePath: string 
                 if (i === retries - 1) {
                     logger.warn(`Failed to clean file ${filePath} after ${retries} attempts:`, cleanErr);
                 } else {
-                    // Wait before retry
+                    // Wait before retrying
                     await new Promise(resolve => setTimeout(resolve, 500 * (i + 1)));
                 }
             }

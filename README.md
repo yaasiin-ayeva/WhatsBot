@@ -1,115 +1,437 @@
 <body>
     <div align="center">
         <h1>
-            WhatsBot <br/>
-            <img alt="Static Badge" src="https://img.shields.io/badge/build-passing-brightgreen">
+            WhatsBot 🤖<br/>
+            <img alt="Build Status" src="https://img.shields.io/badge/build-passing-brightgreen">
             <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/yaasiin-ayeva/WhatsBot">
             <img alt="GitHub forks" src="https://img.shields.io/github/forks/yaasiin-ayeva/WhatsBot">
+            <img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
         </h1>
-        <img src="public/botavatar.gif" alt="Preview" width="40%" style="max-width: 300px; border-radius: 8px;">
+        <img src="public/botavatar.gif" alt="WhatsBot Preview" width="40%" style="max-width: 300px; border-radius: 8px;">
         <p>
-            Simple WhatsApp bot from unofficial WhatsApp API, built in NodeJS &amp; TypeScript, using Gemini &amp; ChatGPT APIs for completion, with many cool features. You can interact with the bot using voice messages, and it will transcribe and respond. 🤖
+            <strong>A simple WhatsApp bot with AI, social media downloads, CRM, and multilingual support</strong><br>
+            Built with NodeJS & TypeScript, powered by Gemini & ChatGPT APIs
         </p>
         <p>
-            Try it here: <a href="https://wa.me/qr/SBHRATABRAZVA1" target="_blank">WhatsBot Playground</a> or scan the QR code below:
+            🎯 Try it live: <a href="https://wa.me/qr/SBHRATABRAZVA1" target="_blank">WhatsBot Playground</a> or scan the QR code below:
         </p>
         <br>
         <img src="public/qr.jpg" width="35%" alt="WhatsApp QR Code" style="margin-top: 20px;">
     </div>
 </body>
 
+---
 
 ## Features
 
-In development mode, your bot prefix will be automatically set to `!`. Meanning that you can use `!help` to get the list of commands instead of `/help`.
+### AI-Powered Conversations
+- **Voice Chat**: Send voice messages and get audio responses powered by Gemini AI + AssemblyAI + Speechify
+- **Gemini AI Chat**: Advanced AI conversations with Google's Gemini model (`/chat`)
+- **ChatGPT Integration**: Alternative AI powered by OpenAI's GPT models (`/gpt`)
 
-| Feature | Description | Example |
-| --- | --- | --- |
-| Voice Chat | Chat with AI and expect a audio/text response from the bot | Just send an audio message |
-| AI Completion with Gemini AI | Sends a message to the AI | `/chat [text]` |
-| AI Completion with ChatGPT | Sends a message to the AI | `/gpt [text]` |
-| Video Download from social media | Download file from social media | Just send the video link or `/get <url>` |
-| Memes | Get random meme | `/meme` |
-| Jokes | Get random joke | `/joke` |
-| Help | Get help | `/help` |
-| Ping | Ping the bot | `/ping` |
-| Language Translation | Translate text to the specified language | `/translate [language-code] [text]` |
-| Weather | Get current weather for a city | `/meteo <city>` |
+### Social Media Downloads
+Download videos from **6 platforms** without watermarks:
+- TikTok
+- Twitter/X
+- LinkedIn
+- Facebook
+- Pinterest
+- Instagram (Reels & Posts)
+- YouTube (wip)
+- Snapchat (wip)
 
+Just send the URL directly or use `/get <url>` - supports up to **150MB** files!
 
-## Getting Started
+### Multilingual Support
+- **Auto Language Detection**: Detects user language from phone number (100+ countries)
+- **Translation**: Translate text to any language (`/translate <lang-code> <text>`)
+- **Available Languages**: View with `/langlist`
+- **Supported Bot Languages**: English, French (automatic based on user location)
 
-### I. Running on Docker (Recommended)
+### Fun & Utilities
+- **Memes**: Random memes (`/meme`)
+- **Jokes**: Two-part or single-line jokes (`/joke`)
+- **Weather**: Current weather for any city (`/meteo <city>`)
+- **Ping**: Check bot latency (`/ping`)
+- **Help**: Interactive command guide (`/help`)
+- **Onboarding**: Tutorial video (`/onboard`)
 
+### CRM & Campaign Management
+**Admin Panel** at `/admin`:
+- **Contact Tracking**: Auto-save all bot users with language detection
+- **Bulk Messaging**: Send campaigns to filtered contacts
+- **Message Templates**: Save and reuse message templates
+- **Schedule Campaigns**: Send immediately or schedule for later
+- **Analytics Dashboard**: Track contacts, interactions, and campaign performance
+- **Language Filtering**: Filter contacts by English, French, or Other
 
-1. From DockerHub image for a Quick Test
-```bash	
+---
+
+## Commands Reference
+
+> **Note**: In development mode, use `!` prefix instead of `/` (e.g., `!help` instead of `/help`)
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| `/help` | Display all available commands | `/help` |
+| `/ping` | Check bot responsiveness and latency | `/ping` |
+| `/onboard` | Get tutorial video | `/onboard` |
+| `/chat <message>` | Chat with Gemini AI | `/chat Tell me a story` |
+| `/gpt <message>` | Chat with ChatGPT | `/gpt Explain quantum physics` |
+| **Voice Messages** | Send audio for AI voice chat | Just send a voice message |
+| `/get <url>` | Download social media video | `/get https://tiktok.com/...` |
+| **Direct URL** | Just paste the URL | `https://instagram.com/...` |
+| `/translate <lang> <text>` | Translate to any language | `/translate es Hello world` |
+| `/langlist` | View available languages | `/langlist` |
+| `/meteo <city>` | Get current weather | `/meteo Paris` |
+| `/meme` | Get random meme | `/meme` |
+| `/joke` | Get random joke | `/joke` |
+
+---
+
+## Quick Start
+
+### Option 1: Docker (Recommended)
+
+#### Quick Test with DockerHub
+```bash
 docker pull yaasiinayeva/whatsbot:latest
 docker run -d -p 3000:3000 yaasiinayeva/whatsbot
 ```
 
-2. From the Github Code
-- After cloning the project make sure to setup your environnment variables from the `.env.example` file
+#### From Source with Docker Compose
 ```bash
+git clone https://github.com/yaasiin-ayeva/WhatsBot.git
+cd WhatsBot
 cp .env.example .env
-```
+# Edit .env with your API keys (see Configuration section)
 
-- Then Build your container and start your project
-```bash	
 docker-compose up --build -d
+
+# Access at http://localhost:3000
 ```
 
-A QR code will be generated for you to scan.
-Go to <a target="_blank" href="localhost:3000">localhost:3000</a>
-Kindly scan it with your whatsapp app and you're all set! 🎉 
+**Scan the QR code** on the web interface and you're ready!
+
+---
+
+### Option 2: PM2 Production Deployment
+
+Perfect for VPS/server deployments with auto-restart and monitoring.
+
+> **Important**: Requires Chrome/Chromium browser installed locally
 
 
-### II. Runninng Locally without docker (Not Recommended)
+```bash
+git clone https://github.com/yaasiin-ayeva/WhatsBot.git
+cd WhatsBot
+npm install
+cp .env.example .env
+# Edit .env with your API keys
 
-> [!IMPORTANT]
-> Running locally requires you to do more configuration. This project is based on `whatsappweb.js` which uses `Pupperteer`. It requires a brower driver to work. You have to install Chrome or Chromium on your machine. Make sure the environment variables are set in the `.env` file before starting the server. The `PUPPETEER_EXECUTABLE_PATH` should be set to your chrome/chromium browser path.
+npm install pm2 -g
+
+# Build and start
+npm run pm2:start
+
+# Access at http://localhost:3000
+```
+
+---
+
+### Option 3: Local Development
+
+> **Important**: Requires Chrome/Chromium browser installed locally
 
 ```bash
 npm install
 cp .env.example .env
+# Edit .env - MUST set PUPPETEER_EXECUTABLE_PATH to your Chrome binary
+
 npm run dev
+
+# Access at http://localhost:3000
 ```
 
-A QR code will be generated for you to scan.
-Go to <a target="_blank" href="localhost:3000">localhost:3000</a>
-Kindly scan it with your whatsapp app and you're all set! 🎉 
+**Chrome/Chromium Paths**:
+- **macOS**: `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`
+- **Linux**: `/usr/bin/chromium` or `/usr/bin/google-chrome`
+- **Windows**: `C:\Program Files\Google\Chrome\Application\chrome.exe`
 
+---
 
-## Configurations
+## Configuration
 
-You can change the configurations in `src/configs/app.config.ts`
+### Required Environment Variables
 
-For third-party services used in the bot, kindly get the API keys and set them correctly. These are the one used in the bot, skipping them could lead to limitations :
+Create a `.env` file from the template:
+```bash
+cp .env.example .env
+```
 
-- [Gemini](https://aistudio.google.com/app/apikey) : AI for text completion
-- [ChatGPT](https://platform.openai.com/api-keys) : ChatGPT for text completion
-- [Open Weather API](https://www.weatherapi.com/my/) : Provides weather information
-- [Speechify](https://console.sws.speechify.com/api-keys) : Text-to-Speech tool used in this project
-- [AssemblyAI](https://www.assemblyai.com/docs) : Speech to text tool used in this project 
-- [Youtube DLP Wrapper](https://github.com/foxesdocode/yt-dlp-wrap) : Video Downloader used in this project
+#### Essential Settings
+```bash
+# Environment
+ENV=production                      # or development (changes command prefix)
+PORT=3000
+
+# Browser (Required for local deployment)
+PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+```
+
+#### AI Services
+```bash
+# Google Gemini AI (Primary chatbot)
+GEMINI_API_KEY=your_key_here
+# Get from: https://aistudio.google.com/app/apikey
+
+# OpenAI ChatGPT (Alternative chatbot)
+CHAT_GPT_PROJECT_ID=your_project_id
+CHAT_GPT_ORG_ID=your_org_id
+CHAT_GPT_API_KEY=your_api_key
+# Get from: https://platform.openai.com/api-keys
+```
+
+#### Speech Services
+```bash
+# AssemblyAI (Speech-to-Text for voice messages)
+ASSEMBLYAI_API_KEY=your_key_here
+# Get from: https://www.assemblyai.com/docs
+
+# Speechify (Text-to-Speech for audio responses)
+SPEECHIFY_API_KEY=your_key_here
+# Get from: https://console.sws.speechify.com/api-keys
+```
+
+#### Other Services
+```bash
+# Weather API
+OPENWEATHERMAP_API_KEY=your_key_here
+# Get from: https://www.weatherapi.com/my/
+
+# Database & Authentication
+MONGODB_URI=mongodb://localhost:27017/whatsbot
+JWT_SECRET=your_secret_here
+
+# Redis (Optional - for caching)
+REDIS_URL=redis://localhost:6379
+REDIS_PORT=6379
+```
+
+---
+
+## Admin Panel Setup
+
+### 1. Create Admin User
+```bash
+npm run create-admin
+# Follow prompts to enter username and password
+```
+
+### 2. Access Admin Panel
+Navigate to: `http://localhost:3000/admin`
+
+### 3. Admin Features
+- **Dashboard**: View total contacts, language breakdown, statistics
+- **Contact Management**: Search, filter (by language), export contacts
+- **Campaign Manager**: Create and schedule bulk messages
+- **Template Manager**: Save reusable message templates
+- **Campaign Analytics**: Track sent/failed messages
+
+**API Endpoints** (protected with JWT):
+```
+POST /crm/auth/login          # Login
+GET  /crm/contacts            # List contacts
+POST /crm/campaigns           # Create campaign
+GET  /crm/campaigns           # List campaigns
+POST /crm/templates           # Create template
+GET  /crm/templates           # List templates
+POST /crm/send-message        # Send individual message
+```
+
+---
+
+## 📁 Project Structure
+
+```
+WhatsBot/
+├── src/
+│   ├── index.ts              # Entry point with error handlers
+│   ├── bot.manager.ts        # WhatsApp bot core logic
+│   ├── commands/             # All bot commands
+│   │   ├── chat.command.ts   # Gemini AI
+│   │   ├── gpt.command.ts    # ChatGPT
+│   │   ├── get.command.ts    # Social media downloader
+│   │   ├── translate.command.ts
+│   │   ├── meteo.command.ts
+│   │   ├── meme.command.ts
+│   │   ├── joke.command.ts
+│   │   └── ...
+│   ├── configs/              # Configuration files
+│   ├── utils/                # Utility functions
+│   │   ├── get.util.ts       # Video downloaders
+│   │   ├── gemini.util.ts    # Gemini AI client
+│   │   ├── chat-gpt.util.ts  # ChatGPT client
+│   │   ├── i18n.util.ts      # Internationalization
+│   │   └── ...
+│   ├── crm/                  # CRM system
+│   │   ├── models/           # Database models
+│   │   ├── api/              # CRM API routes
+│   │   └── middlewares/      # Auth middleware
+│   ├── crons/                # Scheduled tasks
+│   │   ├── cleanup.cron.ts   # File cleanup (hourly)
+│   │   └── campaign.cron.ts  # Campaign scheduler
+│   └── views/                # EJS templates
+│       ├── index.ejs         # Main dashboard
+│       ├── qr.ejs            # QR scanner
+│       └── admin.ejs         # CRM panel
+├── public/
+│   ├── downloads/            # Temporary file storage
+│   └── botavatar.gif         # Bot avatar
+├── logs/                     # Application logs
+├── .bot/                     # yt-dlp binary
+├── ecosystem.config.js       # PM2 configuration
+├── Dockerfile                # Docker image
+├── docker-compose.yml        # Docker Compose
+└── package.json              # Dependencies
+```
+
+---
+
+## Technology Stack
+
+### Core Technologies
+- **Runtime**: Node.js 20+ with TypeScript
+- **WhatsApp**: whatsapp-web.js (custom fork)
+- **Web Framework**: Express.js + EJS templating
+- **Database**: MongoDB with Mongoose
+- **Process Manager**: PM2
+
+### AI & Speech
+- **AI Models**: Google Gemini AI, OpenAI GPT
+- **Speech-to-Text**: AssemblyAI
+- **Text-to-Speech**: Speechify
+- **Language Detection**: langdetect
+
+### Media Processing
+- **Video Download**: yt-dlp, btch-downloader
+- **Video Processing**: FFmpeg (fluent-ffmpeg)
+- **Browser Automation**: Puppeteer
+
+### Other Services
+- **Translation**: Google Translate API
+- **Weather**: WeatherAPI.com
+- **Memes**: meme-api.com
+- **Jokes**: jokeapi.dev
+
+---
+
+### Health Check
+```bash
+curl http://localhost:3000/health
+```
+
+**Response**:
+```json
+{
+  "status": "healthy",
+  "clientReady": true,
+  "uptime": 3600,
+  "memoryUsage": {...},
+  "qrScanned": true,
+  "botContact": "wa.me/...",
+  "version": "20.19.0"
+}
+```
+
+---
 
 ## Disclaimer
-> [!WARNING]
-> **It is not guaranteed you will not be blocked by using this method. WhatsApp does not allow bots or unofficial clients on their platform, especially when it is used to spam people. So this shouldn't be considered totally safe.**
 
-## TODO
-- [x] i18n support
-- [x] Add support for more translation languages
-- [ ] Implement a queue system to handle multiple concurrent video download requests at the same time and make the bot more responsive
-- [ ] Refactor the code to not use third-party services for speech-to-text and use `whisper-node` instead
-- [ ] Add support for any kind of file download
-- [ ] Implement an API for the bot
-- [ ] Add more features (Open to suggestions)
+> **Important**: This bot uses an unofficial WhatsApp API (whatsapp-web.js). WhatsApp does not allow bots or unofficial clients on their platform, especially for spam. **Use at your own risk** - your number could be blocked.
 
-## Contributing
+**Recommendations**:
+- Use a separate phone number for the bot
+- Don't spam users
+- Respect rate limits
+- Monitor for suspicious activity alerts
 
-If you'd like to contribute, please read the [Contributing Guide](CONTRIBUTING.md)
+---
+
+## Roadmap & TODO
+
+### Completed
+- [x] i18n support (English, French)
+- [x] 100+ translation languages
+- [x] CRM system with campaign management
+- [x] PM2 production deployment
+- [x] Automatic file cleanup
+- [x] Crash protection & error handlers
+- [x] Voice message support
+- [x] Docker deployment
+
+### In Progress
+- [ ] Social media downloads (6/8 platforms done)
+- [ ] Queue system for concurrent downloads
+- [ ] Refactor to use whisper-node instead of AssemblyAI
+- [ ] Support for any file type downloads (not just videos)
+
+### Planned
+- [ ] REST API for bot control
+- [ ] Web-based command tester
+- [ ] Analytics dashboard improvements
+- [ ] More AI model integrations
+- [ ] Plugin system for custom commands
+- [ ] Multi-language admin panel
+- [ ] Webhook support for external integrations
+
+**Open to suggestions!** Submit feature requests via [GitHub Issues](https://github.com/yaasiin-ayeva/WhatsBot/issues). Please read our [Contributing Guide](CONTRIBUTING.md) before making a pull request.
+
+---
+
+## Support
+
+### Getting Help
+- Report bugs via [GitHub Issues](https://github.com/yaasiin-ayeva/WhatsBot/issues)
+
+### Common Issues
+1. **Bot won't start**: Check `PUPPETEER_EXECUTABLE_PATH` in `.env`
+2. **QR code not showing**: Check port 3000 is not in use
+3. **Downloads failing**: Update yt-dlp binary or check API keys
+4. **Memory errors**: Check PM2 memory limits in `ecosystem.config.js`
+
+---
 
 ## License
 
-[MIT](LICENSE)
+This project is licensed under the  [MIT License](LICENSE).
+
+## Acknowledgments
+
+- [whatsapp-web.js](https://github.com/pedroslopez/whatsapp-web.js) - WhatsApp Web API wrapper
+- [Google Gemini](https://ai.google.dev/) - AI model
+- [OpenAI](https://openai.com/) - ChatGPT API
+- [AssemblyAI](https://www.assemblyai.com/) - Speech-to-text
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp) - Video downloader
+- All [contributors](https://github.com/yaasiin-ayeva/WhatsBot/graphs/contributors) who helped improve this project
+
+---
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=yaasiin-ayeva/WhatsBot&type=date&legend=top-left)](https://www.star-history.com/#yaasiin-ayeva/WhatsBot&type=date&legend=top-left)
+
+---
+
+<div align="center">
+    <p>Made with ❤️ by <a href="https://github.com/yaasiin-ayeva">Yaasiin Ayeva</a></p>
+    <p>
+        <a href="https://github.com/yaasiin-ayeva/WhatsBot">⭐ Star this repo</a> •
+        <a href="https://github.com/yaasiin-ayeva/WhatsBot/fork">🔀 Fork</a> •
+        <a href="https://github.com/yaasiin-ayeva/WhatsBot/issues">🐛 Report Bug</a> •
+        <a href="https://github.com/yaasiin-ayeva/WhatsBot/issues">💡 Request Feature</a>
+    </p>
+    <p>
+        <strong>If you find this project useful, please consider giving it a ⭐ star!</strong>
+    </p>
+</div>

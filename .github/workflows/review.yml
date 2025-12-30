@@ -29,6 +29,6 @@ jobs:
       - name: Run Claude Review
         uses: pacnpal/claude-code-review@main
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.MY_GITHUB_TOKEN }}
           anthropic-key: ${{ secrets.ANTHROPIC_API_KEY }}
           pr-number: ${{ github.event.pull_request.number || inputs.pr_number }}

@@ -10,6 +10,12 @@ esbuild.build({
     external: [
         'fluent-ffmpeg',
         'whatsapp-web.js',
+        'bcrypt',
+        'better-sqlite3',
+        'canvas',
+        'sharp',
+        'langdetect',
+        'puppeteer',
     ],
     target: 'node20',
     format: 'cjs',

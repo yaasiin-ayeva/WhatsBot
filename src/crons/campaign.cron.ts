@@ -1,4 +1,3 @@
-// src/crons/campaign.cron.ts
 import { BotManager } from '../bot.manager';
 import logger from '../configs/logger.config';
 import { CampaignModel } from '../crm/models/campaign.model';

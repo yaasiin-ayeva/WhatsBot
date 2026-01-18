@@ -30,7 +30,7 @@
         "qrcode-terminal": "^0.12.0",
         "ts-node": "^10.9.2",
         "typescript": "^5.4.5",
-        "whatsapp-web.js": "github:BenyFilho/whatsapp-web.js#fix-getContact",
+        "whatsapp-web.js": "github:fm1randa/whatsapp-web.js#fix/sendseen-markedunread-error",
         "winston": "^3.13.0",
         "wwebjs-mongo": "^1.1.0",
         "yt-dlp-wrap": "^2.3.12"

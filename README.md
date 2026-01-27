@@ -424,7 +424,7 @@ This project is licensed under the  [MIT License](LICENSE).
 ---
 
 <div align="center">
-    <p>Made with ❤️ by <a href="https://github.com/yaasiin-ayeva">Yaasiin Ayeva</a></p>
+    <p>Made with ❤️ by <a href="https://github.com/yaasiin-ayeva">Yaasiin Ayeva</a> x <a href="https://github.com/djabiridrissou">Djabir Idrissou</a></p>
     <p>
         <a href="https://github.com/yaasiin-ayeva/WhatsBot">⭐ Star this repo</a> •
         <a href="https://github.com/yaasiin-ayeva/WhatsBot/fork">🔀 Fork</a> •

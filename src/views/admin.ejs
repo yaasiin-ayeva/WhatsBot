@@ -1,741 +1,668 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WhatsBot CRM</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
-    :root {
-      --primary: #4f46e5;
-      --primary-light: #6366f1;
-      --sidebar-width: 240px;
-    }
-
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background-color: #f8fafc;
-    }
-
-    .sidebar {
-      width: var(--sidebar-width);
-      transition: all 0.3s ease;
-    }
-
-    .main-content {
-      margin-left: var(--sidebar-width);
-      transition: all 0.3s ease;
-    }
-
-    .nav-item.active {
-      background-color: #f1f5f9;
-      border-left: 3px solid var(--primary);
-      color: var(--primary);
-    }
-
-    .nav-item:hover:not(.active) {
-      background-color: #f8fafc;
-    }
-
-    .table-row:hover {
-      background-color: #f8fafc;
-    }
-
-    .badge {
-      font-size: 0.75rem;
-      padding: 0.25rem 0.5rem;
-      border-radius: 0.375rem;
-    }
-
-    .badge-sent {
-      background-color: #ecfdf5;
-      color: #059669;
-    }
-
-    .badge-scheduled {
-      background-color: #eff6ff;
-      color: #2563eb;
-    }
-
-    .badge-failed {
-      background-color: #fef2f2;
-      color: #dc2626;
-    }
-
-    .badge-draft {
-      background-color: #f5f5f4;
-      color: #57534e;
-    }
-
-    input:focus,
-    textarea:focus {
-      box-shadow: 0 0 0 3px rgba(210, 214, 218, 0.3);
-    }
-
-    .contact-checkbox:checked+.contact-label {
-      background-color: #f1f5f9;
-    }
-
-    /* WhatsApp preview styles */
-    .whatsapp-preview {
-      border-radius: 7.5px;
-      box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.13);
-    }
-
-    .whatsapp-message {
-      border-radius: 7.5px;
-      box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.1);
-      position: relative;
-    }
-
-    .whatsapp-message:after {
-      content: "";
-      position: absolute;
-      left: -8px;
-      top: 0;
-      width: 0;
-      height: 0;
-      border-top: 10px solid transparent;
-      border-bottom: 10px solid transparent;
-      border-right: 10px solid #dcf8c6;
-    }
-
-    /* Animation for message button */
-    .message-btn:hover {
-      transform: translateY(-1px);
-    }
-
-    /* Modal styles */
-    .modal-overlay {
-      background-color: rgba(0, 0, 0, 0.5);
-      z-index: 1000;
-    }
-
-    .modal-content {
-      transform: translate(-50%, -50%);
-      z-index: 1001;
-    }
+    :root { --primary: #4f46e5; --sidebar-width: 260px; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #f1f5f9; }
+    .sidebar { width: var(--sidebar-width); }
+    .main-content { margin-left: var(--sidebar-width); }
+    .nav-group-label { font-size: 0.67rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.07em; padding: 0 12px; margin-bottom: 3px; margin-top: 14px; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 9px; color: #64748b; font-weight: 500; font-size: 0.85rem; transition: all 0.13s; cursor: pointer; text-decoration: none; }
+    .nav-item:hover { background: #f1f5f9; color: #1e293b; }
+    .nav-item.active { background: #eef2ff; color: #4f46e5; font-weight: 600; }
+    .nav-item .nav-icon { width: 18px; text-align: center; font-size: 0.82rem; }
+    .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+    .badge-sent { background: #dcfce7; color: #166534; }
+    .badge-sending { background: #fef9c3; color: #92400e; }
+    .badge-scheduled { background: #dbeafe; color: #1e40af; }
+    .badge-failed { background: #fee2e2; color: #991b1b; }
+    .badge-draft { background: #f1f5f9; color: #475569; }
+    .badge-admin { background: #ede9fe; color: #5b21b6; }
+    .badge-user { background: #e0f2fe; color: #0369a1; }
+    .trow:hover td { background: #fafafa; }
+    .wa-bg { background: #e5ddd5; border-radius: 14px; padding: 14px 12px; }
+    .wa-bubble { background: #dcf8c6; border-radius: 0 12px 12px 12px; padding: 9px 13px; position: relative; display: inline-block; max-width: 100%; font-size: 0.83rem; line-height: 1.55; white-space: pre-wrap; word-break: break-word; box-shadow: 0 1px 2px rgba(0,0,0,0.12); }
+    .wa-bubble::before { content:''; position:absolute; top:0; left:-8px; width:0; height:0; border-style:solid; border-width:0 9px 9px 0; border-color:transparent #dcf8c6 transparent transparent; }
+    .modal-backdrop { background: rgba(15,23,42,0.55); backdrop-filter: blur(3px); }
+    .modal-box { animation: modal-in 0.2s cubic-bezier(0.34,1.56,0.64,1); }
+    @keyframes modal-in { from { opacity:0; transform:scale(0.94) translateY(10px); } to { opacity:1; transform:scale(1) translateY(0); } }
+    .ctab { padding: 9px 16px; font-size: 0.83rem; font-weight: 500; color: #64748b; border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.13s; white-space: nowrap; }
+    .ctab:hover:not(.active) { color: #1e293b; }
+    .ctab.active { color: #4f46e5; border-bottom-color: #4f46e5; font-weight: 600; }
+    .toast { animation: toast-slide 0.3s ease; }
+    @keyframes toast-slide { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+    .field { border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 9px 12px; width: 100%; font-size: 0.875rem; outline: none; transition: border-color 0.15s, box-shadow 0.15s; background: white; }
+    .field:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.12); }
+    .tmpl-card { background: white; border: 1.5px solid #e2e8f0; border-radius: 14px; overflow: hidden; transition: box-shadow 0.15s, border-color 0.15s; }
+    .tmpl-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); border-color: #c7d2fe; }
+    .contact-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 8px; cursor: pointer; transition: background 0.1s; font-size: 0.79rem; }
+    .contact-item:hover { background: #f8fafc; }
+    .contact-item input[type=checkbox] { accent-color: #4f46e5; cursor: pointer; }
+    .sel-chip { display: flex; align-items: center; justify-content: space-between; padding: 5px 9px; background: #eef2ff; border-radius: 8px; font-size: 0.76rem; color: #4338ca; gap: 6px; }
+    .tag-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 999px; font-size: 0.7rem; font-weight: 600; color: #15803d; }
+    .toggle-track { width: 40px; height: 22px; background: #cbd5e1; border-radius: 999px; position: relative; transition: background 0.2s; cursor: pointer; flex-shrink: 0; }
+    .toggle-track.on { background: #4f46e5; }
+    .toggle-thumb { width: 18px; height: 18px; background: white; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+    .toggle-track.on .toggle-thumb { transform: translateX(18px); }
+    .stat-card { background: white; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 18px; }
+    #log-output { font-family: 'Menlo','Courier New',monospace; font-size: 0.75rem; line-height: 1.6; background: #0f172a; color: #94a3b8; border-radius: 12px; padding: 14px; height: 360px; overflow-y: auto; }
+    .log-error { color: #f87171; } .log-warn { color: #fbbf24; } .log-info { color: #34d399; } .log-debug { color: #60a5fa; } .log-verbose { color: #a78bfa; }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+    .status-dot.connected { background: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,0.2); }
+    .status-dot.disconnected { background: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.2); }
+    .status-dot.scanning { background: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,0.2); animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
   </style>
 </head>
-
 <body class="min-h-screen flex">
-  <!-- Sidebar -->
-  <aside class="sidebar fixed h-full bg-white border-r border-gray-200 shadow-sm">
-    <div class="p-4 border-b border-gray-200">
-      <div class="flex items-center space-x-3">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-700" fill="none" viewBox="0 0 24 24"
-          stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-        </svg>
-        <h1 class="text-xl font-medium text-gray-800">WhatsBot CRM</h1>
+
+<div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none" style="min-width:280px;max-width:360px;"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar fixed h-full bg-white border-r border-gray-200 flex flex-col z-30 shadow-sm overflow-y-auto">
+  <div class="px-5 py-4 border-b border-gray-100 flex-shrink-0">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0"><i class="fab fa-whatsapp text-white text-lg"></i></div>
+      <div><div class="font-bold text-gray-900 text-sm">WhatsBot</div><div class="text-xs text-gray-400">CRM Dashboard</div></div>
+    </div>
+  </div>
+  <nav class="flex-1 px-3 py-2">
+    <div class="nav-group-label">Overview</div>
+    <a href="#" id="dashboard-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-home"></i></span><span>Dashboard</span></a>
+    <a href="#" id="contacts-tab" class="nav-item active"><span class="nav-icon"><i class="fas fa-users"></i></span><span>Contacts</span></a>
+    <a href="#" id="analytics-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-chart-line"></i></span><span>Analytics</span></a>
+    <div class="nav-group-label">Messaging</div>
+    <a href="#" id="campaigns-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-bullhorn"></i></span><span>Campaigns</span></a>
+    <a href="#" id="templates-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-layer-group"></i></span><span>Templates</span></a>
+    <div class="nav-group-label">System</div>
+    <a href="#" id="bot-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-robot"></i></span><span>Bot Status</span></a>
+    <a href="#" id="commands-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-terminal"></i></span><span>Commands</span></a>
+    <a href="#" id="users-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-user-shield"></i></span><span>Users</span></a>
+    <a href="#" id="audit-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-history"></i></span><span>Audit Log</span></a>
+    <a href="#" id="settings-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-cog"></i></span><span>Settings</span></a>
+  </nav>
+  <div class="px-4 py-3 border-t border-gray-100 flex-shrink-0">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0"><i class="fas fa-user text-indigo-600 text-xs"></i></div>
+        <div><div id="username" class="text-sm font-semibold text-gray-800 leading-none">Admin</div><div class="text-xs text-gray-400 mt-0.5">Administrator</div></div>
+      </div>
+      <button id="logout" title="Logout" class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"><i class="fas fa-sign-out-alt text-sm"></i></button>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main-content flex-grow min-h-screen">
+
+  <!-- Dashboard -->
+  <div id="dashboard-section" class="section-content hidden p-6">
+    <div class="mb-6"><h1 class="text-2xl font-bold text-gray-900">Dashboard</h1><p class="text-sm text-gray-500 mt-1">Overview of your bot activity</p></div>
+    <div class="grid grid-cols-4 gap-4 mb-6">
+      <div class="stat-card"><div class="text-2xl font-bold text-gray-900" id="total-contacts">—</div><div class="text-xs text-gray-500 mt-1 font-medium">Total Contacts</div></div>
+      <div class="stat-card"><div class="text-2xl font-bold text-gray-900" id="total-campaigns">—</div><div class="text-xs text-gray-500 mt-1 font-medium">Campaigns</div></div>
+      <div class="stat-card"><div class="text-2xl font-bold text-gray-900" id="total-messages">—</div><div class="text-xs text-gray-500 mt-1 font-medium">Messages Sent</div></div>
+      <div class="stat-card"><div class="text-2xl font-bold text-gray-900" id="total-templates">—</div><div class="text-xs text-gray-500 mt-1 font-medium">Templates</div></div>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-100"><h2 class="font-semibold text-gray-900 text-sm">Recent Contacts</h2></div>
+      <table class="w-full text-left"><thead><tr class="border-b border-gray-100 bg-gray-50"><th class="px-6 py-3 text-xs font-semibold text-gray-500">Name</th><th class="px-6 py-3 text-xs font-semibold text-gray-500">Phone</th><th class="px-6 py-3 text-xs font-semibold text-gray-500">Language</th><th class="px-6 py-3 text-xs font-semibold text-gray-500">Last seen</th></tr></thead><tbody id="recent-contacts"></tbody></table>
+    </div>
+  </div>
+
+  <!-- Contacts -->
+  <div id="contacts-section" class="section-content p-6">
+    <div class="flex items-center justify-between mb-6">
+      <div><h1 class="text-2xl font-bold text-gray-900">Contacts</h1><p class="text-sm text-gray-500 mt-0.5">People who interacted with your bot</p></div>
+      <div class="flex items-center gap-2">
+        <button onclick="openImportModal()" class="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 bg-white hover:bg-gray-50 px-3 py-2 rounded-xl font-medium transition-colors"><i class="fas fa-file-import text-xs"></i> Import CSV</button>
+        <button onclick="exportContacts()" class="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 bg-white hover:bg-gray-50 px-3 py-2 rounded-xl font-medium transition-colors"><i class="fas fa-file-export text-xs"></i> Export CSV</button>
       </div>
     </div>
-    <nav class="p-4">
-      <ul class="space-y-1">
-        <li>
-          <a href="#" id="dashboard-tab"
-            class="nav-item flex items-center space-x-3 px-3 py-2.5 rounded-lg text-gray-700 font-medium">
-            <i class="fas fa-tachometer-alt w-5 text-center"></i>
-            <span>Dashboard</span>
-          </a>
-        </li>
-        <li>
-          <a href="#" id="contacts-tab"
-            class="nav-item active flex items-center space-x-3 px-3 py-2.5 rounded-lg text-gray-700 font-medium">
-            <i class="fas fa-users w-5 text-center"></i>
-            <span>Contacts</span>
-          </a>
-        </li>
-        <li>
-          <a href="#" id="campaigns-tab"
-            class="nav-item flex items-center space-x-3 px-3 py-2.5 rounded-lg text-gray-700 font-medium">
-            <i class="fas fa-bullhorn w-5 text-center"></i>
-            <span>Campaigns</span>
-          </a>
-        </li>
-        <li>
-          <a href="#" id="new-campaign-tab"
-            class="nav-item flex items-center space-x-3 px-3 py-2.5 rounded-lg text-gray-700 font-medium">
-            <i class="fas fa-plus-circle w-5 text-center"></i>
-            <span>New Campaign</span>
-          </a>
-        </li>
-        <li>
-          <a href="#" id="templates-tab"
-            class="nav-item flex items-center space-x-3 px-3 py-2.5 rounded-lg text-gray-700 font-medium">
-            <i class="fas fa-file-alt w-5 text-center"></i>
-            <span>Templates</span>
-          </a>
-        </li>
-      </ul>
-    </nav>
-    <div class="absolute bottom-0 w-full p-4 border-t border-gray-200">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-2">
-          <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-            <i class="fas fa-user text-gray-600"></i>
-          </div>
-          <span id="username" class="text-gray-700 font-medium">Admin</span>
-        </div>
-        <button id="logout" class="text-gray-500 hover:text-gray-700">
-          <i class="fas fa-sign-out-alt"></i>
-        </button>
-      </div>
-    </div>
-  </aside>
-
-  <!-- Main Content -->
-  <main class="main-content flex-grow">
-    <!-- Dashboard Section -->
-    <div id="dashboard-section" class="section-content hidden p-6">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <!-- Stat 1 -->
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm font-medium text-gray-500">Total Contacts</p>
-              <h3 id="total-contacts" class="text-2xl font-semibold text-gray-800 mt-1">0</h3>
-            </div>
-            <div class="p-3 rounded-full bg-blue-50 text-blue-600">
-              <i class="fas fa-users text-xl"></i>
-            </div>
-          </div>
-        </div>
-
-        <!-- Stat 2 -->
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm font-medium text-gray-500">Campaigns Sent</p>
-              <h3 id="total-campaigns" class="text-2xl font-semibold text-gray-800 mt-1">0</h3>
-            </div>
-            <div class="p-3 rounded-full bg-green-50 text-green-600">
-              <i class="fas fa-bullhorn text-xl"></i>
-            </div>
-          </div>
-        </div>
-
-        <!-- Stat 3 -->
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm font-medium text-gray-500">Messages Sent</p>
-              <h3 id="total-messages" class="text-2xl font-semibold text-gray-800 mt-1">0</h3>
-            </div>
-            <div class="p-3 rounded-full bg-purple-50 text-purple-600">
-              <i class="fas fa-paper-plane text-xl"></i>
-            </div>
-          </div>
+    <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+      <div class="px-5 py-3.5 border-b border-gray-100 flex items-center gap-3 flex-wrap">
+        <div class="relative flex-grow" style="max-width:280px;"><i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i><input id="contact-search" type="text" placeholder="Search…" class="field pl-8 py-2" style="font-size:0.82rem;"></div>
+        <div class="flex items-center gap-1.5 ml-auto">
+          <button onclick="filterContactView('all')" class="contact-filter-btn text-xs px-3 py-1.5 rounded-lg font-semibold bg-indigo-600 text-white">All</button>
+          <button onclick="filterContactView('archived')" class="contact-filter-btn text-xs px-3 py-1.5 rounded-lg font-semibold bg-gray-100 text-gray-600 hover:bg-gray-200">Archived</button>
+          <button onclick="filterContactView('blocked')" class="contact-filter-btn text-xs px-3 py-1.5 rounded-lg font-semibold bg-gray-100 text-gray-600 hover:bg-gray-200">Blocked</button>
         </div>
       </div>
-
-      <!-- Recent Contacts -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="p-5 border-b border-gray-200">
-          <h2 class="text-lg font-medium text-gray-800">Recent Contacts</h2>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Interaction</th>
-              </tr>
-            </thead>
-            <tbody id="recent-contacts" class="bg-white divide-y divide-gray-200">
-              <!-- Filled by JavaScript -->
-            </tbody>
-          </table>
-        </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left" style="min-width:780px;">
+          <thead><tr class="border-b border-gray-100 bg-gray-50">
+            <th class="px-5 py-3 text-xs font-semibold text-gray-500">Phone</th>
+            <th class="px-5 py-3 text-xs font-semibold text-gray-500">Name</th>
+            <th class="px-5 py-3 text-xs font-semibold text-gray-500">Language</th>
+            <th class="px-5 py-3 text-xs font-semibold text-gray-500">Tags</th>
+            <th class="px-5 py-3 text-xs font-semibold text-gray-500">Last seen</th>
+            <th class="px-5 py-3 text-xs font-semibold text-gray-500">Actions</th>
+          </tr></thead>
+          <tbody id="contacts-table-body"></tbody>
+        </table>
       </div>
-    </div>
-
-    <!-- Contacts Section -->
-    <div id="contacts-section" class="section-content p-6">
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="p-5 border-b border-gray-200">
-          <div class="flex justify-between items-center">
-            <h2 class="text-lg font-medium text-gray-800">Contacts</h2>
-            <div class="relative w-64">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <i class="fas fa-search text-gray-400"></i>
-              </div>
-              <input type="text" id="contact-search" placeholder="Search contacts..."
-                class="pl-10 w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-gray-300 transition-colors">
-            </div>
-          </div>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Phone</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Name</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Language</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Region</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Last Interaction</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions</th>
-              </tr>
-            </thead>
-            <tbody id="contacts-table-body" class="bg-white divide-y divide-gray-200">
-              <!-- Contacts will be loaded here -->
-            </tbody>
-          </table>
-        </div>
-        <div class="px-5 py-3 border-t border-gray-200 flex items-center justify-between">
-          <div class="text-sm text-gray-500" id="contacts-pagination-info">
-            Showing <span id="contacts-start">0</span> to <span id="contacts-end">0</span> of <span
-              id="contacts-total">0</span> contacts
-          </div>
-          <div id="contacts-pagination" class="flex space-x-1">
-            <!-- Pagination will be loaded here -->
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Campaigns Section -->
-    <div id="campaigns-section" class="section-content hidden p-6">
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="p-5 border-b border-gray-200">
-          <h2 class="text-lg font-medium text-gray-800">Campaigns</h2>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Name</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Scheduled</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Sent</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Failed</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions</th>
-              </tr>
-            </thead>
-            <tbody id="campaigns-table-body" class="bg-white divide-y divide-gray-200">
-              <!-- Campaigns will be loaded here -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- New Campaign Section -->
-    <div id="new-campaign-section" class="section-content hidden p-6">
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="p-5 border-b border-gray-200">
-          <h2 class="text-lg font-medium text-gray-800">Create New Campaign</h2>
-        </div>
-        <form id="campaign-form" class="p-5">
-          <div class="space-y-5">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Campaign Name</label>
-              <input type="text" name="name" required
-                class="w-full border border-gray-200 rounded-lg px-4 py-2.5 focus:outline-none focus:border-gray-300 transition-colors">
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Message</label>
-                <textarea name="message" id="campaign-message" rows="8" required
-                  class="w-full border border-gray-200 rounded-lg px-4 py-2.5 focus:outline-none focus:border-gray-300 transition-colors"
-                  oninput="updateWhatsAppPreview()"></textarea>
-
-                <div class="mt-4">
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Available Variables</label>
-                  <div class="flex flex-wrap gap-2">
-                    <button type="button" onclick="insertVariable('{name}')"
-                      class="text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded">
-                      {name}
-                    </button>
-                    <button type="button" onclick="insertVariable('{phone}')"
-                      class="text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded">
-                      {phone}
-                    </button>
-                    <button type="button" onclick="insertVariable('{date}')"
-                      class="text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded">
-                      {date}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">WhatsApp Preview</label>
-                <div class="whatsapp-preview-container bg-gray-50 p-4 rounded-lg">
-                  <div class="whatsapp-preview bg-white p-4 rounded-lg shadow-sm max-w-xs mx-auto">
-                    <div class="flex items-center mb-3">
-                      <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white mr-2">
-                        <i class="fas fa-user"></i>
-                      </div>
-                      <div class="text-sm font-medium">You</div>
-                    </div>
-                    <div class="whatsapp-message bg-green-100 p-3 rounded-lg text-sm">
-                      <!-- Message will appear here -->
-                    </div>
-                    <div class="text-xs text-gray-500 mt-1 text-right">Now</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Schedule (leave empty for immediate
-                send)</label>
-              <input type="datetime-local" name="scheduledAt"
-                class="border border-gray-200 rounded-lg px-4 py-2.5 focus:outline-none focus:border-gray-300 transition-colors">
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Select Recipients</label>
-
-              <!-- Quick Selection Buttons -->
-              <div class="mb-4 flex flex-wrap gap-2">
-                <button type="button" onclick="selectAllContacts()"
-                  class="px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-sm font-medium transition-colors">
-                  <i class="fas fa-check-double mr-1"></i> Select All
-                </button>
-                <button type="button" onclick="selectEnglishSpeakers()"
-                  class="px-4 py-2 bg-green-50 hover:bg-green-100 text-green-700 rounded-lg text-sm font-medium transition-colors">
-                  <i class="fas fa-globe-americas mr-1"></i> English Speakers
-                </button>
-                <button type="button" onclick="selectFrenchSpeakers()"
-                  class="px-4 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg text-sm font-medium transition-colors">
-                  <i class="fas fa-globe-europe mr-1"></i> French Speakers
-                </button>
-                <button type="button" onclick="deselectAllContacts()"
-                  class="px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg text-sm font-medium transition-colors">
-                  <i class="fas fa-times mr-1"></i> Clear Selection
-                </button>
-              </div>
-
-              <!-- Language Statistics -->
-              <div class="mb-4 grid grid-cols-3 gap-3" id="language-stats">
-                <div class="bg-green-50 border border-green-200 rounded-lg p-3">
-                  <div class="text-xs text-green-600 font-medium mb-1">English Speakers</div>
-                  <div class="text-2xl font-bold text-green-700" id="english-count">0</div>
-                </div>
-                <div class="bg-purple-50 border border-purple-200 rounded-lg p-3">
-                  <div class="text-xs text-purple-600 font-medium mb-1">French Speakers</div>
-                  <div class="text-2xl font-bold text-purple-700" id="french-count">0</div>
-                </div>
-                <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                  <div class="text-xs text-gray-600 font-medium mb-1">Other Languages</div>
-                  <div class="text-2xl font-bold text-gray-700" id="other-count">0</div>
-                </div>
-              </div>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <div class="border border-gray-200 rounded-lg p-3 h-96 overflow-y-auto">
-                    <div class="flex justify-between items-center mb-3">
-                      <h3 class="font-medium text-gray-700">Available Contacts</h3>
-                      <div class="relative">
-                        <select id="language-filter" onchange="filterContactsByLanguage()"
-                          class="text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-gray-300">
-                          <option value="">All Languages</option>
-                          <option value="en">English</option>
-                          <option value="fr">French</option>
-                          <option value="other">Other</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div id="available-contacts" class="space-y-2">
-                      <!-- Contacts will be loaded here -->
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <div class="border border-gray-200 rounded-lg p-3 h-96 overflow-y-auto" id="selected-contacts">
-                    <div class="flex justify-between items-center mb-3">
-                      <h3 class="font-medium text-gray-700">Selected Contacts</h3>
-                      <span class="text-xs text-gray-500" id="selected-count">0 selected</span>
-                    </div>
-                    <p class="text-gray-400 text-sm" id="no-contacts-message">No contacts selected</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="pt-2">
-              <button type="submit"
-                class="bg-gray-800 hover:bg-gray-700 text-white px-5 py-2.5 rounded-lg font-medium transition-colors">
-                <i class="fas fa-paper-plane mr-2"></i> Send Campaign
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Templates Section -->
-    <div id="templates-section" class="section-content hidden p-6">
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="p-5 border-b border-gray-200 flex justify-between items-center">
-          <h2 class="text-lg font-medium text-gray-800">Message Templates</h2>
-          <button onclick="openNewTemplateModal()"
-            class="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm">
-            <i class="fas fa-plus mr-1"></i> New Template
-          </button>
-        </div>
-
-        <div class="p-5">
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="templates-container">
-            <!-- Templates will be loaded here -->
-          </div>
-        </div>
-      </div>
-    </div>
-  </main>
-
-  <!-- Message Modal -->
-  <div id="message-modal" class="fixed inset-0 z-50 hidden overflow-y-auto">
-    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-      <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-        <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
-      </div>
-      <div
-        class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-          <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Send Message</h3>
-          <div class="mt-2">
-            <textarea id="message-content" rows="4"
-              class="w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500"
-              placeholder="Write your message here..."></textarea>
-          </div>
-        </div>
-        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-          <button type="button" onclick="sendPrivateMessage()"
-            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm">
-            Send
-          </button>
-          <button type="button" onclick="closeMessageModal()"
-            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-            Cancel
-          </button>
-        </div>
+      <div class="px-5 py-3 border-t border-gray-100 flex items-center justify-between">
+        <div class="text-xs text-gray-500">Showing <span id="contacts-start">1</span>–<span id="contacts-end">20</span> of <span id="contacts-total">0</span></div>
+        <div id="contacts-pagination" class="flex items-center gap-1"></div>
       </div>
     </div>
   </div>
 
-  <!-- Template Modal -->
-  <div id="template-modal" class="fixed inset-0 z-50 hidden overflow-y-auto">
-    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-      <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-        <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+  <!-- Analytics -->
+  <div id="analytics-section" class="section-content hidden p-6">
+    <div class="mb-6"><h1 class="text-2xl font-bold text-gray-900">Analytics</h1><p class="text-sm text-gray-500 mt-0.5">Insights from the last 30 days</p></div>
+    <div class="grid gap-5 mb-5" style="grid-template-columns:2fr 1fr;">
+      <div class="bg-white border border-gray-200 rounded-2xl p-5"><div class="text-sm font-semibold text-gray-700 mb-4">New Contacts Over Time</div><canvas id="contacts-chart" height="160"></canvas></div>
+      <div class="bg-white border border-gray-200 rounded-2xl p-5"><div class="text-sm font-semibold text-gray-700 mb-4">Language Distribution</div><canvas id="language-chart" height="160"></canvas></div>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-2xl p-5"><div class="text-sm font-semibold text-gray-700 mb-4">Campaign Delivery (Last 20)</div><canvas id="campaigns-chart" height="90"></canvas></div>
+  </div>
+
+  <!-- Campaigns -->
+  <div id="campaigns-section" class="section-content hidden p-6">
+    <div class="flex items-center justify-between mb-5">
+      <div><h1 class="text-2xl font-bold text-gray-900">Campaigns</h1><p class="text-sm text-gray-500 mt-0.5">Bulk messaging to your contacts</p></div>
+      <button onclick="openCampaignModal()" class="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"><i class="fas fa-plus text-xs"></i> New Campaign</button>
+    </div>
+    <div class="grid grid-cols-4 gap-3 mb-5">
+      <div class="stat-card text-center"><div class="text-xl font-bold text-gray-900" id="camp-total">0</div><div class="text-xs text-gray-500 mt-0.5">Total</div></div>
+      <div class="stat-card text-center"><div class="text-xl font-bold text-green-600" id="camp-sent">0</div><div class="text-xs text-gray-500 mt-0.5">Sent</div></div>
+      <div class="stat-card text-center"><div class="text-xl font-bold text-blue-600" id="camp-scheduled">0</div><div class="text-xs text-gray-500 mt-0.5">Scheduled</div></div>
+      <div class="stat-card text-center"><div class="text-xl font-bold text-red-500" id="camp-failed">0</div><div class="text-xs text-gray-500 mt-0.5">Failed</div></div>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+      <table class="w-full text-left"><thead><tr class="border-b border-gray-100 bg-gray-50">
+        <th class="px-5 py-3 text-xs font-semibold text-gray-500">Name</th>
+        <th class="px-5 py-3 text-xs font-semibold text-gray-500">Status</th>
+        <th class="px-5 py-3 text-xs font-semibold text-gray-500">Recipients</th>
+        <th class="px-5 py-3 text-xs font-semibold text-gray-500">Sent / Failed</th>
+        <th class="px-5 py-3 text-xs font-semibold text-gray-500">Recurring</th>
+        <th class="px-5 py-3 text-xs font-semibold text-gray-500">Scheduled</th>
+        <th class="px-5 py-3 text-xs font-semibold text-gray-500">Actions</th>
+      </tr></thead><tbody id="campaigns-table-body"></tbody></table>
+    </div>
+  </div>
+
+  <!-- Templates -->
+  <div id="templates-section" class="section-content hidden p-6">
+    <div class="flex items-center justify-between mb-5">
+      <div><h1 class="text-2xl font-bold text-gray-900">Templates</h1><p class="text-sm text-gray-500 mt-0.5">Reusable message templates</p></div>
+      <button onclick="openNewTemplateModal()" class="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"><i class="fas fa-plus text-xs"></i> New Template</button>
+    </div>
+    <div class="flex items-center gap-3 mb-4">
+      <div class="relative flex-grow" style="max-width:300px;"><i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i><input id="template-search" type="text" placeholder="Search templates…" class="field pl-8 py-2" style="font-size:0.82rem;"></div>
+      <select id="template-category-filter" onchange="filterTemplatesByCategory()" class="field py-2" style="width:160px;font-size:0.82rem;">
+        <option value="">All categories</option>
+        <option value="general">General</option>
+        <option value="promo">Promo</option>
+        <option value="support">Support</option>
+        <option value="onboarding">Onboarding</option>
+      </select>
+    </div>
+    <div id="templates-grid" class="grid gap-4" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr));"></div>
+  </div>
+
+  <!-- Bot Status -->
+  <div id="bot-section" class="section-content hidden p-6">
+    <div class="mb-6"><h1 class="text-2xl font-bold text-gray-900">Bot Status</h1><p class="text-sm text-gray-500 mt-0.5">Connection monitoring and live logs</p></div>
+    <div class="grid gap-5 mb-5" style="grid-template-columns:1fr 1fr;">
+      <div class="bg-white border border-gray-200 rounded-2xl p-5">
+        <div class="text-sm font-semibold text-gray-700 mb-4">Connection</div>
+        <div class="flex items-center gap-3 mb-4"><span class="status-dot disconnected" id="bot-status-dot"></span><span class="text-base font-bold text-gray-900" id="bot-status-text">Loading…</span></div>
+        <div class="text-xs text-gray-600 space-y-1.5" id="bot-status-details"></div>
+        <div id="qr-container-wrap" class="mt-4 hidden">
+          <div class="text-xs text-amber-600 font-semibold mb-2"><i class="fas fa-qrcode mr-1"></i>Scan with WhatsApp</div>
+          <div id="qr-container" class="flex justify-center p-4 bg-white border border-gray-200 rounded-xl"></div>
+        </div>
+        <div class="flex gap-2 mt-5">
+          <button onclick="reconnectBot()" class="flex items-center gap-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl font-semibold transition-colors"><i class="fas fa-sync-alt text-xs"></i> Reconnect</button>
+          <button onclick="loadBotStatus()" class="flex items-center gap-1.5 text-sm border border-gray-200 hover:bg-gray-50 text-gray-600 px-4 py-2 rounded-xl font-semibold transition-colors"><i class="fas fa-redo text-xs"></i> Refresh</button>
+        </div>
       </div>
-      <div
-        class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-          <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="template-modal-title">New Template</h3>
-          <div class="mt-2 space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Template Name</label>
-              <input type="text" id="template-name"
-                class="w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Content</label>
-              <textarea id="template-content" rows="6"
-                class="w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
-            </div>
-          </div>
+      <div class="bg-white border border-gray-200 rounded-2xl p-5">
+        <div class="text-sm font-semibold text-gray-700 mb-3">Server Info</div>
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between"><span class="text-gray-400">Uptime</span><span id="bot-uptime" class="font-mono font-medium text-gray-700">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Node version</span><span class="font-mono font-medium text-gray-700"><%= process.version %></span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Platform</span><span class="font-mono font-medium text-gray-700"><%= process.platform %></span></div>
         </div>
-        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-          <button type="button" onclick="saveTemplate()"
-            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
-            Save
-          </button>
-          <button type="button" onclick="closeTemplateModal()"
-            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-            Cancel
-          </button>
+      </div>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-2xl p-5">
+      <div class="flex items-center justify-between mb-3">
+        <div class="text-sm font-semibold text-gray-700">Live Logs</div>
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <button onclick="setLogFilter('all')" class="log-filter-btn text-xs px-2.5 py-1 rounded-lg font-semibold bg-slate-700 text-white" data-level="all">All</button>
+          <button onclick="setLogFilter('error')" class="log-filter-btn text-xs px-2.5 py-1 rounded-lg font-semibold bg-gray-100 text-gray-600 hover:bg-gray-200" data-level="error">Error</button>
+          <button onclick="setLogFilter('warn')" class="log-filter-btn text-xs px-2.5 py-1 rounded-lg font-semibold bg-gray-100 text-gray-600 hover:bg-gray-200" data-level="warn">Warn</button>
+          <button onclick="setLogFilter('info')" class="log-filter-btn text-xs px-2.5 py-1 rounded-lg font-semibold bg-gray-100 text-gray-600 hover:bg-gray-200" data-level="info">Info</button>
+          <button onclick="clearLogs()" class="text-xs px-2.5 py-1 rounded-lg font-semibold bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600 ml-2">Clear</button>
+          <label class="flex items-center gap-1 text-xs text-gray-500 ml-1 cursor-pointer"><input type="checkbox" id="auto-scroll" checked class="rounded"> Auto-scroll</label>
         </div>
+      </div>
+      <pre id="log-output"></pre>
+    </div>
+  </div>
+
+  <!-- Commands -->
+  <div id="commands-section" class="section-content hidden p-6">
+    <div class="mb-6"><h1 class="text-2xl font-bold text-gray-900">Commands</h1><p class="text-sm text-gray-500 mt-0.5">Enable or disable individual bot commands</p></div>
+    <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+      <table class="w-full text-left"><thead><tr class="border-b border-gray-100 bg-gray-50">
+        <th class="px-6 py-3 text-xs font-semibold text-gray-500">Command</th>
+        <th class="px-6 py-3 text-xs font-semibold text-gray-500">Usage Count</th>
+        <th class="px-6 py-3 text-xs font-semibold text-gray-500">Status</th>
+        <th class="px-6 py-3 text-xs font-semibold text-gray-500">Toggle</th>
+      </tr></thead><tbody id="commands-table-body"></tbody></table>
+    </div>
+  </div>
+
+  <!-- Users -->
+  <div id="users-section" class="section-content hidden p-6">
+    <div class="flex items-center justify-between mb-6">
+      <div><h1 class="text-2xl font-bold text-gray-900">Users</h1><p class="text-sm text-gray-500 mt-0.5">Admin account management</p></div>
+      <button onclick="openUserModal()" class="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"><i class="fas fa-plus text-xs"></i> Add User</button>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+      <table class="w-full text-left"><thead><tr class="border-b border-gray-100 bg-gray-50">
+        <th class="px-6 py-3 text-xs font-semibold text-gray-500">Username</th>
+        <th class="px-6 py-3 text-xs font-semibold text-gray-500">Role</th>
+        <th class="px-6 py-3 text-xs font-semibold text-gray-500">Created</th>
+        <th class="px-6 py-3 text-xs font-semibold text-gray-500">Actions</th>
+      </tr></thead><tbody id="users-table-body"></tbody></table>
+    </div>
+  </div>
+
+  <!-- Audit Log -->
+  <div id="audit-section" class="section-content hidden p-6">
+    <div class="mb-6"><h1 class="text-2xl font-bold text-gray-900">Audit Log</h1><p class="text-sm text-gray-500 mt-0.5">Record of all admin actions</p></div>
+    <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+      <div class="px-5 py-3 border-b border-gray-100 flex items-center gap-3 flex-wrap">
+        <input id="audit-action-filter" type="text" placeholder="Filter by action…" class="field py-2" style="max-width:200px;font-size:0.82rem;">
+        <select id="audit-resource-filter" class="field py-2" style="max-width:150px;font-size:0.82rem;" onchange="loadAuditLogs()">
+          <option value="">All resources</option>
+          <option value="contact">Contact</option>
+          <option value="campaign">Campaign</option>
+          <option value="template">Template</option>
+          <option value="settings">Settings</option>
+          <option value="command">Command</option>
+          <option value="user">User</option>
+          <option value="bot">Bot</option>
+        </select>
+        <button onclick="loadAuditLogs()" class="text-sm bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-4 py-2 rounded-xl font-semibold transition-colors">Filter</button>
+      </div>
+      <table class="w-full text-left"><thead><tr class="border-b border-gray-100 bg-gray-50">
+        <th class="px-5 py-3 text-xs font-semibold text-gray-500">Time</th>
+        <th class="px-5 py-3 text-xs font-semibold text-gray-500">User</th>
+        <th class="px-5 py-3 text-xs font-semibold text-gray-500">Action</th>
+        <th class="px-5 py-3 text-xs font-semibold text-gray-500">Resource</th>
+        <th class="px-5 py-3 text-xs font-semibold text-gray-500">Details</th>
+      </tr></thead><tbody id="audit-table-body"></tbody></table>
+      <div class="px-5 py-3 border-t border-gray-100 flex items-center justify-between">
+        <div class="text-xs text-gray-500">Total: <span id="audit-total">0</span></div>
+        <div id="audit-pagination" class="flex items-center gap-1"></div>
       </div>
     </div>
   </div>
 
-  <script src="/public/js/admin.js"></script>
-  <script>
-    // WhatsApp preview functions
-    function updateWhatsAppPreview() {
-      const message = document.getElementById('campaign-message').value;
-      document.querySelector('.whatsapp-message').textContent = message;
-    }
+  <!-- Settings -->
+  <div id="settings-section" class="section-content hidden p-6">
+    <div class="mb-6"><h1 class="text-2xl font-bold text-gray-900">Settings</h1><p class="text-sm text-gray-500 mt-0.5">Bot configuration and API keys</p></div>
+    <form id="settings-form" class="space-y-5">
+      <div class="bg-white border border-gray-200 rounded-2xl p-5">
+        <div class="text-sm font-semibold text-gray-800 mb-4">Bot Info</div>
+        <div class="grid grid-cols-3 gap-4" id="bot-info-grid"></div>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-2xl p-5">
+        <div class="text-sm font-semibold text-gray-800 mb-1">API Key Status</div>
+        <div class="text-xs text-gray-500 mb-4">Loaded from environment at startup</div>
+        <div class="grid grid-cols-3 gap-3" id="api-keys-status-grid"></div>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-2xl p-5">
+        <div class="text-sm font-semibold text-gray-800 mb-1">Update API Keys</div>
+        <div class="text-xs text-gray-500 mb-4">Stored securely and applied at runtime. Leave blank to keep current value.</div>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="text-xs font-semibold text-gray-500 block mb-1">GEMINI_API_KEY</label><input class="field" type="password" id="key-GEMINI_API_KEY" placeholder="Enter new value…" autocomplete="new-password"></div>
+          <div><label class="text-xs font-semibold text-gray-500 block mb-1">CHAT_GPT_API_KEY</label><input class="field" type="password" id="key-CHAT_GPT_API_KEY" placeholder="Enter new value…" autocomplete="new-password"></div>
+          <div><label class="text-xs font-semibold text-gray-500 block mb-1">OPENWEATHERMAP_API_KEY</label><input class="field" type="password" id="key-OPENWEATHERMAP_API_KEY" placeholder="Enter new value…" autocomplete="new-password"></div>
+          <div><label class="text-xs font-semibold text-gray-500 block mb-1">ASSEMBLYAI_API_KEY</label><input class="field" type="password" id="key-ASSEMBLYAI_API_KEY" placeholder="Enter new value…" autocomplete="new-password"></div>
+          <div><label class="text-xs font-semibold text-gray-500 block mb-1">SPEECHIFY_API_KEY</label><input class="field" type="password" id="key-SPEECHIFY_API_KEY" placeholder="Enter new value…" autocomplete="new-password"></div>
+        </div>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-2xl p-5">
+        <div class="text-sm font-semibold text-gray-800 mb-4">Download Settings</div>
+        <div class="flex items-center gap-8">
+          <div><label class="text-xs font-semibold text-gray-500 block mb-1">Max File Size (MB)</label><input type="number" id="setting-maxFileSizeMb" class="field" style="max-width:140px;" min="1" max="2000"></div>
+          <div class="flex items-center gap-3 mt-4">
+            <div class="toggle-track" id="toggle-autoDownload" onclick="toggleAutoDownload()"><div class="toggle-thumb"></div></div>
+            <div><div class="text-sm font-medium text-gray-800">Auto-download</div><div class="text-xs text-gray-500">Automatically download media from URLs</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-end">
+        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition-colors">Save Settings</button>
+      </div>
+    </form>
+  </div>
 
-    function insertVariable(variable) {
-      const textarea = document.getElementById('campaign-message');
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const text = textarea.value;
+</main>
 
-      textarea.value = text.substring(0, start) + variable + text.substring(end);
-      textarea.selectionStart = textarea.selectionEnd = start + variable.length;
-      textarea.focus();
+<!-- MODALS -->
 
-      updateWhatsAppPreview();
-    }
+<!-- Campaign Modal -->
+<div id="campaign-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+  <div class="modal-backdrop absolute inset-0" onclick="closeCampaignModal()"></div>
+  <div class="modal-box relative bg-white rounded-2xl shadow-2xl w-full overflow-hidden" style="max-width:960px;max-height:92vh;display:flex;flex-direction:column;">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
+      <h2 id="campaign-modal-title" class="text-lg font-bold text-gray-900">New Campaign</h2>
+      <button onclick="closeCampaignModal()" class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="flex border-b border-gray-100 flex-shrink-0">
+      <div class="ctab active" id="ctab-compose" onclick="switchCampaignTab('compose')"><i class="fas fa-pen-to-square mr-1.5 text-xs"></i>Compose</div>
+      <div class="ctab" id="ctab-recipients" onclick="switchCampaignTab('recipients')"><i class="fas fa-users mr-1.5 text-xs"></i>Recipients</div>
+      <div class="ctab" id="ctab-schedule" onclick="switchCampaignTab('schedule')"><i class="fas fa-clock mr-1.5 text-xs"></i>Schedule &amp; Send</div>
+    </div>
+    <div class="overflow-y-auto flex-grow">
+      <div id="ctab-compose-content" class="p-6">
+        <div class="grid gap-5" style="grid-template-columns:1fr 1fr;">
+          <div class="space-y-4">
+            <div><label class="text-xs font-semibold text-gray-500 block mb-1">Campaign Name *</label><input id="campaign-name" class="field" placeholder="e.g. Weekly Promo" oninput="updateWaPreview();updateScheduleSummary()"></div>
+            <div>
+              <div class="flex items-center justify-between mb-1"><label class="text-xs font-semibold text-gray-500">Message *</label><span class="text-xs text-gray-400" id="msg-char-count">0 chars</span></div>
+              <div class="flex gap-1.5 mb-2 flex-wrap">
+                <button type="button" onclick="insertVariable('{{name}}')" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-lg font-semibold">{{name}}</button>
+                <button type="button" onclick="insertVariable('{{phone}}')" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-lg font-semibold">{{phone}}</button>
+                <button type="button" onclick="insertVariable('{{date}}')" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-lg font-semibold">{{date}}</button>
+              </div>
+              <textarea id="campaign-message" rows="7" class="field resize-none" placeholder="Write your message…" oninput="updateWaPreview()"></textarea>
+            </div>
+            <div><label class="text-xs font-semibold text-gray-500 block mb-1">Use Template</label><select id="template-selector" onchange="applyTemplateToModal()" class="field"><option value="">— Select a template —</option></select></div>
+          </div>
+          <div><div class="text-xs font-semibold text-gray-500 mb-2">Preview</div><div class="wa-bg"><div class="wa-bubble" id="wa-preview">Your message will appear here…</div></div></div>
+        </div>
+      </div>
+      <div id="ctab-recipients-content" class="p-6 hidden">
+        <div class="grid gap-4" style="grid-template-columns:1fr 1fr;">
+          <div>
+            <div class="text-xs font-semibold text-gray-500 mb-2">Available Contacts</div>
+            <div class="flex gap-1.5 mb-2 flex-wrap">
+              <button type="button" onclick="selectAllContacts()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-2.5 py-1 rounded-lg font-semibold">All</button>
+              <button type="button" onclick="selectEnglishSpeakers()" class="text-xs bg-green-50 hover:bg-green-100 text-green-700 px-2.5 py-1 rounded-lg font-semibold">🇬🇧 English</button>
+              <button type="button" onclick="selectFrenchSpeakers()" class="text-xs bg-purple-50 hover:bg-purple-100 text-purple-700 px-2.5 py-1 rounded-lg font-semibold">🇫🇷 French</button>
+              <button type="button" onclick="deselectAllContacts()" class="text-xs bg-red-50 hover:bg-red-100 text-red-700 px-2.5 py-1 rounded-lg font-semibold ml-auto">Clear</button>
+            </div>
+            <input type="text" id="recipient-search" placeholder="Filter contacts…" class="field mb-2 py-2" style="font-size:0.8rem;" oninput="filterAvailableContacts(this.value)">
+            <div id="available-contacts-list" class="border border-gray-200 rounded-xl overflow-y-auto" style="height:320px;"></div>
+          </div>
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <div class="text-xs font-semibold text-gray-500">Selected (<span id="selected-count">0</span>)</div>
+            </div>
+            <div class="mb-2"><input type="text" id="csv-recipients" placeholder="Or paste phone numbers, comma-separated" class="field py-1.5" style="font-size:0.75rem;" oninput="parseCsvRecipients(this.value)"></div>
+            <div id="selected-contacts-list" class="border border-gray-200 rounded-xl p-2 overflow-y-auto space-y-1.5" style="height:340px;"></div>
+          </div>
+        </div>
+      </div>
+      <div id="ctab-schedule-content" class="p-6 hidden">
+        <div class="grid gap-6" style="grid-template-columns:1fr 1fr;">
+          <div class="space-y-4">
+            <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm space-y-2">
+              <div class="flex justify-between"><span class="text-gray-500">Campaign</span><span class="font-semibold text-gray-800" id="summary-name">—</span></div>
+              <div class="flex justify-between"><span class="text-gray-500">Recipients</span><span class="font-semibold text-gray-800"><span id="summary-recipients">0</span> contacts</span></div>
+              <div class="flex justify-between"><span class="text-gray-500">Message length</span><span class="font-semibold text-gray-800" id="summary-length">0 chars</span></div>
+              <div class="flex justify-between"><span class="text-gray-500">Delivery</span><span class="font-semibold text-gray-800" id="summary-delivery">Immediate</span></div>
+              <div class="flex justify-between"><span class="text-gray-500">Recurring</span><span class="font-semibold text-gray-800" id="summary-recurring">None</span></div>
+            </div>
+            <div><label class="text-xs font-semibold text-gray-500 block mb-1">Schedule for later (optional)</label><input type="datetime-local" id="campaign-scheduledAt" class="field" onchange="updateScheduleSummary()"></div>
+            <div><label class="text-xs font-semibold text-gray-500 block mb-1">Recurring</label>
+              <select id="campaign-recurringType" class="field" onchange="updateRecurringUI()">
+                <option value="none">None (send once)</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </div>
+            <div id="recurring-day-wrap" class="hidden">
+              <label class="text-xs font-semibold text-gray-500 block mb-1" id="recurring-day-label">Day</label>
+              <input type="number" id="campaign-recurringDay" class="field" style="max-width:120px;" min="0" max="31">
+            </div>
+          </div>
+          <div><div class="text-xs font-semibold text-gray-500 mb-2">Preview</div><div class="wa-bg"><div class="wa-bubble" id="wa-preview-2">Your message will appear here…</div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-between items-center flex-shrink-0">
+      <button id="campaign-back-btn" onclick="advanceCampaignTab(-1)" class="hidden text-sm text-gray-600 px-4 py-2 rounded-xl border border-gray-200 hover:bg-white font-medium"><i class="fas fa-arrow-left text-xs mr-1.5"></i>Back</button>
+      <div class="ml-auto flex gap-2">
+        <button onclick="closeCampaignModal()" class="text-sm text-gray-600 px-4 py-2 rounded-xl border border-gray-200 hover:bg-white font-medium">Cancel</button>
+        <button id="campaign-next-btn" onclick="advanceCampaignTab(1)" class="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl text-sm font-semibold">Next <i class="fas fa-arrow-right text-xs"></i></button>
+        <button id="campaign-send-btn" onclick="submitCampaign()" class="hidden flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-xl text-sm font-semibold"><i class="fas fa-paper-plane text-xs"></i> Send Campaign</button>
+      </div>
+    </div>
+  </div>
+</div>
 
-    // Message modal functions
-    let currentRecipient = null;
+<!-- Campaign View Modal -->
+<div id="campaign-view-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+  <div class="modal-backdrop absolute inset-0" onclick="closeCampaignViewModal()"></div>
+  <div class="modal-box relative bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <h2 class="text-lg font-bold text-gray-900" id="view-campaign-name">Campaign</h2>
+      <button onclick="closeCampaignViewModal()" class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="p-6 space-y-4" id="view-campaign-body"></div>
+  </div>
+</div>
 
-    function openMessageModal(phoneNumber) {
-      currentRecipient = phoneNumber;
-      document.getElementById('message-modal').classList.remove('hidden');
-    }
+<!-- Delivery Report Modal -->
+<div id="delivery-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+  <div class="modal-backdrop absolute inset-0" onclick="closeDeliveryModal()"></div>
+  <div class="modal-box relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden" style="max-height:90vh;display:flex;flex-direction:column;">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
+      <h2 class="text-lg font-bold text-gray-900">Delivery Report — <span id="delivery-campaign-name" class="text-indigo-600"></span></h2>
+      <button onclick="closeDeliveryModal()" class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="overflow-y-auto flex-grow">
+      <table class="w-full text-left"><thead><tr class="border-b border-gray-100 bg-gray-50">
+        <th class="px-5 py-3 text-xs font-semibold text-gray-500">Phone</th>
+        <th class="px-5 py-3 text-xs font-semibold text-gray-500">Status</th>
+        <th class="px-5 py-3 text-xs font-semibold text-gray-500">Error</th>
+        <th class="px-5 py-3 text-xs font-semibold text-gray-500">Sent At</th>
+      </tr></thead><tbody id="delivery-report-body"></tbody></table>
+    </div>
+    <div class="px-6 py-3.5 border-t border-gray-100 bg-gray-50 flex justify-end gap-2 flex-shrink-0">
+      <button onclick="closeDeliveryModal()" class="text-sm text-gray-600 px-4 py-2 rounded-xl border border-gray-200 hover:bg-white font-medium">Close</button>
+      <button id="retry-failed-btn" onclick="retryCampaign()" class="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-xl text-sm font-semibold"><i class="fas fa-redo text-xs"></i> Retry Failed</button>
+    </div>
+  </div>
+</div>
 
-    function closeMessageModal() {
-      document.getElementById('message-modal').classList.add('hidden');
-      currentRecipient = null;
-    }
+<!-- Template Modal -->
+<div id="template-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+  <div class="modal-backdrop absolute inset-0" onclick="closeTemplateModal()"></div>
+  <div class="modal-box relative bg-white rounded-2xl shadow-2xl w-full overflow-hidden" style="max-width:780px;">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <h2 id="template-modal-title" class="text-lg font-bold text-gray-900">New Template</h2>
+      <button onclick="closeTemplateModal()" class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="p-6 grid gap-5" style="grid-template-columns:1fr 1fr;">
+      <div class="space-y-4">
+        <div><label class="text-xs font-semibold text-gray-500 block mb-1">Name *</label><input id="template-name" class="field" placeholder="Template name"></div>
+        <div><label class="text-xs font-semibold text-gray-500 block mb-1">Category</label>
+          <select id="template-category" class="field">
+            <option value="general">General</option><option value="promo">Promo</option><option value="support">Support</option><option value="onboarding">Onboarding</option>
+          </select>
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-1"><label class="text-xs font-semibold text-gray-500">Content *</label><span class="text-xs text-gray-400" id="tmpl-char-count">0 chars</span></div>
+          <div class="flex gap-1.5 mb-2">
+            <button type="button" onclick="insertTemplateVariable('{{name}}')" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-lg font-semibold">{{name}}</button>
+            <button type="button" onclick="insertTemplateVariable('{{phone}}')" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-lg font-semibold">{{phone}}</button>
+            <button type="button" onclick="insertTemplateVariable('{{date}}')" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-lg font-semibold">{{date}}</button>
+          </div>
+          <textarea id="template-content" rows="8" class="field resize-none" placeholder="Write your template here…" oninput="updateTmplPreview()"></textarea>
+        </div>
+      </div>
+      <div><div class="text-xs font-semibold text-gray-500 mb-2">Preview</div><div class="wa-bg"><div class="wa-bubble" id="tmpl-preview">Your template preview…</div></div></div>
+    </div>
+    <div class="px-6 py-3.5 border-t border-gray-100 bg-gray-50 flex justify-end gap-2">
+      <button onclick="closeTemplateModal()" class="text-sm text-gray-600 px-4 py-2 rounded-xl border border-gray-200 hover:bg-white font-medium">Cancel</button>
+      <button onclick="saveTemplate()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl text-sm font-semibold">Save Template</button>
+    </div>
+  </div>
+</div>
 
-    async function sendPrivateMessage() {
-      const message = document.getElementById('message-content').value;
-      if (!message || !currentRecipient) return;
+<!-- Tags Modal -->
+<div id="tags-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+  <div class="modal-backdrop absolute inset-0" onclick="closeTagsModal()"></div>
+  <div class="modal-box relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <h2 class="text-lg font-bold text-gray-900">Edit Tags</h2>
+      <button onclick="closeTagsModal()" class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="p-6">
+      <div class="text-xs text-gray-500 mb-3" id="tags-contact-label">—</div>
+      <div class="flex flex-wrap gap-1.5 mb-3 min-h-8 p-2 bg-gray-50 rounded-xl border border-gray-200" id="tags-chip-container"></div>
+      <div class="flex gap-2">
+        <input id="tag-input" type="text" class="field flex-grow" placeholder="Type a tag and press Enter…" onkeydown="handleTagInput(event)">
+        <button type="button" onclick="addTagFromInput()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold">Add</button>
+      </div>
+    </div>
+    <div class="px-6 py-3.5 border-t border-gray-100 bg-gray-50 flex justify-end gap-2">
+      <button onclick="closeTagsModal()" class="text-sm text-gray-600 px-4 py-2 rounded-xl border border-gray-200 hover:bg-white font-medium">Cancel</button>
+      <button onclick="saveTags()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl text-sm font-semibold">Save Tags</button>
+    </div>
+  </div>
+</div>
 
-      try {
-        const response = await fetch('/crm/send-message', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            phoneNumber: currentRecipient,
-            message
-          })
-        });
+<!-- User Modal -->
+<div id="user-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+  <div class="modal-backdrop absolute inset-0" onclick="closeUserModal()"></div>
+  <div class="modal-box relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <h2 id="user-modal-title" class="text-lg font-bold text-gray-900">Add User</h2>
+      <button onclick="closeUserModal()" class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="p-6 space-y-4">
+      <input type="hidden" id="user-modal-id">
+      <div><label class="text-xs font-semibold text-gray-500 block mb-1">Username *</label><input id="user-username" class="field" placeholder="username"></div>
+      <div id="user-password-wrap"><label class="text-xs font-semibold text-gray-500 block mb-1">Password *</label><input id="user-password" type="password" class="field" placeholder="password" autocomplete="new-password"></div>
+      <div><label class="text-xs font-semibold text-gray-500 block mb-1">Role</label>
+        <select id="user-role" class="field"><option value="admin">Admin</option><option value="user">User</option></select>
+      </div>
+    </div>
+    <div class="px-6 py-3.5 border-t border-gray-100 bg-gray-50 flex justify-end gap-2">
+      <button onclick="closeUserModal()" class="text-sm text-gray-600 px-4 py-2 rounded-xl border border-gray-200 hover:bg-white font-medium">Cancel</button>
+      <button onclick="saveUser()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl text-sm font-semibold">Save</button>
+    </div>
+  </div>
+</div>
 
-        if (!response.ok) throw new Error('Failed to send message');
+<!-- CSV Import Modal -->
+<div id="import-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+  <div class="modal-backdrop absolute inset-0" onclick="closeImportModal()"></div>
+  <div class="modal-box relative bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <h2 class="text-lg font-bold text-gray-900">Import Contacts (CSV)</h2>
+      <button onclick="closeImportModal()" class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="p-6">
+      <div class="text-xs text-gray-500 bg-gray-50 rounded-xl p-3 mb-4 font-mono leading-relaxed">
+        Format: <strong>phoneNumber,name</strong> (one per line)<br>Example:<br>+1234567890,John Doe<br>+0987654321,Jane<br>+1122334455
+      </div>
+      <textarea id="import-csv-content" rows="8" class="field resize-none" placeholder="Paste CSV content here…"></textarea>
+    </div>
+    <div class="px-6 py-3.5 border-t border-gray-100 bg-gray-50 flex justify-end gap-2">
+      <button onclick="closeImportModal()" class="text-sm text-gray-600 px-4 py-2 rounded-xl border border-gray-200 hover:bg-white font-medium">Cancel</button>
+      <button onclick="importContacts()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl text-sm font-semibold"><i class="fas fa-file-import text-xs mr-1.5"></i>Import</button>
+    </div>
+  </div>
+</div>
 
-        closeMessageModal();
-        document.getElementById('message-content').value = '';
-        alert('Message sent successfully!');
-      } catch (error) {
-        console.error('Error sending message:', error);
-        alert('Failed to send message');
-      }
-    }
+<!-- Message Modal -->
+<div id="message-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+  <div class="modal-backdrop absolute inset-0" onclick="closeMessageModal()"></div>
+  <div class="modal-box relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <div><h2 class="text-lg font-bold text-gray-900">Send Message</h2><div class="text-xs text-gray-400 mt-0.5" id="msg-recipient-label">—</div></div>
+      <button onclick="closeMessageModal()" class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="p-6"><textarea id="message-content" rows="5" placeholder="Write your message here…" class="field resize-none"></textarea></div>
+    <div class="px-6 py-3.5 border-t border-gray-100 bg-gray-50 flex justify-end gap-2">
+      <button onclick="closeMessageModal()" class="text-sm text-gray-600 px-4 py-2 rounded-xl border border-gray-200 hover:bg-white font-medium">Cancel</button>
+      <button onclick="sendPrivateMessage()" class="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-xl text-sm font-semibold"><i class="fas fa-paper-plane text-xs"></i> Send</button>
+    </div>
+  </div>
+</div>
 
-    // Template modal functions
-    let currentTemplateId = null;
-
-    function openNewTemplateModal() {
-      currentTemplateId = null;
-      document.getElementById('template-modal-title').textContent = 'New Template';
-      document.getElementById('template-name').value = '';
-      document.getElementById('template-content').value = '';
-      document.getElementById('template-modal').classList.remove('hidden');
-    }
-
-    function openEditTemplateModal(id, name, content) {
-      currentTemplateId = id;
-      document.getElementById('template-modal-title').textContent = 'Edit Template';
-      document.getElementById('template-name').value = name;
-      document.getElementById('template-content').value = content;
-      document.getElementById('template-modal').classList.remove('hidden');
-    }
-
-    function closeTemplateModal() {
-      document.getElementById('template-modal').classList.add('hidden');
-      currentTemplateId = null;
-    }
-
-    async function saveTemplate() {
-      const name = document.getElementById('template-name').value;
-      const content = document.getElementById('template-content').value;
-
-      if (!name || !content) {
-        alert('Please fill all fields');
-        return;
-      }
-
-      try {
-        const url = currentTemplateId
-          ? `/crm/templates/${currentTemplateId}`
-          : '/crm/templates';
-
-        const method = currentTemplateId ? 'PUT' : 'POST';
-
-        const response = await fetch(url, {
-          method,
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ name, content })
-        });
-
-        if (!response.ok) throw new Error('Failed to save template');
-
-        closeTemplateModal();
-        loadTemplates();
-        alert('Template saved successfully!');
-      } catch (error) {
-        console.error('Error saving template:', error);
-        alert('Failed to save template');
-      }
-    }
-
-    async function deleteTemplate(id) {
-      if (!confirm('Are you sure you want to delete this template?')) return;
-
-      try {
-        const response = await fetch(`/crm/templates/${id}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-
-        if (!response.ok) throw new Error('Failed to delete template');
-
-        loadTemplates();
-        alert('Template deleted successfully!');
-      } catch (error) {
-        console.error('Error deleting template:', error);
-        alert('Failed to delete template');
-      }
-    }
-
-    function useTemplate(id) {
-      // Find template in the list and insert into message field
-      const template = Array.from(document.querySelectorAll('#templates-container > div'))
-        .find(el => el.dataset.templateId === id);
-
-      if (template) {
-        const name = template.querySelector('h3').textContent;
-        const content = template.querySelector('p').textContent;
-
-        document.getElementById('campaign-message').value = content;
-        updateWhatsAppPreview();
-
-        // Switch to new campaign tab if not already there
-        if (document.getElementById('new-campaign-section').classList.contains('hidden')) {
-          document.getElementById('new-campaign-tab').click();
-        }
-      }
-    }
-
-    // Initialize preview
-    document.addEventListener('DOMContentLoaded', updateWhatsAppPreview);
-  </script>
+<script src="/public/js/admin.js"></script>
+<script>
+  function updateWaPreview() {
+    const msg = document.getElementById('campaign-message').value || 'Your message will appear here…';
+    document.getElementById('wa-preview').textContent = msg;
+    if (document.getElementById('wa-preview-2')) document.getElementById('wa-preview-2').textContent = msg;
+    document.getElementById('msg-char-count').textContent = document.getElementById('campaign-message').value.length + ' chars';
+    updateScheduleSummary();
+  }
+  function updateTmplPreview() {
+    const c = document.getElementById('template-content').value;
+    document.getElementById('tmpl-preview').textContent = c || 'Your template preview…';
+    document.getElementById('tmpl-char-count').textContent = c.length + ' chars';
+  }
+  function insertVariable(v) {
+    const ta = document.getElementById('campaign-message');
+    const s = ta.selectionStart, e = ta.selectionEnd;
+    ta.value = ta.value.substring(0, s) + v + ta.value.substring(e);
+    ta.selectionStart = ta.selectionEnd = s + v.length;
+    ta.focus(); updateWaPreview();
+  }
+  function insertTemplateVariable(v) {
+    const ta = document.getElementById('template-content');
+    const s = ta.selectionStart, e = ta.selectionEnd;
+    ta.value = ta.value.substring(0, s) + v + ta.value.substring(e);
+    ta.selectionStart = ta.selectionEnd = s + v.length;
+    ta.focus(); updateTmplPreview();
+  }
+  function applyTemplateToModal() {
+    const sel = document.getElementById('template-selector');
+    const content = sel.options[sel.selectedIndex]?.dataset?.content;
+    if (content) { document.getElementById('campaign-message').value = content; updateWaPreview(); sel.value = ''; }
+  }
+  function updateScheduleSummary() {
+    const name = document.getElementById('campaign-name').value;
+    const msg = document.getElementById('campaign-message').value;
+    const scheduled = document.getElementById('campaign-scheduledAt')?.value;
+    const sel = document.querySelectorAll('#selected-contacts-list .sel-chip').length;
+    const recurring = document.getElementById('campaign-recurringType')?.value || 'none';
+    document.getElementById('summary-name').textContent = name || '—';
+    document.getElementById('summary-recipients').textContent = sel;
+    document.getElementById('summary-length').textContent = msg.length + ' chars';
+    document.getElementById('summary-delivery').textContent = scheduled ? new Date(scheduled).toLocaleString() : 'Immediate';
+    document.getElementById('summary-recurring').textContent = recurring === 'none' ? 'None' : recurring.charAt(0).toUpperCase() + recurring.slice(1);
+  }
+  function updateRecurringUI() {
+    const type = document.getElementById('campaign-recurringType').value;
+    const wrap = document.getElementById('recurring-day-wrap');
+    const label = document.getElementById('recurring-day-label');
+    if (type === 'weekly') { wrap.classList.remove('hidden'); label.textContent = 'Day of week (0=Sun … 6=Sat)'; document.getElementById('campaign-recurringDay').max = 6; document.getElementById('campaign-recurringDay').min = 0; }
+    else if (type === 'monthly') { wrap.classList.remove('hidden'); label.textContent = 'Day of month (1–31)'; document.getElementById('campaign-recurringDay').max = 31; document.getElementById('campaign-recurringDay').min = 1; }
+    else { wrap.classList.add('hidden'); }
+    updateScheduleSummary();
+  }
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('campaign-name')?.addEventListener('input', updateScheduleSummary);
+    document.getElementById('audit-action-filter')?.addEventListener('keydown', e => { if (e.key === 'Enter') loadAuditLogs(); });
+  });
+</script>
 </body>
-
 </html>

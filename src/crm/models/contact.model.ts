@@ -11,6 +11,8 @@ export interface IContact extends Document {
     lastInteraction: Date;
     interactionsCount: number;
     tags: string[];
+    blocked: boolean;
+    archived: boolean;
 }
 
 const ContactSchema = new Schema<IContact>({
@@ -23,7 +25,9 @@ const ContactSchema = new Schema<IContact>({
     detectedRegion: String,
     lastInteraction: { type: Date, default: Date.now },
     interactionsCount: { type: Number, default: 1 },
-    tags: [{ type: String }]
+    tags: [{ type: String }],
+    blocked: { type: Boolean, default: false },
+    archived: { type: Boolean, default: false }
 }, { timestamps: true });
 
 export const ContactModel = mongoose.model<IContact>('Contact', ContactSchema);

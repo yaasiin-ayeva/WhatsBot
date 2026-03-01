@@ -15,7 +15,7 @@ export const YTDL_BINARY_PATH = path.join(YTDL_DIR, 'yt-dlp-bin');
 export const MAX_STREAMING_FILE_SIZE = 150 * 1024 * 1024; // 150 MB
 export const DOWNLOAD_DIR = path.join(__dirname, '../../public/downloads');
 
-export type TSocialNetwork = "tiktok" | "instagram" | "twitter" | "facebook" | "pinterest" | "youtube" | "snapchat" | "linkedin";
+export type TSocialNetwork = "tiktok" | "instagram" | "twitter" | "facebook" | "pinterest" | "youtube" | "snapchat" | "linkedin" | "reddit" | "twitch" | "vimeo" | "dailymotion" | "threads" | "rumble" | "bilibili";
 export type TDownloadMethod = "btch" | "ytdlp";
 
 export interface ILinkedInVideo {
@@ -204,7 +204,14 @@ const socialNetworkPatterns: { [key in TSocialNetwork]: RegExp } = {
     pinterest: /^(?:https?:\/\/)?(?:www\.)?pinterest\.com|pin\.it\/.+$/i,
     youtube: /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/|youtu\.be\/).+$/i,
     snapchat: /^(?:https?:\/\/)?(?:www\.)?(snapchat\.com|t\.snapchat\.com)\/.+$/i,
-    linkedin: /^(?:https?:\/\/)?(?:www\.)?linkedin\.com\/.+$/i
+    linkedin: /^(?:https?:\/\/)?(?:www\.)?linkedin\.com\/.+$/i,
+    reddit: /^(?:https?:\/\/)?(?:www\.)?(reddit\.com|v\.redd\.it)\/.+$/i,
+    twitch: /^(?:https?:\/\/)?(?:www\.)?(twitch\.tv|clips\.twitch\.tv)\/.+$/i,
+    vimeo: /^(?:https?:\/\/)?(?:www\.)?vimeo\.com\/.+$/i,
+    dailymotion: /^(?:https?:\/\/)?(?:www\.)?(dailymotion\.com|dai\.ly)\/.+$/i,
+    threads: /^(?:https?:\/\/)?(?:www\.)?threads\.net\/.+$/i,
+    rumble: /^(?:https?:\/\/)?(?:www\.)?rumble\.com\/.+$/i,
+    bilibili: /^(?:https?:\/\/)?(?:www\.)?(bilibili\.com|b23\.tv)\/.+$/i,
 };
 
 export const identifySocialNetwork = (url: string): TSocialNetwork | null => {
@@ -274,7 +281,15 @@ const btchDownloaders: { [key in TSocialNetwork]: (url: string) => Promise<strin
         } catch (error) {
             return '';
         }
-    }
+    },
+    // New platforms — no btch support, yt-dlp fallback handles these
+    reddit: async () => '',
+    twitch: async () => '',
+    vimeo: async () => '',
+    dailymotion: async () => '',
+    threads: async () => '',
+    rumble: async () => '',
+    bilibili: async () => '',
 };
 
 const ytdlpDownloaders: { [key in TSocialNetwork]: (url: string) => Promise<string> } = {
@@ -287,32 +302,45 @@ const ytdlpDownloaders: { [key in TSocialNetwork]: (url: string) => Promise<stri
     youtube: (url) => YtDlpDownloader.getInstance().download(url, 'best[ext=mp4]/best'),
     snapchat: (url) => YtDlpDownloader.getInstance().download(url),
     pinterest: (url) => YtDlpDownloader.getInstance().download(url),
+    reddit: (url) => YtDlpDownloader.getInstance().download(url),
+    twitch: (url) => YtDlpDownloader.getInstance().download(url),
+    vimeo: (url) => YtDlpDownloader.getInstance().download(url),
+    dailymotion: (url) => YtDlpDownloader.getInstance().download(url),
+    threads: (url) => YtDlpDownloader.getInstance().download(url),
+    rumble: (url) => YtDlpDownloader.getInstance().download(url),
+    bilibili: (url) => YtDlpDownloader.getInstance().download(url),
 };
 
 export const downloader = async (
     url: string,
-    type: TSocialNetwork,
+    type: TSocialNetwork | null,
     method: TDownloadMethod = null
 ): Promise<string> => {
-    try {
-        let downloadFunction = ytdlpDownloaders[type];
+    // Unknown platform → go straight to yt-dlp
+    if (!type) {
+        logger.info(`Unknown platform, attempting yt-dlp for: ${url}`);
+        return YtDlpDownloader.getInstance().download(url);
+    }
 
-        if (method) {
-            downloadFunction = method === "btch" ? btchDownloaders[type] : ytdlpDownloaders[type];
-        } else {
-            const exceptedProviders = [
-                // "tiktok",
-                "instagram",
-                "pinterest"
-            ];
-            if (exceptedProviders.includes(type)) {
-                downloadFunction = btchDownloaders[type];
-            }
+    const btchPrimary = ["instagram", "pinterest"];
+    const useBtch = method ? method === "btch" : btchPrimary.includes(type);
+
+    if (useBtch) {
+        try {
+            const result = await btchDownloaders[type](url);
+            if (result) return result;
+            logger.warn(`btch returned empty for ${type}, falling back to yt-dlp`);
+        } catch (err) {
+            logger.warn(`btch failed for ${type}, falling back to yt-dlp: ${err.message}`);
         }
-        return await downloadFunction(url);
+        return YtDlpDownloader.getInstance().download(url);
+    }
+
+    try {
+        return await ytdlpDownloaders[type](url);
     } catch (error) {
-        logger.error(`Download failed for ${url} using ${method}:`, error);
-        throw new Error(`Failed to download from ${type} using ${method}: ${error.message}`);
+        logger.error(`yt-dlp failed for ${type} (${url}):`, error);
+        throw new Error(`Failed to download from ${type}: ${error.message}`);
     }
 };
 

@@ -1,4 +1,5 @@
 import winston = require("winston");
+import { createLogBufferStream } from '../utils/log-buffer.util';
 
 const enumerateErrorFormat = winston.format((info) => {
     if (info instanceof Error) {
@@ -22,6 +23,13 @@ const logger = winston.createLogger({
         }),
         new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
         new winston.transports.File({ filename: 'logs/combined.log' }),
+        new winston.transports.Stream({
+            stream: createLogBufferStream(),
+            format: winston.format.combine(
+                winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+                winston.format.json()
+            )
+        }),
     ],
 });
 

@@ -9,6 +9,9 @@ export interface ICampaign extends Document {
   sentCount: number;
   failedCount: number;
   createdBy: mongoose.Types.ObjectId;
+  recurringType: 'none' | 'daily' | 'weekly' | 'monthly';
+  recurringDay?: number;
+  deliveryReport: Array<{ phone: string; status: 'sent' | 'failed' | 'skipped'; error?: string; sentAt: Date }>;
 }
 
 const CampaignSchema = new Schema<ICampaign>({
@@ -19,7 +22,15 @@ const CampaignSchema = new Schema<ICampaign>({
   contacts: [{ type: String }],
   sentCount: { type: Number, default: 0 },
   failedCount: { type: Number, default: 0 },
-  createdBy: { type: Schema.Types.ObjectId, ref: 'User' }
+  createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
+  recurringType: { type: String, enum: ['none', 'daily', 'weekly', 'monthly'], default: 'none' },
+  recurringDay: { type: Number },
+  deliveryReport: [{
+    phone: String,
+    status: { type: String, enum: ['sent', 'failed', 'skipped'] },
+    error: String,
+    sentAt: Date
+  }]
 }, { timestamps: true });
 
 export const CampaignModel = mongoose.model<ICampaign>('Campaign', CampaignSchema);

@@ -15,6 +15,11 @@ const templateSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
+    },
+    category: {
+        type: String,
+        default: 'general',
+        trim: true
     }
 }, {
     timestamps: true

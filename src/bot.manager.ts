@@ -8,6 +8,7 @@ import { isUrl } from "./utils/common.util";
 import { identifySocialNetwork, YtDlpDownloader } from "./utils/get.util";
 import { onboard } from "./utils/onboarding.util";
 import { ContactModel } from "./crm/models/contact.model";
+import { SettingsModel } from "./crm/models/settings.model";
 const qrcode = require('qrcode-terminal');
 
 export class BotManager {
@@ -96,6 +97,35 @@ export class BotManager {
         } catch (error) {
             logger.error(`Client initialization error: ${error}`);
         }
+    }
+
+    public getStatus(): { status: string; phone?: string; pushName?: string; qrCode?: string; uptime: number } {
+        const info = this.client?.info;
+        if (info) {
+            return {
+                status: 'connected',
+                phone: info.wid?.user,
+                pushName: info.pushname,
+                uptime: process.uptime()
+            };
+        }
+        if (this.qrData.qrCodeData && !this.qrData.qrScanned) {
+            return { status: 'scanning', qrCode: this.qrData.qrCodeData, uptime: process.uptime() };
+        }
+        return { status: 'disconnected', uptime: process.uptime() };
+    }
+
+    public async reconnect(): Promise<void> {
+        try {
+            this.qrData.qrScanned = false;
+            this.qrData.authenticated = false;
+            this.qrData.qrCodeData = '';
+            await this.client.destroy();
+        } catch (_) { /* ignore destroy errors */ }
+        setTimeout(() => {
+            logger.info('Reconnecting client...');
+            this.client.initialize();
+        }, 1000);
     }
 
     private async trackContact(user: WAWebJS.Contact, message: Message, userI18n: UserI18n) {
@@ -190,7 +220,7 @@ export class BotManager {
         const url = content.trim().split(/ +/)[0];
         const socialNetwork = identifySocialNetwork(url);
 
-        if (url && isUrl(url) && socialNetwork) {
+        if (url && isUrl(url)) {
             await commands["get"].run(message, null, url, socialNetwork, userI18n);
             return;
         }
@@ -201,8 +231,16 @@ export class BotManager {
         const command = args.shift()?.toLowerCase();
 
         if (command && command in commands) {
+            const settings = await SettingsModel.findOne().lean();
+            if (settings?.disabledCommands?.includes(command)) {
+                chat.sendMessage(`> 🤖 ${userI18n.t('unknownCommand', { command, prefix: this.prefix })}`);
+                return;
+            }
             if (chat) await chat.sendStateTyping();
             await commands[command].run(message, args, userI18n);
+            SettingsModel.findOneAndUpdate(
+                {}, { $inc: { [`commandStats.${command}`]: 1 } }, { upsert: true }
+            ).catch(() => {});
         } else {
             const errorMessage = userI18n.t('unknownCommand', {
                 command: command || '',

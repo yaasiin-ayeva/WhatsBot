@@ -23,20 +23,15 @@ export const run = async (message: Message, args: string[] = null, _videoUrl = n
 
     if (!socialNetwork) {
         socialNetwork = identifySocialNetwork(_videoUrl);
-        if (!socialNetwork) {
-            await sendErrorMessage(message, userI18n.t('getMessages.unsupportedNetwork'), userI18n);
-            return;
-        }
     }
 
     let mediaPath: string | null = null;
     let convertedFilePath: string | null = null;
 
     try {
-        const downloadingMessage = userI18n.t('getMessages.downloading', {
-            network: socialNetwork,
-            size: (MAX_STREAMING_FILE_SIZE / 1024 / 1024).toString()
-        });
+        const downloadingMessage = socialNetwork
+            ? userI18n.t('getMessages.downloading', { network: socialNetwork, size: (MAX_STREAMING_FILE_SIZE / 1024 / 1024).toString() })
+            : userI18n.t('getMessages.downloadingUnknown', { size: (MAX_STREAMING_FILE_SIZE / 1024 / 1024).toString() });
 
         await message.reply(`> WhatsBot 🤖 ${downloadingMessage}`);
 

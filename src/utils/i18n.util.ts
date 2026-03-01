@@ -56,6 +56,7 @@ export const TRANSLATIONS = {
             invalidUrl: "Veuillez fournir une URL valide pour la vidéo.",
             unsupportedNetwork: "Réseau social non pris en charge.",
             downloading: "Récupération de votre fichier depuis {network} (Taille maximale autorisée {size} Mo)...",
+            downloadingUnknown: "Récupération de votre fichier... (Taille maximale autorisée {size} Mo)...",
             downloadError: "Erreur lors du téléchargement du fichier.",
             caption: "Téléchargez vos vidéos TikTok, Instagram, Twitter, Facebook, LinkedIn sur WhatsApp sans filigrane. Envoyez simplement le lien de la vidéo à ce bot https://wa.me/qr/SBHRATABRAZVA1",
             captions: [
@@ -126,6 +127,7 @@ export const TRANSLATIONS = {
             invalidUrl: "Please provide a valid URL for the video.",
             unsupportedNetwork: "Unsupported social network.",
             downloading: "Getting your file from {network} (Max file size allowed {size} MB)...",
+            downloadingUnknown: "Getting your file... (Max file size allowed {size} MB)...",
             downloadError: "Error during file download.",
             caption: "Download your TikTok, Instagram, Twitter, Facebook, LinkedIn videos on WhatsApp without watermark. Just send the video link to this bot https://wa.me/qr/SBHRATABRAZVA1",
             captions: [

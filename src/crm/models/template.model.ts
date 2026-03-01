@@ -20,6 +20,14 @@ const templateSchema = new mongoose.Schema({
         type: String,
         default: 'general',
         trim: true
+    },
+    pinned: { type: Boolean, default: false },
+    usageCount: { type: Number, default: 0 },
+    revision: { type: Number, default: 0 },
+    approvalStatus: {
+        type: String,
+        enum: ['draft', 'pending', 'approved'],
+        default: 'draft'
     }
 }, {
     timestamps: true

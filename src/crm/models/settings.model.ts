@@ -22,6 +22,19 @@ const settingsSchema = new mongoose.Schema({
         type: Map,
         of: String,
         default: {}
+    },
+    inboundApiKey: {
+        type: String,
+        default: ''
+    },
+    smtp: {
+        host:     { type: String, default: '' },
+        port:     { type: Number, default: 587 },
+        secure:   { type: Boolean, default: false },
+        user:     { type: String, default: '' },
+        pass:     { type: String, default: '' },
+        fromName: { type: String, default: 'WhatsBot' },
+        fromEmail:{ type: String, default: '' }
     }
 }, {
     timestamps: true

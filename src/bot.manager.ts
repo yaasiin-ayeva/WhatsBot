@@ -9,7 +9,25 @@ import { identifySocialNetwork, YtDlpDownloader } from "./utils/get.util";
 import { onboard } from "./utils/onboarding.util";
 import { ContactModel } from "./crm/models/contact.model";
 import { SettingsModel } from "./crm/models/settings.model";
+import { MessageModel } from "./crm/models/message.model";
+import { ScoreRuleModel } from "./crm/models/score-rule.model";
+import { CampaignModel } from "./crm/models/campaign.model";
+import { messageEmitter } from "./utils/message-emitter.util";
+import { AutoReplyModel } from "./crm/models/auto-reply.model";
+import { fireEvent } from "./utils/fire-event.util";
 const qrcode = require('qrcode-terminal');
+
+// Per-contact auto-reply cooldown: phone → last triggered timestamp
+const autoReplyCooldown = new Map<string, Map<string, Date>>();
+
+async function applyScore(phoneNumber: string, action: string) {
+    try {
+        const rule = await ScoreRuleModel.findOne({ action, enabled: true }).lean();
+        if (rule) {
+            await ContactModel.updateOne({ phoneNumber }, { $inc: { score: rule.points } });
+        }
+    } catch (_) { /* non-critical */ }
+}
 
 export class BotManager {
     private static instance: BotManager;
@@ -128,8 +146,11 @@ export class BotManager {
         }, 1000);
     }
 
-    private async trackContact(user: WAWebJS.Contact, message: Message, userI18n: UserI18n) {
+    private async trackContact(user: WAWebJS.Contact, _message: Message, userI18n: UserI18n) {
         try {
+            const existing = await ContactModel.findOne({ phoneNumber: user.number }).lean();
+            const isNew = !existing;
+
             await ContactModel.findOneAndUpdate(
                 { phoneNumber: user.number },
                 {
@@ -143,6 +164,12 @@ export class BotManager {
                 },
                 { upsert: true, new: true }
             );
+
+            if (isNew) {
+                await applyScore(user.number, 'first_interaction');
+                fireEvent('contact.new', { phoneNumber: user.number, name: user.name || user.pushname }).catch(() => {});
+            }
+            await applyScore(user.number, 'message_received');
         } catch (error) {
             logger.error('Failed to track contact:', error);
         }
@@ -173,6 +200,40 @@ export class BotManager {
 
             if (message.from === this.client.info.wid._serialized || message.isStatus) {
                 return;
+            }
+
+            // Persist incoming message for inbox
+            if (!user.isMe) {
+                const msgDoc = await MessageModel.create({
+                    phoneNumber: user.number,
+                    body: content,
+                    type: 'text',
+                    direction: 'in',
+                    sentVia: 'whatsapp',
+                    read: false,
+                    timestamp: new Date()
+                });
+                messageEmitter.emit('message', msgDoc.toObject());
+
+                // Fire integration event
+                fireEvent('message.received', { phoneNumber: user.number, body: content }).catch(() => {});
+
+                // Track campaign reply (mark first unacknowledged delivery for this phone)
+                const updated = await CampaignModel.updateOne(
+                    {
+                        'deliveryReport.phone': user.number,
+                        'deliveryReport.status': 'sent',
+                        'deliveryReport.repliedAt': { $exists: false }
+                    },
+                    { $set: { 'deliveryReport.$.repliedAt': new Date() } }
+                );
+                if (updated.modifiedCount > 0) {
+                    await applyScore(user.number, 'campaign_reply');
+                }
+
+                // Check auto-reply rules
+                const replied = await this.checkAutoReply(user.number, content, chat);
+                if (replied) return;
             }
 
             await Promise.all([
@@ -216,6 +277,78 @@ export class BotManager {
         await commands[AppConfig.instance.getDefaultAudioAiCommand()].run(message, args, userI18n);
     }
 
+    private async checkAutoReply(phoneNumber: string, content: string, chat: any): Promise<boolean> {
+        try {
+            const rules = await AutoReplyModel.find({ enabled: true }).sort({ priority: -1 }).lean();
+            for (const rule of rules) {
+                // Cooldown check
+                const cooldownKey = String(rule._id);
+                const phoneCooldowns = autoReplyCooldown.get(phoneNumber);
+                if (phoneCooldowns) {
+                    const lastTriggered = phoneCooldowns.get(cooldownKey);
+                    if (lastTriggered) {
+                        const elapsedMs = Date.now() - lastTriggered.getTime();
+                        if (elapsedMs < rule.cooldownMinutes * 60 * 1000) continue;
+                    }
+                }
+
+                // Match check
+                const lc = content.toLowerCase();
+                const trigger = rule.trigger.toLowerCase();
+                let matched = false;
+                if (rule.matchType === 'exact') matched = lc === trigger;
+                else if (rule.matchType === 'contains') matched = lc.includes(trigger);
+                else if (rule.matchType === 'startsWith') matched = lc.startsWith(trigger);
+                else if (rule.matchType === 'regex') {
+                    try { matched = new RegExp(rule.trigger, 'i').test(content); } catch { matched = false; }
+                }
+
+                if (!matched) continue;
+
+                let replyText = rule.response;
+
+                if (rule.useAI && rule.aiProvider !== 'none') {
+                    try {
+                        if (rule.aiProvider === 'openai') {
+                            const { default: OpenAI } = await import('openai');
+                            const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+                            const completion = await client.chat.completions.create({
+                                model: 'gpt-4o-mini',
+                                messages: [
+                                    { role: 'system', content: rule.aiPrompt || 'You are a helpful WhatsApp assistant. Reply briefly.' },
+                                    { role: 'user', content }
+                                ],
+                                max_tokens: 300
+                            });
+                            replyText = completion.choices[0]?.message?.content || rule.response;
+                        } else if (rule.aiProvider === 'gemini') {
+                            const { GoogleGenerativeAI } = await import('@google/generative-ai');
+                            const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+                            const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+                            const result = await model.generateContent(`${rule.aiPrompt}\n\nUser: ${content}`);
+                            replyText = result.response.text() || rule.response;
+                        }
+                    } catch (aiErr) {
+                        logger.warn('Auto-reply AI generation failed, using static response:', aiErr);
+                        replyText = rule.response;
+                    }
+                }
+
+                if (replyText) {
+                    await chat.sendMessage(replyText);
+                    // Update cooldown
+                    if (!autoReplyCooldown.has(phoneNumber)) autoReplyCooldown.set(phoneNumber, new Map());
+                    autoReplyCooldown.get(phoneNumber)!.set(cooldownKey, new Date());
+                    fireEvent('autoreply.triggered', { phoneNumber, rule: rule.name, trigger: rule.trigger }).catch(() => {});
+                    return true;
+                }
+            }
+        } catch (err) {
+            logger.error('checkAutoReply error:', err);
+        }
+        return false;
+    }
+
     private async handleTextMessage(message: Message, content: string, userI18n: UserI18n, chat: any) {
         const url = content.trim().split(/ +/)[0];
         const socialNetwork = identifySocialNetwork(url);
@@ -238,6 +371,8 @@ export class BotManager {
             }
             if (chat) await chat.sendStateTyping();
             await commands[command].run(message, args, userI18n);
+            const phoneNumber = message.from.split('@')[0];
+            applyScore(phoneNumber, 'command_used').catch(() => {});
             SettingsModel.findOneAndUpdate(
                 {}, { $inc: { [`commandStats.${command}`]: 1 } }, { upsert: true }
             ).catch(() => {});

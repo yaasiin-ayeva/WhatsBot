@@ -13,6 +13,7 @@ export interface IContact extends Document {
     tags: string[];
     blocked: boolean;
     archived: boolean;
+    score: number;
 }
 
 const ContactSchema = new Schema<IContact>({
@@ -27,7 +28,8 @@ const ContactSchema = new Schema<IContact>({
     interactionsCount: { type: Number, default: 1 },
     tags: [{ type: String }],
     blocked: { type: Boolean, default: false },
-    archived: { type: Boolean, default: false }
+    archived: { type: Boolean, default: false },
+    score: { type: Number, default: 0 }
 }, { timestamps: true });
 
 export const ContactModel = mongoose.model<IContact>('Contact', ContactSchema);

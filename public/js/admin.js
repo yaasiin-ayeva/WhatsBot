@@ -56,6 +56,7 @@ document.addEventListener('DOMContentLoaded', function () {
       'chats-tab':              { section: 'chats-section',              onLoad: loadChats },
       'scoring-tab':            { section: 'scoring-section',            onLoad: loadScoring },
       'scheduled-messages-tab': { section: 'scheduled-messages-section', onLoad: loadScheduledMessages },
+      'widget-tab':             { section: 'widget-section',             onLoad: loadWidgetSettings },
       'integrations-tab':       { section: 'integrations-section',       onLoad: loadIntegrations },
       'groups-tab':             { section: 'groups-section',             onLoad: loadGroups },
     };

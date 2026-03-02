@@ -44,8 +44,9 @@ window.openScheduledModal = function () {
   document.getElementById('sched-phone').value = '';
   document.getElementById('sched-message').value = '';
   document.getElementById('sched-at').value = '';
-  document.getElementById('sched-contact-name').classList.add('hidden');
-  document.getElementById('scheduled-modal').classList.remove('hidden');
+  const nameEl = document.getElementById('sched-contact-name');
+  if (nameEl) nameEl.classList.add('hidden');
+  document.getElementById('scheduled-modal').style.display = 'flex';
 };
 
 window.openScheduledContactPicker = function () {
@@ -65,7 +66,7 @@ window.saveScheduledMessage = async function () {
   if (new Date(scheduledAt) <= new Date()) return showToast('Scheduled time must be in the future', 'error');
   try {
     await apiFetch('/crm/scheduled-messages', 'POST', { phoneNumber, message, scheduledAt });
-    document.getElementById('scheduled-modal').classList.add('hidden');
+    document.getElementById('scheduled-modal').style.display = 'none';
     showToast('Message scheduled', 'success');
     loadScheduledMessages();
   } catch {
@@ -82,4 +83,8 @@ window.deleteScheduledMessage = async function (id) {
   } catch {
     showToast('Failed to cancel message', 'error');
   }
+};
+
+window.closeScheduledModal = function () {
+  document.getElementById('scheduled-modal').style.display = 'none';
 };

@@ -13,8 +13,6 @@ class EnvConfig {
     static CHAT_GPT_API_KEY = process.env.CHAT_GPT_API_KEY;
     static PUPPETEER_EXECUTABLE_PATH = process.env.PUPPETEER_EXECUTABLE_PATH;
     static OPENWEATHERMAP_API_KEY = process.env.OPENWEATHERMAP_API_KEY;
-    static SPEECHIFY_API_KEY = process.env.SPEECHIFY_API_KEY;
-    static ASSEMBLYAI_API_KEY = process.env.ASSEMBLYAI_API_KEY;
     static ENV = process.env.ENV;
     static PORT = process.env.PORT;
     static MONGODB_URI = process.env.MONGODB_URI;
@@ -43,12 +41,6 @@ class EnvConfig {
         }
         if (!this.OPENWEATHERMAP_API_KEY) {
             throw new Error("Environment variable OPENWEATHERMAP_API_KEY is missing. Please provide a valid OpenWeatherMap API key.");
-        }
-        if (!this.SPEECHIFY_API_KEY) {
-            throw new Error("Environment variable SPEECHIFY_API_KEY is missing. Please provide a valid Speechify API key.");
-        }
-        if (!this.ASSEMBLYAI_API_KEY) {
-            throw new Error("Environment variable ASSEMBLYAI_API_KEY is missing. Please provide a valid AssemblyAI API key.");
         }
         if (!this.ENV) {
             throw new Error("Environment variable ENV is missing. Please provide a valid ENV.");

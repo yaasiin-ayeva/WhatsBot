@@ -6,6 +6,7 @@ import { UserI18n } from "./utils/i18n.util";
 import commands from "./commands";
 import { isUrl } from "./utils/common.util";
 import { identifySocialNetwork, YtDlpDownloader } from "./utils/get.util";
+import { initializeSherpaModels } from "./utils/sherpa-model-downloader.util";
 import { onboard } from "./utils/onboarding.util";
 import { ContactModel } from "./crm/models/contact.model";
 import { SettingsModel } from "./crm/models/settings.model";
@@ -72,6 +73,12 @@ export class BotManager {
             await YtDlpDownloader.getInstance().initialize();
         } catch (error) {
             logger.error("Downloader check failed:", error);
+        }
+
+        try {
+            await initializeSherpaModels();
+        } catch (error) {
+            logger.error("sherpa-onnx model check failed:", error);
         }
     }
 

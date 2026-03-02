@@ -25,7 +25,7 @@
 ## Features
 
 ### AI-Powered Conversations
-- **Voice Chat**: Send voice messages and get audio responses powered by Gemini AI + AssemblyAI + Speechify
+- **Voice Chat**: Send voice messages and get audio responses powered by Gemini AI + local `sherpa-onnx`
 - **Gemini AI Chat**: Advanced AI conversations with Google's Gemini model (`/chat`)
 - **ChatGPT Integration**: Alternative AI powered by OpenAI's GPT models (`/gpt`)
 
@@ -194,13 +194,12 @@ CHAT_GPT_API_KEY=your_api_key
 
 #### Speech Services
 ```bash
-# AssemblyAI (Speech-to-Text for voice messages)
-ASSEMBLYAI_API_KEY=your_key_here
-# Get from: https://www.assemblyai.com/docs
-
-# Speechify (Text-to-Speech for audio responses)
-SPEECHIFY_API_KEY=your_key_here
-# Get from: https://console.sws.speechify.com/api-keys
+# sherpa-onnx (Local speech for voice messages)
+SHERPA_ONNX_ASR_ENCODER_PATH=/absolute/path/to/asr/encoder.onnx
+SHERPA_ONNX_ASR_DECODER_PATH=/absolute/path/to/asr/decoder.onnx
+SHERPA_ONNX_TTS_MODEL_PATH=/absolute/path/to/tts/model.onnx
+SHERPA_ONNX_TTS_TOKENS_PATH=/absolute/path/to/tts/tokens.txt
+SHERPA_ONNX_TTS_LEXICON_PATH=/absolute/path/to/tts/lexicon.txt
 ```
 
 #### Other Services
@@ -309,8 +308,8 @@ WhatsBot/
 
 ### AI & Speech
 - **AI Models**: Google Gemini AI, OpenAI GPT
-- **Speech-to-Text**: AssemblyAI
-- **Text-to-Speech**: Speechify
+- **Speech-to-Text**: sherpa-onnx
+- **Text-to-Speech**: sherpa-onnx
 - **Language Detection**: langdetect
 
 ### Media Processing
@@ -373,7 +372,7 @@ curl http://localhost:3000/health
 ### In Progress
 - [ ] Social media downloads (6/8 platforms done)
 - [ ] Queue system for concurrent downloads
-- [ ] Refactor to use whisper-node instead of AssemblyAI
+- [x] Local voice stack via sherpa-onnx
 - [ ] Support for any file type downloads (not just videos)
 
 ### Planned
@@ -411,7 +410,7 @@ This project is licensed under the  [MIT License](LICENSE).
 - [whatsapp-web.js](https://github.com/pedroslopez/whatsapp-web.js) - WhatsApp Web API wrapper
 - [Google Gemini](https://ai.google.dev/) - AI model
 - [OpenAI](https://openai.com/) - ChatGPT API
-- [AssemblyAI](https://www.assemblyai.com/) - Speech-to-text
+- [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) - Local speech-to-text and text-to-speech
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp) - Video downloader
 - All [contributors](https://github.com/yaasiin-ayeva/WhatsBot/graphs/contributors) who helped improve this project
 

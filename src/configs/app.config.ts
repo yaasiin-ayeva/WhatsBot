@@ -83,10 +83,6 @@ export class AppConfig {
         return `http://api.weatherapi.com/v1/current.json?key=${api_key}&q=${city}&lang=${lang}`;
     }
 
-    public getSpeechifyBaseUrl(): string {
-        return "https://api.sws.speechify.com/v1/audio/speech";
-    }
-
     public getDefaultAudioAiCommand(): string {
         return "chat";
     }

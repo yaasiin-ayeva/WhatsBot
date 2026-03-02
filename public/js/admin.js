@@ -37,6 +37,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // ─── Boot ────────────────────────────────────────────────
   checkAuth();
   initTabSwitching();
+  initSidebarToggle();
   initSearchHandlers();
   initFormHandlers();
   loadContacts();
@@ -61,6 +62,17 @@ document.addEventListener('DOMContentLoaded', function () {
     localStorage.removeItem('token');
     redirect('/admin/login');
   });
+
+  // ─── Sidebar Toggle ───────────────────────────────────────
+  function initSidebarToggle() {
+    if (localStorage.getItem('sidebarCollapsed') === 'true') {
+      document.body.classList.add('sidebar-collapsed');
+    }
+    document.getElementById('sidebar-toggle').addEventListener('click', () => {
+      const collapsed = document.body.classList.toggle('sidebar-collapsed');
+      localStorage.setItem('sidebarCollapsed', collapsed);
+    });
+  }
 
   // ─── Tab Switching ────────────────────────────────────────
   function initTabSwitching() {
@@ -1459,8 +1471,11 @@ document.addEventListener('DOMContentLoaded', function () {
       const keyLabels = {
         GEMINI_API_KEY:         'Gemini AI',
         OPENWEATHERMAP_API_KEY: 'OpenWeatherMap',
-        ASSEMBLYAI_API_KEY:     'AssemblyAI',
-        SPEECHIFY_API_KEY:      'Speechify',
+        SHERPA_ONNX_ASR_ENCODER_PATH: 'Sherpa ASR encoder',
+        SHERPA_ONNX_ASR_DECODER_PATH: 'Sherpa ASR decoder',
+        SHERPA_ONNX_TTS_MODEL_PATH:   'Sherpa TTS model',
+        SHERPA_ONNX_TTS_TOKENS_PATH:  'Sherpa TTS tokens',
+        SHERPA_ONNX_TTS_LEXICON_PATH: 'Sherpa TTS lexicon',
         CHAT_GPT_API_KEY:       'ChatGPT / OpenAI',
       };
       const statusGrid = document.getElementById('api-keys-status-grid');
@@ -1489,7 +1504,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   async function saveSettings() {
     const maxFileSizeMb = parseInt(document.getElementById('setting-maxFileSizeMb').value, 10);
-    const keyIds = ['GEMINI_API_KEY', 'CHAT_GPT_API_KEY', 'OPENWEATHERMAP_API_KEY', 'ASSEMBLYAI_API_KEY', 'SPEECHIFY_API_KEY'];
+    const keyIds = ['GEMINI_API_KEY', 'CHAT_GPT_API_KEY', 'OPENWEATHERMAP_API_KEY', 'SHERPA_ONNX_ASR_ENCODER_PATH', 'SHERPA_ONNX_ASR_DECODER_PATH', 'SHERPA_ONNX_TTS_MODEL_PATH', 'SHERPA_ONNX_TTS_TOKENS_PATH', 'SHERPA_ONNX_TTS_LEXICON_PATH'];
     const apiKeys = {};
     keyIds.forEach(k => {
       const val = document.getElementById(`key-${k}`)?.value?.trim();
@@ -2199,19 +2214,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
   window.switchIntegrationTab = function(tab) {
     currentIntegrationTab = tab;
-    ['webhooks', 'notifications', 'autoreply', 'inbound'].forEach(t => {
+    ['webhooks', 'notifications', 'email', 'autoreply', 'inbound'].forEach(t => {
       document.getElementById(`ipanel-${t}`)?.classList.toggle('hidden', t !== tab);
       document.getElementById(`itab-${t}`)?.classList.toggle('active', t === tab);
     });
     if (tab === 'autoreply') loadAutoReplies();
+    else if (tab === 'email') { loadSmtpSettings(); renderIntegrationsTab(); }
+    else if (tab === 'inbound') loadInboundApiKey();
     else renderIntegrationsTab();
   };
 
   function renderIntegrationsTab() {
     const webhookRows = integrations.filter(i => i.type === 'webhook');
     const notifRows   = integrations.filter(i => i.type === 'slack' || i.type === 'discord');
+    const emailRows   = integrations.filter(i => i.type === 'email');
     renderIntegrationTable('webhooks-table-body', webhookRows, 5);
     renderIntegrationTable('notifications-table-body', notifRows, 5);
+    renderEmailIntegrationTable(emailRows);
   }
 
   function renderIntegrationTable(tbodyId, rows, colspan) {
@@ -2261,6 +2280,20 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('int-url').value     = existing?.url    || '';
     document.getElementById('int-secret').value  = existing?.secret || '';
     document.getElementById('int-secret-wrap').classList.toggle('hidden', type !== 'webhook');
+
+    // Adapt URL label for email type
+    const urlLabel = document.getElementById('int-url-label');
+    const urlHint  = document.getElementById('int-url-hint');
+    const urlInput = document.getElementById('int-url');
+    if (type === 'email') {
+      urlLabel.textContent = 'Recipients';
+      urlInput.placeholder = 'alice@example.com, bob@example.com';
+      urlHint.classList.remove('hidden');
+    } else {
+      urlLabel.textContent = 'URL';
+      urlInput.placeholder = 'https://hooks.example.com/…';
+      urlHint.classList.add('hidden');
+    }
 
     const enabledToggle = document.getElementById('int-enabled-toggle');
     enabledToggle.classList.toggle('on', existing?.enabled !== false);
@@ -2433,6 +2466,75 @@ document.addEventListener('DOMContentLoaded', function () {
   window.closeAutoReplyModal = function() {
     document.getElementById('autoreply-modal').classList.add('hidden');
     currentAutoReplyId = null;
+  };
+
+  // ── Email table ───────────────────────────────────────────────────────────
+  function renderEmailIntegrationTable(rows) {
+    const tbody = document.getElementById('email-table-body');
+    if (!tbody) return;
+    if (!rows.length) {
+      tbody.innerHTML = `<tr><td colspan="4" class="text-center py-10 text-gray-400 text-sm"><i class="fas fa-envelope text-3xl mb-3 block opacity-30"></i>No email integrations configured</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = rows.map(i => {
+      const events = (i.events || []).map(e => `<span class="tag-chip">${e}</span>`).join(' ') || '—';
+      const statusBadge = i.lastStatus === 'ok'
+        ? `<span class="badge badge-sent">OK</span>`
+        : i.lastStatus === 'error'
+        ? `<span class="badge badge-failed" title="${i.lastError || ''}">Error</span>`
+        : `<span class="badge badge-draft">—</span>`;
+      return `<tr class="trow border-b border-gray-50">
+        <td class="px-4 py-3 text-sm font-medium text-gray-900">${i.name} ${statusBadge}</td>
+        <td class="px-4 py-3 text-xs text-gray-500 max-w-xs truncate" title="${i.url}">${i.url}</td>
+        <td class="px-4 py-3 text-xs">${events}</td>
+        <td class="px-4 py-3 flex items-center gap-2">
+          <button onclick="openIntegrationModal('${i._id}')" class="text-xs text-indigo-600 hover:underline">Edit</button>
+          <button onclick="testIntegration('${i._id}')" class="text-xs text-gray-500 hover:text-gray-800" title="Test"><i class="fas fa-paper-plane"></i></button>
+          <button onclick="deleteIntegration('${i._id}')" class="text-xs text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  // ── SMTP Settings ─────────────────────────────────────────────────────────
+  async function loadSmtpSettings() {
+    try {
+      const smtp = await apiFetch('/crm/integrations/smtp');
+      document.getElementById('smtp-host').value       = smtp.host       || '';
+      document.getElementById('smtp-port').value       = smtp.port       || 587;
+      document.getElementById('smtp-user').value       = smtp.user       || '';
+      document.getElementById('smtp-pass').value       = smtp.pass       || '';
+      document.getElementById('smtp-from-name').value  = smtp.fromName   || '';
+      document.getElementById('smtp-from-email').value = smtp.fromEmail  || '';
+      document.getElementById('smtp-secure').checked   = smtp.secure     || false;
+    } catch { /* silent */ }
+  }
+
+  window.saveSmtp = async function() {
+    const payload = {
+      host:      document.getElementById('smtp-host').value.trim(),
+      port:      parseInt(document.getElementById('smtp-port').value) || 587,
+      secure:    document.getElementById('smtp-secure').checked,
+      user:      document.getElementById('smtp-user').value.trim(),
+      pass:      document.getElementById('smtp-pass').value,
+      fromName:  document.getElementById('smtp-from-name').value.trim(),
+      fromEmail: document.getElementById('smtp-from-email').value.trim()
+    };
+    try {
+      await apiFetch('/crm/integrations/smtp', 'PUT', payload);
+      showToast('SMTP settings saved');
+    } catch {
+      showToast('Failed to save SMTP settings', 'error');
+    }
+  };
+
+  window.testSmtp = async function() {
+    try {
+      const res = await apiFetch('/crm/integrations/smtp/test', 'POST');
+      showToast(res.message || 'Connection successful', 'success');
+    } catch (e) {
+      showToast('SMTP test failed — check your credentials', 'error');
+    }
   };
 
   // ── Inbound API ──────────────────────────────────────────────────────────

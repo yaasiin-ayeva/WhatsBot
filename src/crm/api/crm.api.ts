@@ -404,8 +404,11 @@ export default function (botManager: BotManager) {
                 env: {
                     GEMINI_API_KEY: !!process.env.GEMINI_API_KEY,
                     OPENWEATHERMAP_API_KEY: !!process.env.OPENWEATHERMAP_API_KEY,
-                    ASSEMBLYAI_API_KEY: !!process.env.ASSEMBLYAI_API_KEY,
-                    SPEECHIFY_API_KEY: !!process.env.SPEECHIFY_API_KEY,
+                    SHERPA_ONNX_ASR_ENCODER_PATH: !!process.env.SHERPA_ONNX_ASR_ENCODER_PATH,
+                    SHERPA_ONNX_ASR_DECODER_PATH: !!process.env.SHERPA_ONNX_ASR_DECODER_PATH,
+                    SHERPA_ONNX_TTS_MODEL_PATH: !!process.env.SHERPA_ONNX_TTS_MODEL_PATH,
+                    SHERPA_ONNX_TTS_TOKENS_PATH: !!process.env.SHERPA_ONNX_TTS_TOKENS_PATH,
+                    SHERPA_ONNX_TTS_LEXICON_PATH: !!process.env.SHERPA_ONNX_TTS_LEXICON_PATH,
                     CHAT_GPT_API_KEY: !!process.env.CHAT_GPT_API_KEY,
                     ENV: process.env.ENV || 'unknown',
                     PORT: process.env.PORT || '3000',

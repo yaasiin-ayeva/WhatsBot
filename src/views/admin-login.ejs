@@ -10,87 +10,105 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     * { box-sizing: border-box; }
-    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #0f172a; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px; }
-    .bg-mesh {
-      position: fixed; inset: 0; z-index: 0;
-      background: radial-gradient(ellipse 80% 60% at 20% 20%, rgba(79,70,229,0.18) 0%, transparent 60%),
-                  radial-gradient(ellipse 60% 50% at 80% 80%, rgba(16,185,129,0.12) 0%, transparent 60%),
-                  #0f172a;
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f1f5f9;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
     }
     .card {
-      position: relative; z-index: 1;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 24px;
-      backdrop-filter: blur(20px);
-      padding: 44px 40px;
+      background: #fff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 20px;
+      padding: 40px 36px;
       width: 100%;
-      max-width: 420px;
-      box-shadow: 0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
+      max-width: 400px;
+      box-shadow: 0 4px 24px rgba(15,23,42,0.07), 0 1px 4px rgba(15,23,42,0.04);
     }
-    .logo-ring {
-      width: 60px; height: 60px; border-radius: 18px;
-      background: linear-gradient(135deg, #25d366, #075e54);
+    .logo-icon {
+      width: 52px; height: 52px; border-radius: 14px;
+      background: #4f46e5;
       display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 8px 24px rgba(37,211,102,0.35);
-      margin: 0 auto 20px;
+      box-shadow: 0 4px 14px rgba(79,70,229,0.3);
+      margin: 0 auto 18px;
+    }
+    label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
     }
     .field {
-      background: rgba(255,255,255,0.06);
-      border: 1.5px solid rgba(255,255,255,0.1);
-      border-radius: 12px;
-      color: #f1f5f9;
-      padding: 11px 14px 11px 40px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 10px 12px 10px 38px;
       width: 100%;
       font-size: 0.875rem;
+      color: #1e293b;
       outline: none;
+      background: white;
       transition: border-color 0.15s, box-shadow 0.15s;
     }
-    .field::placeholder { color: rgba(255,255,255,0.3); }
-    .field:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,0.2); }
-    .field-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.3); font-size: 0.82rem; }
+    .field::placeholder { color: #94a3b8; }
+    .field:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.12); }
+    .field-icon {
+      position: absolute; left: 12px; top: 50%;
+      transform: translateY(-50%);
+      color: #94a3b8; font-size: 0.8rem;
+    }
     .btn {
       width: 100%;
-      background: linear-gradient(135deg, #4f46e5, #6366f1);
+      background: #4f46e5;
       color: white;
       border: none;
-      border-radius: 12px;
-      padding: 12px;
-      font-size: 0.9rem;
+      border-radius: 10px;
+      padding: 11px;
+      font-size: 0.875rem;
       font-weight: 600;
       cursor: pointer;
-      transition: opacity 0.15s, transform 0.1s;
-      box-shadow: 0 4px 20px rgba(79,70,229,0.4);
-      letter-spacing: 0.02em;
+      transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
+      box-shadow: 0 2px 8px rgba(79,70,229,0.3);
+      letter-spacing: 0.01em;
     }
-    .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn:hover { background: #4338ca; box-shadow: 0 4px 14px rgba(79,70,229,0.35); transform: translateY(-1px); }
     .btn:active { transform: translateY(0); }
-    .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
     .error-box {
-      background: rgba(239,68,68,0.12);
-      border: 1px solid rgba(239,68,68,0.3);
+      background: #fef2f2;
+      border: 1.5px solid #fecaca;
       border-radius: 10px;
-      color: #fca5a5;
+      color: #b91c1c;
       font-size: 0.82rem;
+      font-weight: 500;
       padding: 10px 14px;
       text-align: center;
     }
-    label { color: rgba(255,255,255,0.55); font-size: 0.78rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; display: block; }
-    .divider { height: 1px; background: rgba(255,255,255,0.07); margin: 24px 0; }
+    .divider { height: 1px; background: #f1f5f9; margin: 24px 0; }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%,60% { transform: translateX(-5px); }
+      40%,80% { transform: translateX(5px); }
+    }
+    .shake { animation: shake 0.35s ease; }
   </style>
 </head>
 <body>
-  <div class="bg-mesh"></div>
 
   <div class="card">
     <!-- Logo -->
-    <div class="logo-ring">
+    <div class="logo-icon">
       <i class="fab fa-whatsapp text-white text-2xl"></i>
     </div>
 
     <div class="text-center mb-8">
-      <h1 class="text-2xl font-bold text-white tracking-tight">WhatsBot CRM</h1>
-      <p class="text-sm mt-1" style="color:rgba(255,255,255,0.4)">Administration Panel · Sign in to continue</p>
+      <h1 class="text-2xl font-bold text-gray-900" style="letter-spacing:-0.01em">WhatsBot CRM</h1>
+      <p class="text-sm text-gray-400 mt-1">Administration Panel · Sign in to continue</p>
     </div>
 
     <form id="login-form" class="space-y-4" autocomplete="on">
@@ -109,7 +127,9 @@
           <i class="fas fa-lock field-icon"></i>
           <input type="password" id="password" name="password" required autocomplete="current-password"
             class="field" placeholder="Enter your password" style="padding-right:40px">
-          <button type="button" id="toggle-pw" class="absolute right-3 top-1/2 -translate-y-1/2" style="color:rgba(255,255,255,0.3);background:none;border:none;cursor:pointer;font-size:0.82rem;">
+          <button type="button" id="toggle-pw"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+            style="background:none;border:none;cursor:pointer;font-size:0.82rem;">
             <i class="fas fa-eye"></i>
           </button>
         </div>
@@ -126,26 +146,23 @@
     </form>
 
     <div class="divider"></div>
-    <p class="text-center text-xs" style="color:rgba(255,255,255,0.2)">
-      WhatsBot CRM &nbsp;·&nbsp; Secure Administration Access
-    </p>
+    <p class="text-center text-xs text-gray-300">WhatsBot CRM &nbsp;·&nbsp; Secure Administration Access</p>
   </div>
 
   <script>
-    // Password visibility toggle
-    document.getElementById('toggle-pw').addEventListener('click', function() {
+    document.getElementById('toggle-pw').addEventListener('click', function () {
       const pw = document.getElementById('password');
       const icon = this.querySelector('i');
       if (pw.type === 'password') { pw.type = 'text'; icon.className = 'fas fa-eye-slash'; }
       else { pw.type = 'password'; icon.className = 'fas fa-eye'; }
     });
 
-    document.getElementById('login-form').addEventListener('submit', async function(e) {
+    document.getElementById('login-form').addEventListener('submit', async function (e) {
       e.preventDefault();
-      const btn      = document.getElementById('submit-btn');
-      const btnText  = document.getElementById('btn-text');
-      const spinner  = document.getElementById('btn-spinner');
-      const errEl    = document.getElementById('error-message');
+      const btn     = document.getElementById('submit-btn');
+      const btnText = document.getElementById('btn-text');
+      const spinner = document.getElementById('btn-spinner');
+      const errEl   = document.getElementById('error-message');
 
       btn.disabled = true;
       btnText.classList.add('hidden');
@@ -158,8 +175,8 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             username: document.getElementById('username').value,
-            password: document.getElementById('password').value
-          })
+            password: document.getElementById('password').value,
+          }),
         });
 
         if (!res.ok) {
@@ -176,11 +193,10 @@
         btn.disabled = false;
         btnText.classList.remove('hidden');
         spinner.classList.add('hidden');
-        // Shake effect
-        document.querySelector('.card').style.animation = 'none';
-        setTimeout(() => {
-          document.querySelector('.card').style.animation = '';
-        }, 10);
+        const card = document.querySelector('.card');
+        card.classList.remove('shake');
+        void card.offsetWidth;
+        card.classList.add('shake');
       }
     });
   </script>

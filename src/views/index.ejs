@@ -10,146 +10,187 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     * { box-sizing: border-box; }
-    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #0f172a; color: #f1f5f9; min-height: 100vh; }
-    .bg-mesh {
-      position: fixed; inset: 0; z-index: 0; pointer-events: none;
-      background: radial-gradient(ellipse 70% 50% at 10% 10%, rgba(37,211,102,0.1) 0%, transparent 60%),
-                  radial-gradient(ellipse 60% 50% at 90% 90%, rgba(79,70,229,0.12) 0%, transparent 60%);
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f1f5f9;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
+    /* ── Navbar ── */
     .navbar {
-      position: relative; z-index: 10;
-      background: rgba(255,255,255,0.03);
-      border-bottom: 1px solid rgba(255,255,255,0.07);
-      backdrop-filter: blur(12px);
-      padding: 14px 32px;
-      display: flex; align-items: center; justify-content: space-between;
-    }
-    .logo-pill {
-      display: flex; align-items: center; gap: 10px;
+      background: #fff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 20;
     }
     .logo-icon {
       width: 36px; height: 36px; border-radius: 10px;
-      background: linear-gradient(135deg, #25d366, #075e54);
+      background: #4f46e5;
       display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 4px 12px rgba(37,211,102,0.3);
+      box-shadow: 0 2px 8px rgba(79,70,229,0.25);
       flex-shrink: 0;
     }
+    /* ── Cards ── */
     .card {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 18px;
-      backdrop-filter: blur(10px);
-      padding: 20px;
+      background: #fff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 16px;
+      box-shadow: 0 1px 4px rgba(15,23,42,0.04);
     }
+    /* ── Status badge ── */
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 6px 14px; border-radius: 999px;
+      font-size: 0.78rem; font-weight: 600;
+      transition: all 0.25s;
+    }
+    .status-badge.healthy   { background: #dcfce7; color: #166534; border: 1.5px solid #86efac; }
+    .status-badge.scanning  { background: #fef9c3; color: #92400e; border: 1.5px solid #fde68a; }
+    .status-badge.unhealthy { background: #fee2e2; color: #991b1b; border: 1.5px solid #fca5a5; }
+    /* ── Pulse dot ── */
+    .pulse-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .pulse-dot.green  { background: #22c55e; animation: pulse-green 2s infinite; }
+    .pulse-dot.yellow { background: #f59e0b; animation: pulse-yellow 2s infinite; }
+    .pulse-dot.red    { background: #ef4444; }
+    @keyframes pulse-green  { 0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0.4)}  50%{box-shadow:0 0 0 6px rgba(34,197,94,0)} }
+    @keyframes pulse-yellow { 0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,0.4)} 50%{box-shadow:0 0 0 6px rgba(245,158,11,0)} }
+    /* ── Stat row ── */
     .stat-row {
       display: flex; align-items: center; gap: 12px;
-      padding: 13px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 12px 0;
+      border-bottom: 1px solid #f8fafc;
     }
-    .stat-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .stat-row:last-child  { border-bottom: none; padding-bottom: 0; }
     .stat-row:first-child { padding-top: 0; }
-    .stat-icon { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 0.8rem; }
-    .stat-label { font-size: 0.78rem; color: rgba(255,255,255,0.4); font-weight: 500; }
-    .stat-value { font-size: 0.87rem; color: #f1f5f9; font-weight: 600; margin-top: 1px; font-family: 'Menlo', monospace; }
-    .pulse-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-    .pulse-dot.green  { background: #22c55e; box-shadow: 0 0 0 0 rgba(34,197,94,0.5); animation: pulse-green 2s infinite; }
-    .pulse-dot.red    { background: #ef4444; }
-    .pulse-dot.yellow { background: #f59e0b; box-shadow: 0 0 0 0 rgba(245,158,11,0.5); animation: pulse-yellow 2s infinite; }
-    @keyframes pulse-green  { 0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0.4)} 50%{box-shadow:0 0 0 8px rgba(34,197,94,0)} }
-    @keyframes pulse-yellow { 0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,0.4)} 50%{box-shadow:0 0 0 8px rgba(245,158,11,0)} }
-    .status-badge {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 5px 12px; border-radius: 999px; font-size: 0.78rem; font-weight: 600;
+    .stat-icon {
+      width: 34px; height: 34px; border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 0.82rem;
     }
-    .status-badge.healthy  { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.25); }
-    .status-badge.unhealthy{ background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.25); }
-    .status-badge.scanning { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.25); }
-    .admin-btn {
-      display: inline-flex; align-items: center; gap: 8px;
-      background: rgba(79,70,229,0.15); border: 1px solid rgba(79,70,229,0.3);
-      color: #a5b4fc; padding: 8px 16px; border-radius: 10px; font-size: 0.82rem; font-weight: 600;
-      text-decoration: none; transition: background 0.15s, border-color 0.15s;
-    }
-    .admin-btn:hover { background: rgba(79,70,229,0.25); border-color: rgba(79,70,229,0.5); color: #c7d2fe; }
-    .uptime-bar { height: 3px; background: rgba(255,255,255,0.07); border-radius: 999px; overflow: hidden; margin-top: 6px; }
-    .uptime-fill { height: 100%; background: linear-gradient(90deg, #25d366, #4ade80); border-radius: 999px; transition: width 0.5s; }
+    .stat-label { font-size: 0.75rem; color: #94a3b8; font-weight: 500; }
+    .stat-value { font-size: 0.875rem; color: #1e293b; font-weight: 600; margin-top: 2px; font-family: 'Menlo', 'Courier New', monospace; }
+    /* ── Uptime bar ── */
+    .uptime-bar { height: 3px; background: #f1f5f9; border-radius: 999px; overflow: hidden; margin-top: 6px; }
+    .uptime-fill { height: 100%; background: linear-gradient(90deg, #4f46e5, #818cf8); border-radius: 999px; transition: width 0.5s; }
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
   </style>
 </head>
 <body>
 
-<div class="bg-mesh"></div>
-
 <!-- Navbar -->
 <nav class="navbar">
-  <div class="logo-pill">
+  <div class="flex items-center gap-3">
     <div class="logo-icon"><i class="fab fa-whatsapp text-white"></i></div>
     <div>
-      <div class="font-bold text-white text-sm">WhatsBot</div>
-      <div class="text-xs" style="color:rgba(255,255,255,0.35)">Automated WhatsApp Bot</div>
+      <div class="font-bold text-gray-900 text-sm">WhatsBot</div>
+      <div class="text-xs text-gray-400">Automated WhatsApp Bot</div>
     </div>
   </div>
-  <a href="/admin" class="admin-btn"><i class="fas fa-shield-alt text-xs"></i>Admin Panel</a>
+  <a href="/admin"
+    class="flex items-center gap-2 text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 px-4 py-2 rounded-lg transition-colors">
+    <i class="fas fa-shield-alt"></i>Admin Panel
+  </a>
 </nav>
 
 <!-- Main -->
-<main class="relative z-10 max-w-2xl mx-auto px-4 py-12">
+<main class="flex-1 max-w-2xl w-full mx-auto px-4 py-10">
 
   <!-- Hero -->
-  <div class="text-center mb-10">
-    <div id="status-badge" class="status-badge scanning inline-flex mb-4">
+  <div class="mb-8">
+    <div id="status-badge" class="status-badge scanning mb-4">
       <div class="pulse-dot yellow"></div>
       <span id="status-text">Checking…</span>
     </div>
-    <h1 class="text-4xl font-bold text-white mb-3" style="letter-spacing:-0.02em">WhatsBot is <span id="hero-word" class="text-green-400">loading</span></h1>
-    <p style="color:rgba(255,255,255,0.4); font-size:0.9rem;">Real-time status of your WhatsApp automation bot</p>
+    <h1 class="text-3xl font-bold text-gray-900 mb-1" style="letter-spacing:-0.02em">
+      WhatsBot is <span id="hero-word" class="text-indigo-600">loading</span>
+    </h1>
+    <p class="text-sm text-gray-400">Real-time status of your WhatsApp automation bot</p>
   </div>
 
-  <!-- Status Card -->
-  <div class="card mb-5">
-    <div class="flex items-center justify-between mb-4">
-      <span class="text-xs font-semibold uppercase tracking-widest" style="color:rgba(255,255,255,0.35)">Bot Information</span>
-      <span id="last-updated" class="text-xs" style="color:rgba(255,255,255,0.25)">Updating…</span>
+  <!-- Bot Info Card -->
+  <div class="card mb-4">
+    <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+      <span class="text-xs font-semibold text-gray-400 uppercase tracking-widest">Bot Information</span>
+      <span id="last-updated" class="text-xs text-gray-300">Updating…</span>
     </div>
+    <div class="px-5 py-4">
 
-    <div class="stat-row">
-      <div class="stat-icon" style="background:rgba(34,197,94,0.15)"><i class="fas fa-circle text-green-400" style="font-size:0.55rem"></i></div>
-      <div class="flex-1"><div class="stat-label">App State</div><div class="stat-value" id="val-status">—</div></div>
-    </div>
-    <div class="stat-row">
-      <div class="stat-icon" style="background:rgba(99,102,241,0.15)"><i class="fas fa-qrcode text-indigo-400"></i></div>
-      <div class="flex-1"><div class="stat-label">QR Scanned</div><div class="stat-value" id="val-qr">—</div></div>
-    </div>
-    <div class="stat-row">
-      <div class="stat-icon" style="background:rgba(245,158,11,0.15)"><i class="fas fa-phone text-yellow-400"></i></div>
-      <div class="flex-1"><div class="stat-label">Bot Contact</div><div class="stat-value" id="val-contact">—</div></div>
-    </div>
-    <div class="stat-row">
-      <div class="stat-icon" style="background:rgba(236,72,153,0.15)"><i class="fas fa-id-badge text-pink-400"></i></div>
-      <div class="flex-1"><div class="stat-label">Push Name</div><div class="stat-value" id="val-pushname">—</div></div>
-    </div>
-    <div class="stat-row">
-      <div class="stat-icon" style="background:rgba(20,184,166,0.15)"><i class="fas fa-mobile-alt text-teal-400"></i></div>
-      <div class="flex-1"><div class="stat-label">Platform</div><div class="stat-value" id="val-platform">—</div></div>
-    </div>
-    <div class="stat-row">
-      <div class="stat-icon" style="background:rgba(79,70,229,0.15)"><i class="fas fa-clock text-indigo-300"></i></div>
-      <div class="flex-1">
-        <div class="stat-label">Uptime</div>
-        <div class="stat-value" id="val-uptime">—</div>
-        <div class="uptime-bar mt-1"><div class="uptime-fill" id="uptime-fill" style="width:0%"></div></div>
+      <div class="stat-row">
+        <div class="stat-icon bg-green-50"><i class="fas fa-circle text-green-500" style="font-size:0.55rem"></i></div>
+        <div class="flex-1">
+          <div class="stat-label">App State</div>
+          <div class="stat-value" id="val-status">—</div>
+        </div>
       </div>
-    </div>
-    <div class="stat-row">
-      <div class="stat-icon" style="background:rgba(148,163,184,0.1)"><i class="fas fa-code-branch text-gray-400"></i></div>
-      <div class="flex-1"><div class="stat-label">Version</div><div class="stat-value" id="val-version">—</div></div>
+
+      <div class="stat-row">
+        <div class="stat-icon bg-indigo-50"><i class="fas fa-qrcode text-indigo-400"></i></div>
+        <div class="flex-1">
+          <div class="stat-label">QR Scanned</div>
+          <div class="stat-value" id="val-qr">—</div>
+        </div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-icon bg-amber-50"><i class="fas fa-phone text-amber-400"></i></div>
+        <div class="flex-1">
+          <div class="stat-label">Bot Contact</div>
+          <div class="stat-value" id="val-contact">—</div>
+        </div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-icon bg-pink-50"><i class="fas fa-id-badge text-pink-400"></i></div>
+        <div class="flex-1">
+          <div class="stat-label">Push Name</div>
+          <div class="stat-value" id="val-pushname">—</div>
+        </div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-icon bg-teal-50"><i class="fas fa-mobile-alt text-teal-400"></i></div>
+        <div class="flex-1">
+          <div class="stat-label">Platform</div>
+          <div class="stat-value" id="val-platform">—</div>
+        </div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-icon bg-indigo-50"><i class="fas fa-clock text-indigo-400"></i></div>
+        <div class="flex-1">
+          <div class="stat-label">Uptime</div>
+          <div class="stat-value" id="val-uptime">—</div>
+          <div class="uptime-bar"><div class="uptime-fill" id="uptime-fill" style="width:0%"></div></div>
+        </div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-icon bg-gray-50"><i class="fas fa-code-branch text-gray-400"></i></div>
+        <div class="flex-1">
+          <div class="stat-label">Version</div>
+          <div class="stat-value" id="val-version">—</div>
+        </div>
+      </div>
+
     </div>
   </div>
 
   <!-- Footer -->
-  <p class="text-center text-xs mt-8" style="color:rgba(255,255,255,0.2)">
+  <p class="text-center text-xs text-gray-300 mt-6">
     WhatsBot &nbsp;·&nbsp; Auto-refreshes every 3 seconds &nbsp;·&nbsp;
-    <a href="https://github.com/yaasiin-ayeva/WhatsBot" target="_blank" class="underline hover:text-white transition-colors">GitHub</a>
+    <a href="https://github.com/yaasiin-ayeva/WhatsBot" target="_blank"
+       class="underline hover:text-gray-500 transition-colors">GitHub</a>
   </p>
+
 </main>
 
 <script>
@@ -168,30 +209,30 @@
   }
 
   function setStatus(status) {
-    const badge = $('status-badge');
-    const text  = $('status-text');
+    const badge    = $('status-badge');
+    const text     = $('status-text');
     const heroWord = $('hero-word');
-    badge.className = 'status-badge inline-flex mb-4';
-    const dot = badge.querySelector('.pulse-dot');
+    const dot      = badge.querySelector('.pulse-dot');
+    badge.className = 'status-badge';
 
     if (status === 'healthy') {
       badge.classList.add('healthy');
       dot.className = 'pulse-dot green';
       text.textContent = 'Healthy';
       heroWord.textContent = 'running';
-      heroWord.className = 'text-green-400';
+      heroWord.className = 'text-green-500';
     } else if (status === 'scanning') {
       badge.classList.add('scanning');
       dot.className = 'pulse-dot yellow';
       text.textContent = 'Awaiting QR scan';
       heroWord.textContent = 'waiting';
-      heroWord.className = 'text-yellow-400';
+      heroWord.className = 'text-amber-500';
     } else {
       badge.classList.add('unhealthy');
       dot.className = 'pulse-dot red';
       text.textContent = 'Offline';
       heroWord.textContent = 'offline';
-      heroWord.className = 'text-red-400';
+      heroWord.className = 'text-red-500';
     }
   }
 
@@ -204,16 +245,15 @@
           return;
         }
 
-        $('val-status').textContent    = d.status   || '—';
-        $('val-qr').textContent        = d.qrScanned ? 'Yes ✓' : 'No';
-        $('val-contact').textContent   = d.botContact  || '—';
-        $('val-pushname').textContent  = d.botPushName || '—';
-        $('val-platform').textContent  = d.botPlatform || '—';
-        $('val-uptime').textContent    = formatUptime(parseFloat(d.uptime));
-        $('val-version').textContent   = d.version  || '—';
-        $('last-updated').textContent  = 'Updated ' + new Date().toLocaleTimeString();
+        $('val-status').textContent   = d.status      || '—';
+        $('val-qr').textContent       = d.qrScanned   ? 'Yes ✓' : 'No';
+        $('val-contact').textContent  = d.botContact  || '—';
+        $('val-pushname').textContent = d.botPushName || '—';
+        $('val-platform').textContent = d.botPlatform || '—';
+        $('val-uptime').textContent   = formatUptime(parseFloat(d.uptime));
+        $('val-version').textContent  = d.version     || '—';
+        $('last-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
 
-        // Uptime bar — cap at 24h for display
         const uptimeSec = parseFloat(d.uptime) || 0;
         const pct = Math.min((uptimeSec / 86400) * 100, 100);
         $('uptime-fill').style.width = pct + '%';

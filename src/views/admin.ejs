@@ -1210,6 +1210,19 @@
   </div>
 </div>
 
+<!-- Admin modules — load order matters: state first, then feature modules, then bootstrapper -->
+<script src="/public/js/admin/state.js"></script>
+<script src="/public/js/admin/utils.js"></script>
+<script src="/public/js/admin/dashboard.js"></script>
+<script src="/public/js/admin/contacts.js"></script>
+<script src="/public/js/admin/campaigns.js"></script>
+<script src="/public/js/admin/templates.js"></script>
+<script src="/public/js/admin/chats.js"></script>
+<script src="/public/js/admin/bot-logs.js"></script>
+<script src="/public/js/admin/system.js"></script>
+<script src="/public/js/admin/scoring.js"></script>
+<script src="/public/js/admin/scheduled.js"></script>
+<script src="/public/js/admin/integrations.js"></script>
 <script src="/public/js/admin.js"></script>
 <script>
   function updateWaPreview() {

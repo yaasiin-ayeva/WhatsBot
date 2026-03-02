@@ -1,4 +1,5 @@
 import express from 'express';
+import path from 'path';
 import { BotManager } from '../../bot.manager';
 import logger from '../../configs/logger.config';
 import { authenticate, authorizeAdmin } from '../middlewares/auth.middleware';
@@ -22,6 +23,7 @@ import { IntegrationModel, INTEGRATION_EVENTS } from '../models/integration.mode
 import { AutoReplyModel } from '../models/auto-reply.model';
 import { fireEvent } from '../../utils/fire-event.util';
 import { encryptValue, decryptValue } from '../../utils/crypto.util';
+import { WidgetSettingsModel } from '../models/widget-settings.model';
 import { geminiCompletion } from '../../utils/gemini.util';
 import { claudeCompletion } from '../../utils/claude.util';
 import { chatGptCompletion } from '../../utils/chat-gpt.util';
@@ -407,14 +409,7 @@ export default function (botManager: BotManager) {
                 'ANTHROPIC_API_KEY',
                 'OPENWEATHERMAP_API_KEY',
             ]);
-            apiKeysMap.forEach((rawVal, key) => {
-                const val    = decryptValue(String(rawVal || ''));
-                const masked = val.length > 8 ? val.slice(0, 4) + '…' + val.slice(-4) : val ? '****' : '';
-                maskedKeys[key]    = masked;
-                displayKeys[key]   = sensitiveKeys.has(key) ? masked : val;
-            });
-
-            const runtimeDisplayKeys = [
+            const sherpaPathKeys = new Set([
                 'SHERPA_ONNX_ASR_ENCODER_PATH',
                 'SHERPA_ONNX_ASR_DECODER_PATH',
                 'SHERPA_ONNX_ASR_TOKENS_PATH',
@@ -422,10 +417,18 @@ export default function (botManager: BotManager) {
                 'SHERPA_ONNX_TTS_TOKENS_PATH',
                 'SHERPA_ONNX_TTS_LEXICON_PATH',
                 'SHERPA_ONNX_TTS_DATA_DIR',
-            ];
-            runtimeDisplayKeys.forEach((key) => {
+            ]);
+            const toRelPath = (absPath: string) => path.isAbsolute(absPath) ? (path.relative(process.cwd(), absPath) || absPath) : absPath;
+            apiKeysMap.forEach((rawVal, key) => {
+                const val    = decryptValue(String(rawVal || ''));
+                const masked = val.length > 8 ? val.slice(0, 4) + '…' + val.slice(-4) : val ? '****' : '';
+                maskedKeys[key]    = masked;
+                displayKeys[key]   = sensitiveKeys.has(key) ? masked : (sherpaPathKeys.has(key) ? toRelPath(val) : val);
+            });
+
+            sherpaPathKeys.forEach((key) => {
                 if (!displayKeys[key] && process.env[key]) {
-                    displayKeys[key] = String(process.env[key]);
+                    displayKeys[key] = toRelPath(String(process.env[key]));
                 }
             });
 
@@ -469,11 +472,19 @@ export default function (botManager: BotManager) {
             }
             if (autoDownloadEnabled !== undefined) update.autoDownloadEnabled = autoDownloadEnabled;
             if (defaultAudioAiCommand !== undefined) update.defaultAudioAiCommand = defaultAudioAiCommand;
+            const sherpaPathKeysSet = new Set([
+                'SHERPA_ONNX_ASR_ENCODER_PATH', 'SHERPA_ONNX_ASR_DECODER_PATH', 'SHERPA_ONNX_ASR_TOKENS_PATH',
+                'SHERPA_ONNX_TTS_MODEL_PATH', 'SHERPA_ONNX_TTS_TOKENS_PATH', 'SHERPA_ONNX_TTS_LEXICON_PATH', 'SHERPA_ONNX_TTS_DATA_DIR',
+            ]);
             if (apiKeys && typeof apiKeys === 'object') {
                 for (const [key, value] of Object.entries(apiKeys)) {
                     if (value) {
-                        update[`apiKeys.${key}`] = encryptValue(String(value));
-                        process.env[key] = String(value); // plaintext in memory
+                        let finalValue = String(value);
+                        if (sherpaPathKeysSet.has(key) && !path.isAbsolute(finalValue)) {
+                            finalValue = path.resolve(process.cwd(), finalValue);
+                        }
+                        update[`apiKeys.${key}`] = encryptValue(finalValue);
+                        process.env[key] = finalValue; // plaintext in memory
                     }
                 }
             }
@@ -1486,6 +1497,119 @@ ${transcript}`;
         } catch (error) {
             logger.error('POST /groups/:groupId/recap error:', error);
             res.status(500).json({ error: 'Failed to generate recap' });
+        }
+    });
+
+    // ── Widget Settings ────────────────────────────────────────────
+    router.get('/widget-settings', authenticate, authorizeAdmin, async (_req, res) => {
+        try {
+            let settings = await WidgetSettingsModel.findOne();
+            if (!settings) settings = await WidgetSettingsModel.create({});
+            res.json(settings);
+        } catch (error) {
+            logger.error('GET /widget-settings error:', error);
+            res.status(500).json({ error: 'Failed to fetch widget settings' });
+        }
+    });
+
+    router.put('/widget-settings', authenticate, authorizeAdmin, async (req: any, res) => {
+        try {
+            const allowed = [
+                'enabled', 'buttonStyle', 'displayPosition', 'primaryColor', 'secondaryColor',
+                'headerText', 'operatorName', 'welcomeMessage', 'onlineMessage', 'offlineMessage',
+                'placeholderText', 'logoUrl', 'trackVisitorIp', 'allowedDomains',
+                'whatsappMode', 'whatsappNumber',
+            ];
+            const update: Record<string, any> = {};
+            for (const f of allowed) { if (f in req.body) update[f] = req.body[f]; }
+            const settings = await WidgetSettingsModel.findOneAndUpdate({}, update, { upsert: true, new: true });
+            await addAuditLog(req.user?.id, req.user?.username, 'update', 'widget-settings');
+            res.json(settings);
+        } catch (error) {
+            logger.error('PUT /widget-settings error:', error);
+            res.status(500).json({ error: 'Failed to update widget settings' });
+        }
+    });
+
+    router.post('/widget-settings/rotate-id', authenticate, authorizeAdmin, async (req: any, res) => {
+        try {
+            const newId = crypto.randomBytes(12).toString('hex');
+            const settings = await WidgetSettingsModel.findOneAndUpdate({}, { widgetId: newId }, { upsert: true, new: true });
+            await addAuditLog(req.user?.id, req.user?.username, 'rotate', 'widget-id');
+            res.json({ widgetId: settings!.widgetId });
+        } catch (error) {
+            res.status(500).json({ error: 'Failed to rotate widget ID' });
+        }
+    });
+
+    // Public: get safe widget config (called by the embeddable snippet)
+    router.get('/widget/config/:widgetId', async (req, res) => {
+        try {
+            const s = await WidgetSettingsModel.findOne({ widgetId: req.params.widgetId }).lean() as any;
+            if (!s || !s.enabled) return res.status(404).json({ error: 'Widget not found or disabled' });
+            const { primaryColor, secondaryColor, headerText, operatorName, welcomeMessage,
+                    onlineMessage, offlineMessage, placeholderText, logoUrl,
+                    buttonStyle, displayPosition, whatsappMode, whatsappNumber } = s;
+            res.json({ primaryColor, secondaryColor, headerText, operatorName, welcomeMessage,
+                       onlineMessage, offlineMessage, placeholderText, logoUrl,
+                       buttonStyle, displayPosition, whatsappMode, whatsappNumber });
+        } catch (error) {
+            res.status(500).json({ error: 'Failed to fetch widget config' });
+        }
+    });
+
+    // Public: submit message from widget visitor
+    router.post('/widget/chat', async (req, res) => {
+        try {
+            const { widgetId, visitorName, visitorSessionId, message, pageUrl } = req.body;
+            if (!widgetId || !message?.trim()) {
+                return res.status(400).json({ error: 'widgetId and message are required' });
+            }
+            const s = await WidgetSettingsModel.findOne({ widgetId }).lean() as any;
+            if (!s || !s.enabled) return res.status(404).json({ error: 'Widget not found or disabled' });
+
+            const visitorIp = s.trackVisitorIp
+                ? ((req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || 'unknown').split(',')[0].trim()
+                : undefined;
+
+            // Use a stable virtual phone key per session so inbox groups by visitor
+            const sessionKey = visitorSessionId ? visitorSessionId.slice(0, 20).replace(/[^a-z0-9]/gi, '') : 'anon';
+            const phoneNumber = `widget_${widgetId.slice(0, 8)}_${sessionKey}`;
+
+            const saved = await MessageModel.create({
+                phoneNumber,
+                body: message.trim(),
+                type: 'text',
+                direction: 'in',
+                sentVia: 'widget',
+                read: false,
+                senderName: visitorName || 'Website Visitor',
+                visitorIp,
+                pageUrl: pageUrl || '',
+                timestamp: new Date(),
+            });
+
+            messageEmitter.emit('message', saved.toObject());
+            res.json({ success: true, messageId: saved._id, phoneNumber });
+        } catch (error) {
+            logger.error('POST /widget/chat error:', error);
+            res.status(500).json({ error: 'Failed to send message' });
+        }
+    });
+
+    // Public: poll for replies (widget uses this to show admin replies)
+    router.get('/widget/replies/:phoneNumber', async (req, res) => {
+        try {
+            const { phoneNumber } = req.params;
+            const since = req.query.since ? new Date(req.query.since as string) : new Date(0);
+            const msgs = await MessageModel.find({
+                phoneNumber,
+                direction: 'out',
+                timestamp: { $gt: since },
+            }).sort({ timestamp: 1 }).lean();
+            res.json(msgs);
+        } catch (error) {
+            res.status(500).json({ error: 'Failed to fetch replies' });
         }
     });
 

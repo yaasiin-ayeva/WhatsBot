@@ -5,7 +5,7 @@ export interface IMessage extends Document {
     body: string;
     type: 'text' | 'image' | 'document' | 'other';
     direction: 'in' | 'out';
-    sentVia: 'whatsapp' | 'admin';
+    sentVia: 'whatsapp' | 'admin' | 'widget';
     read: boolean;
     campaignId?: mongoose.Types.ObjectId;
     timestamp: Date;
@@ -13,6 +13,9 @@ export interface IMessage extends Document {
     isGroup: boolean;
     groupId?: string;
     senderName?: string;
+    // Widget fields
+    visitorIp?: string;
+    pageUrl?: string;
 }
 
 const MessageSchema = new Schema<IMessage>({
@@ -20,13 +23,15 @@ const MessageSchema = new Schema<IMessage>({
     body: { type: String, required: true },
     type: { type: String, enum: ['text', 'image', 'document', 'other'], default: 'text' },
     direction: { type: String, enum: ['in', 'out'], required: true },
-    sentVia: { type: String, enum: ['whatsapp', 'admin'], default: 'whatsapp' },
+    sentVia: { type: String, enum: ['whatsapp', 'admin', 'widget'], default: 'whatsapp' },
     read: { type: Boolean, default: false },
     campaignId: { type: Schema.Types.ObjectId, ref: 'Campaign' },
     timestamp: { type: Date, default: Date.now },
     isGroup: { type: Boolean, default: false },
     groupId: { type: String, index: true },
     senderName: { type: String },
+    visitorIp: { type: String },
+    pageUrl: { type: String },
 });
 
 export const MessageModel = mongoose.model<IMessage>('Message', MessageSchema);

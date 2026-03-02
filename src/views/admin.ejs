@@ -139,6 +139,7 @@
     <a href="#" id="campaigns-tab" class="nav-item" title="Campaigns"><span class="nav-icon"><i class="fas fa-bullhorn"></i></span><span class="sb-label">Campaigns</span></a>
     <a href="#" id="templates-tab" class="nav-item" title="Templates"><span class="nav-icon"><i class="fas fa-layer-group"></i></span><span class="sb-label">Templates</span></a>
     <a href="#" id="scheduled-messages-tab" class="nav-item" title="Scheduled"><span class="nav-icon"><i class="fas fa-clock"></i></span><span class="sb-label">Scheduled</span></a>
+    <a href="#" id="widget-tab" class="nav-item" title="Website Widget"><span class="nav-icon"><i class="fas fa-window-maximize"></i></span><span class="sb-label">Website Widget</span></a>
     <div class="nav-group-label">System</div>
     <a href="#" id="bot-tab" class="nav-item" title="Bot Status"><span class="nav-icon"><i class="fas fa-robot"></i></span><span class="sb-label">Bot Status</span></a>
     <a href="#" id="commands-tab" class="nav-item" title="Commands"><span class="nav-icon"><i class="fas fa-terminal"></i></span><span class="sb-label">Commands</span></a>
@@ -421,7 +422,7 @@
   <div id="scheduled-messages-section" class="section-content hidden p-6">
     <div class="flex items-center justify-between mb-5">
       <div><h1 class="text-2xl font-bold text-gray-900">Scheduled Messages</h1><p class="text-sm text-gray-500 mt-0.5">One-off messages sent at a specific date &amp; time</p></div>
-      <button onclick="openScheduledModal()" class="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"><i class="fas fa-plus text-xs"></i> New Scheduled Message</button>
+      <button type="button" onclick="openScheduledModal()" class="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"><i class="fas fa-plus text-xs"></i> New Scheduled Message</button>
     </div>
     <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden">
       <table class="w-full text-left"><thead><tr class="border-b border-gray-100 bg-gray-50">
@@ -460,6 +461,181 @@
           <th class="px-4 py-2.5 text-xs font-semibold text-gray-500">Phone</th>
           <th class="px-4 py-2.5 text-xs font-semibold text-gray-500">Score</th>
         </tr></thead><tbody id="leaderboard-body"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Website Widget -->
+  <div id="widget-section" class="section-content hidden p-6">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">Website Widget</h1>
+        <p class="text-sm text-gray-500 mt-0.5">Add a floating chat button to any website</p>
+      </div>
+      <button onclick="saveWidgetSettings()" class="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"><i class="fas fa-save text-xs"></i> Save Settings</button>
+    </div>
+
+    <div class="grid gap-5" style="grid-template-columns:1fr 380px">
+      <!-- Left: Settings -->
+      <div class="space-y-4">
+
+        <!-- Enable + Mode -->
+        <div class="bg-white border border-gray-200 rounded-2xl p-5 space-y-4">
+          <h3 class="font-semibold text-gray-800 text-sm">General</h3>
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm font-medium text-gray-700">Enable widget</div>
+              <div class="text-xs text-gray-400">Show the chat button on your websites</div>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="widget-enabled" class="sr-only peer">
+              <div class="w-10 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-5 peer-checked:bg-indigo-600 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+            </label>
+          </div>
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm font-medium text-gray-700">WhatsApp redirect mode</div>
+              <div class="text-xs text-gray-400">Clicking the button opens WhatsApp instead of an embedded chat</div>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="widget-wa-mode" class="sr-only peer" onchange="toggleWaMode(this.checked);updateWidgetPreview()">
+              <div class="w-10 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-5 peer-checked:bg-green-500 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+            </label>
+          </div>
+          <div id="widget-wa-wrap" class="hidden">
+            <label class="text-xs font-semibold text-gray-500 block mb-1">WhatsApp Phone Number</label>
+            <input id="widget-wa-number" class="field" placeholder="e.g. 22890123456" oninput="updateWidgetPreview()">
+            <p class="text-xs text-gray-400 mt-1">Full number without spaces or + (country code included)</p>
+          </div>
+        </div>
+
+        <!-- Appearance -->
+        <div class="bg-white border border-gray-200 rounded-2xl p-5 space-y-4">
+          <h3 class="font-semibold text-gray-800 text-sm">Appearance</h3>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="text-xs font-semibold text-gray-500 block mb-1">Button style</label>
+              <select id="widget-button-style" class="field" onchange="updateWidgetPreview()">
+                <option value="round">Round (floating circle)</option>
+                <option value="tab">Tab (rectangle on edge)</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs font-semibold text-gray-500 block mb-1">Position</label>
+              <select id="widget-position" class="field" onchange="updateWidgetPreview()">
+                <option value="bottom-right">Bottom right</option>
+                <option value="bottom-left">Bottom left</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs font-semibold text-gray-500 block mb-1">Primary color</label>
+              <div class="flex gap-2 items-center">
+                <input type="color" id="widget-primary-color" value="#128C7E" class="h-9 w-12 rounded border border-gray-200 cursor-pointer" oninput="updateWidgetPreview()">
+                <input type="text" id="widget-primary-color-text" class="field flex-1 text-xs font-mono" placeholder="#128C7E" oninput="document.getElementById('widget-primary-color').value=this.value;updateWidgetPreview()">
+              </div>
+            </div>
+            <div>
+              <label class="text-xs font-semibold text-gray-500 block mb-1">Send button / bubble color</label>
+              <div class="flex gap-2 items-center">
+                <input type="color" id="widget-secondary-color" value="#25D366" class="h-9 w-12 rounded border border-gray-200 cursor-pointer" oninput="updateWidgetPreview()">
+                <input type="text" id="widget-secondary-color-text" class="field flex-1 text-xs font-mono" placeholder="#25D366" oninput="document.getElementById('widget-secondary-color').value=this.value;updateWidgetPreview()">
+              </div>
+            </div>
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-gray-500 block mb-1">Logo / avatar URL <span class="font-normal">(optional)</span></label>
+            <input id="widget-logo-url" class="field" placeholder="https://…/logo.png" oninput="updateWidgetPreview()">
+          </div>
+        </div>
+
+        <!-- Text & messages -->
+        <div class="bg-white border border-gray-200 rounded-2xl p-5 space-y-3">
+          <h3 class="font-semibold text-gray-800 text-sm">Text &amp; Messages</h3>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs font-semibold text-gray-500 block mb-1">Header text</label>
+              <input id="widget-header-text" class="field" placeholder="Chat with us" oninput="updateWidgetPreview()">
+            </div>
+            <div>
+              <label class="text-xs font-semibold text-gray-500 block mb-1">Operator name</label>
+              <input id="widget-operator-name" class="field" placeholder="Support">
+            </div>
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-gray-500 block mb-1">Welcome message</label>
+            <textarea id="widget-welcome-message" rows="2" class="field resize-none" placeholder="Hi there! How can we help you today?" oninput="updateWidgetPreview()"></textarea>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs font-semibold text-gray-500 block mb-1">Online sub-text</label>
+              <input id="widget-online-message" class="field" placeholder="We reply in a few minutes" oninput="updateWidgetPreview()">
+            </div>
+            <div>
+              <label class="text-xs font-semibold text-gray-500 block mb-1">Offline sub-text</label>
+              <input id="widget-offline-message" class="field" placeholder="We'll reply as soon as possible">
+            </div>
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-gray-500 block mb-1">Input placeholder</label>
+            <input id="widget-placeholder" class="field" placeholder="Type a message…">
+          </div>
+        </div>
+
+        <!-- Privacy & Domains -->
+        <div class="bg-white border border-gray-200 rounded-2xl p-5 space-y-4">
+          <h3 class="font-semibold text-gray-800 text-sm">Privacy &amp; Access</h3>
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm font-medium text-gray-700">Track visitor IP</div>
+              <div class="text-xs text-gray-400">Store the visitor's IP address with each message</div>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="widget-track-ip" class="sr-only peer">
+              <div class="w-10 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-5 peer-checked:bg-indigo-600 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+            </label>
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-gray-500 block mb-1">Allowed domains <span class="font-normal">(optional, comma-separated)</span></label>
+            <input id="widget-allowed-domains" class="field" placeholder="example.com, shop.example.com">
+            <p class="text-xs text-gray-400 mt-1">Leave blank to allow embedding on any website</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right: Preview + Snippet -->
+      <div class="space-y-4">
+
+        <!-- Live preview -->
+        <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+          <div class="px-5 py-3.5 border-b border-gray-100"><h3 class="font-semibold text-gray-800 text-sm">Live Preview</h3></div>
+          <div id="widget-live-preview" class="relative bg-gray-100" style="height:380px;overflow:hidden">
+            <!-- rendered by updateWidgetPreview() -->
+          </div>
+        </div>
+
+        <!-- Embed snippet -->
+        <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+          <div class="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
+            <h3 class="font-semibold text-gray-800 text-sm">Embed Code</h3>
+            <div class="flex gap-2">
+              <button onclick="copyWidgetSnippet()" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1"><i class="fas fa-copy"></i> Copy</button>
+              <button onclick="rotateWidgetId()" class="text-xs text-gray-500 hover:text-red-600 px-3 py-1.5 rounded-lg border border-gray-200 hover:border-red-300 font-semibold flex items-center gap-1" title="Generate a new widget ID"><i class="fas fa-sync-alt"></i> Rotate ID</button>
+            </div>
+          </div>
+          <div class="p-4">
+            <p class="text-xs text-gray-500 mb-2">Paste this before <code class="bg-gray-100 px-1 rounded">&lt;/body&gt;</code> on your website:</p>
+            <pre id="widget-snippet" class="text-xs bg-gray-50 border border-gray-200 rounded-xl p-3 overflow-x-auto whitespace-pre-wrap break-all text-indigo-700 select-all"></pre>
+          </div>
+        </div>
+
+        <!-- Info box -->
+        <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4 text-xs text-blue-700 space-y-1.5">
+          <div class="font-semibold flex items-center gap-1.5"><i class="fas fa-info-circle"></i> How it works</div>
+          <p>Website visitors click the floating button to open a chat panel. Messages they send appear in your <strong>Inbox</strong> tab in real-time. Replies you send from Inbox are polled by the widget every few seconds and shown to the visitor.</p>
+          <p>In <strong>WhatsApp mode</strong> the button redirects visitors directly to WhatsApp — no embedded chat is shown.</p>
+        </div>
+
       </div>
     </div>
   </div>
@@ -1289,9 +1465,10 @@
 <script src="/public/js/admin/bot-logs.js"></script>
 <script src="/public/js/admin/system.js"></script>
 <script src="/public/js/admin/scoring.js"></script>
-<script src="/public/js/admin/scheduled.js"></script>
+<script src="/public/js/admin/scheduled.js?v=2"></script>
 <script src="/public/js/admin/integrations.js"></script>
-<script src="/public/js/admin/groups.js"></script>
+<script src="/public/js/admin/groups.js?v=2"></script>
+<script src="/public/js/admin/widget.js"></script>
 <script src="/public/js/admin.js"></script>
 <script>
   function updateWaPreview() {
@@ -1352,7 +1529,6 @@
   }
   function closeRevisionModal() { document.getElementById('revision-modal').classList.add('hidden'); }
   function closeTemplatePreviewModal() { document.getElementById('template-preview-modal').classList.add('hidden'); }
-  function closeScheduledModal() { document.getElementById('scheduled-modal').classList.add('hidden'); }
   function closeIntegrationModal() { document.getElementById('integration-modal').classList.add('hidden'); }
   function closeAutoReplyModal()   { document.getElementById('autoreply-modal').classList.add('hidden'); }
   function toggleIntEnabled() {

@@ -8,6 +8,8 @@ import path from "path";
 import { BotManager } from "./bot.manager";
 import { connectDB } from "./configs/db.config";
 import { initCrons } from "./crons/index.cron";
+import { hydrateRuntimeConfigFromSettings } from "./utils/runtime-config.util";
+import { initializeSherpaModels } from "./utils/sherpa-model-downloader.util";
 
 // Global error handlers to prevent crashes (Log but don't exit - let the app continue running)
 process.on('uncaughtException', (error: Error) => {
@@ -67,14 +69,23 @@ app.get('/admin/login', (req, res) => {
 
 const botManager = BotManager.getInstance();
 
-connectDB();
-initCrons(botManager);
-
 app.use("/", apiRoutes(botManager));
 
-app.listen(port, () => {
-    logger.info(readAsciiArt());
-    logger.info(`Server running on port ${port}`);
-    logger.info(`Access: http://localhost:${port}/`);
-    botManager.initialize();
+async function bootstrap() {
+    await connectDB();
+    await hydrateRuntimeConfigFromSettings();
+    await initializeSherpaModels();
+    initCrons(botManager);
+
+    app.listen(port, () => {
+        logger.info(readAsciiArt());
+        logger.info(`Server running on port ${port}`);
+        logger.info(`Access: http://localhost:${port}/`);
+        botManager.initialize();
+    });
+}
+
+bootstrap().catch((error) => {
+    logger.error('Application bootstrap failed:', error);
+    process.exit(1);
 });

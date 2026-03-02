@@ -1,11 +1,16 @@
 // ── Commands ────────────────────────────────────────────────────────────────
 
 async function loadCommands() {
+  const AS = window.AdminState;
   try {
-    const [list, stats] = await Promise.all([
+    const [list, stats, settings] = await Promise.all([
       apiFetch('/crm/commands'),
       apiFetch('/crm/commands/stats').catch(() => ({})),
+      apiFetch('/crm/settings').catch(() => null),
     ]);
+    if (settings?.env?.ENV) {
+      AS.commandPrefix = settings.env.ENV === 'production' ? '/' : '!';
+    }
     renderCommands(list, stats);
   } catch {
     showToast('Failed to load commands', 'error');
@@ -13,6 +18,8 @@ async function loadCommands() {
 }
 
 function renderCommands(list, stats) {
+  const AS = window.AdminState;
+  const prefix = AS.commandPrefix || '/';
   const tbody = document.getElementById('commands-table-body');
   tbody.innerHTML = '';
   if (!list || !list.length) {
@@ -24,7 +31,7 @@ function renderCommands(list, stats) {
     const tr = document.createElement('tr');
     tr.className = 'trow';
     tr.innerHTML = `
-      <td class="px-6 py-3.5 text-sm font-mono font-semibold text-gray-800">!${escHtml(cmd.name)}</td>
+      <td class="px-6 py-3.5 text-sm font-mono font-semibold text-gray-800">${prefix}${escHtml(cmd.name)}</td>
       <td class="px-6 py-3.5 text-sm text-gray-600">${count}</td>
       <td class="px-6 py-3.5">
         <span class="text-xs font-bold px-2.5 py-1 rounded-full ${cmd.disabled ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-700'}">
@@ -216,6 +223,7 @@ async function loadSettings() {
   const AS = window.AdminState;
   try {
     const data = await apiFetch('/crm/settings');
+    const keyIds = ['GEMINI_API_KEY', 'CHAT_GPT_API_KEY', 'ANTHROPIC_API_KEY', 'OPENWEATHERMAP_API_KEY', 'SHERPA_ONNX_ASR_ENCODER_PATH', 'SHERPA_ONNX_ASR_DECODER_PATH', 'SHERPA_ONNX_ASR_TOKENS_PATH', 'SHERPA_ONNX_TTS_MODEL_PATH', 'SHERPA_ONNX_TTS_TOKENS_PATH', 'SHERPA_ONNX_TTS_LEXICON_PATH'];
 
     const botInfoGrid = document.getElementById('bot-info-grid');
     botInfoGrid.innerHTML = [
@@ -232,9 +240,11 @@ async function loadSettings() {
 
     const keyLabels = {
       GEMINI_API_KEY:               'Gemini AI',
+      ANTHROPIC_API_KEY:            'Claude / Anthropic',
       OPENWEATHERMAP_API_KEY:       'OpenWeatherMap',
       SHERPA_ONNX_ASR_ENCODER_PATH: 'Sherpa ASR encoder',
       SHERPA_ONNX_ASR_DECODER_PATH: 'Sherpa ASR decoder',
+      SHERPA_ONNX_ASR_TOKENS_PATH:  'Sherpa ASR tokens',
       SHERPA_ONNX_TTS_MODEL_PATH:   'Sherpa TTS model',
       SHERPA_ONNX_TTS_TOKENS_PATH:  'Sherpa TTS tokens',
       SHERPA_ONNX_TTS_LEXICON_PATH: 'Sherpa TTS lexicon',
@@ -256,9 +266,18 @@ async function loadSettings() {
     }
 
     document.getElementById('setting-maxFileSizeMb').value = data.maxFileSizeMb ?? 150;
+    document.getElementById('setting-defaultAudioAiCommand').value = data.defaultAudioAiCommand || 'chat';
     AS.autoDownloadEnabled = data.autoDownloadEnabled ?? true;
     const toggle = document.getElementById('toggle-autoDownload');
     if (AS.autoDownloadEnabled) toggle.classList.add('on'); else toggle.classList.remove('on');
+
+    keyIds.forEach(k => {
+      const el = document.getElementById(`key-${k}`);
+      if (!el) return;
+      const persistedValue = data.apiKeysDisplay?.[k] || '';
+      el.value = persistedValue;
+      el.dataset.persistedValue = persistedValue;
+    });
   } catch {
     showToast('Failed to load settings', 'error');
   }
@@ -267,16 +286,18 @@ async function loadSettings() {
 async function saveSettings() {
   const AS = window.AdminState;
   const maxFileSizeMb = parseInt(document.getElementById('setting-maxFileSizeMb').value, 10);
-  const keyIds = ['GEMINI_API_KEY', 'CHAT_GPT_API_KEY', 'OPENWEATHERMAP_API_KEY', 'SHERPA_ONNX_ASR_ENCODER_PATH', 'SHERPA_ONNX_ASR_DECODER_PATH', 'SHERPA_ONNX_TTS_MODEL_PATH', 'SHERPA_ONNX_TTS_TOKENS_PATH', 'SHERPA_ONNX_TTS_LEXICON_PATH'];
+  const defaultAudioAiCommand = document.getElementById('setting-defaultAudioAiCommand').value;
+  const keyIds = ['GEMINI_API_KEY', 'CHAT_GPT_API_KEY', 'ANTHROPIC_API_KEY', 'OPENWEATHERMAP_API_KEY', 'SHERPA_ONNX_ASR_ENCODER_PATH', 'SHERPA_ONNX_ASR_DECODER_PATH', 'SHERPA_ONNX_ASR_TOKENS_PATH', 'SHERPA_ONNX_TTS_MODEL_PATH', 'SHERPA_ONNX_TTS_TOKENS_PATH', 'SHERPA_ONNX_TTS_LEXICON_PATH'];
   const apiKeys = {};
   keyIds.forEach(k => {
-    const val = document.getElementById(`key-${k}`)?.value?.trim();
-    if (val) apiKeys[k] = val;
+    const el = document.getElementById(`key-${k}`);
+    const val = el?.value?.trim();
+    const persisted = el?.dataset?.persistedValue || '';
+    if (val && val !== persisted) apiKeys[k] = val;
   });
   try {
-    await apiFetch('/crm/settings', 'PUT', { maxFileSizeMb, autoDownloadEnabled: AS.autoDownloadEnabled, apiKeys });
+    await apiFetch('/crm/settings', 'PUT', { maxFileSizeMb, autoDownloadEnabled: AS.autoDownloadEnabled, defaultAudioAiCommand, apiKeys });
     showToast('Settings saved', 'success');
-    keyIds.forEach(k => { const el = document.getElementById(`key-${k}`); if (el) el.value = ''; });
     loadSettings();
   } catch {
     showToast('Failed to save settings', 'error');

@@ -394,22 +394,53 @@ export default function (botManager: BotManager) {
 
             const apiKeysMap: Map<string, string> = settings.get('apiKeys') || new Map();
             const maskedKeys: Record<string, string> = {};
+            const displayKeys: Record<string, string> = {};
+            const sensitiveKeys = new Set([
+                'GEMINI_API_KEY',
+                'CHAT_GPT_PROJECT_ID',
+                'CHAT_GPT_ORG_ID',
+                'CHAT_GPT_API_KEY',
+                'ANTHROPIC_API_KEY',
+                'OPENWEATHERMAP_API_KEY',
+            ]);
             apiKeysMap.forEach((val, key) => {
-                maskedKeys[key] = val.length > 8 ? val.slice(0, 4) + '…' + val.slice(-4) : val ? '****' : '';
+                const masked = val.length > 8 ? val.slice(0, 4) + '…' + val.slice(-4) : val ? '****' : '';
+                maskedKeys[key] = masked;
+                displayKeys[key] = sensitiveKeys.has(key) ? masked : val;
             });
+
+            const runtimeDisplayKeys = [
+                'SHERPA_ONNX_ASR_ENCODER_PATH',
+                'SHERPA_ONNX_ASR_DECODER_PATH',
+                'SHERPA_ONNX_ASR_TOKENS_PATH',
+                'SHERPA_ONNX_TTS_MODEL_PATH',
+                'SHERPA_ONNX_TTS_TOKENS_PATH',
+                'SHERPA_ONNX_TTS_LEXICON_PATH',
+                'SHERPA_ONNX_TTS_DATA_DIR',
+            ];
+            runtimeDisplayKeys.forEach((key) => {
+                if (!displayKeys[key] && process.env[key]) {
+                    displayKeys[key] = String(process.env[key]);
+                }
+            });
+
+            const hasRuntimeKey = (key: string) => !!(process.env[key] || apiKeysMap.get(key));
 
             res.json({
                 ...settings.toObject(),
                 apiKeysMasked: maskedKeys,
+                apiKeysDisplay: displayKeys,
                 env: {
-                    GEMINI_API_KEY: !!process.env.GEMINI_API_KEY,
-                    OPENWEATHERMAP_API_KEY: !!process.env.OPENWEATHERMAP_API_KEY,
-                    SHERPA_ONNX_ASR_ENCODER_PATH: !!process.env.SHERPA_ONNX_ASR_ENCODER_PATH,
-                    SHERPA_ONNX_ASR_DECODER_PATH: !!process.env.SHERPA_ONNX_ASR_DECODER_PATH,
-                    SHERPA_ONNX_TTS_MODEL_PATH: !!process.env.SHERPA_ONNX_TTS_MODEL_PATH,
-                    SHERPA_ONNX_TTS_TOKENS_PATH: !!process.env.SHERPA_ONNX_TTS_TOKENS_PATH,
-                    SHERPA_ONNX_TTS_LEXICON_PATH: !!process.env.SHERPA_ONNX_TTS_LEXICON_PATH,
-                    CHAT_GPT_API_KEY: !!process.env.CHAT_GPT_API_KEY,
+                    GEMINI_API_KEY: hasRuntimeKey('GEMINI_API_KEY'),
+                    OPENWEATHERMAP_API_KEY: hasRuntimeKey('OPENWEATHERMAP_API_KEY'),
+                    SHERPA_ONNX_ASR_ENCODER_PATH: hasRuntimeKey('SHERPA_ONNX_ASR_ENCODER_PATH'),
+                    SHERPA_ONNX_ASR_DECODER_PATH: hasRuntimeKey('SHERPA_ONNX_ASR_DECODER_PATH'),
+                    SHERPA_ONNX_ASR_TOKENS_PATH: hasRuntimeKey('SHERPA_ONNX_ASR_TOKENS_PATH'),
+                    SHERPA_ONNX_TTS_MODEL_PATH: hasRuntimeKey('SHERPA_ONNX_TTS_MODEL_PATH'),
+                    SHERPA_ONNX_TTS_TOKENS_PATH: hasRuntimeKey('SHERPA_ONNX_TTS_TOKENS_PATH'),
+                    SHERPA_ONNX_TTS_LEXICON_PATH: hasRuntimeKey('SHERPA_ONNX_TTS_LEXICON_PATH'),
+                    CHAT_GPT_API_KEY: hasRuntimeKey('CHAT_GPT_API_KEY'),
+                    ANTHROPIC_API_KEY: hasRuntimeKey('ANTHROPIC_API_KEY'),
                     ENV: process.env.ENV || 'unknown',
                     PORT: process.env.PORT || '3000',
                 }
@@ -422,10 +453,11 @@ export default function (botManager: BotManager) {
 
     router.put('/settings', authenticate, authorizeAdmin, async (req, res) => {
         try {
-            const { maxFileSizeMb, autoDownloadEnabled, apiKeys } = req.body;
+            const { maxFileSizeMb, autoDownloadEnabled, defaultAudioAiCommand, apiKeys } = req.body;
             const update: any = {};
             if (maxFileSizeMb !== undefined) update.maxFileSizeMb = maxFileSizeMb;
             if (autoDownloadEnabled !== undefined) update.autoDownloadEnabled = autoDownloadEnabled;
+            if (defaultAudioAiCommand !== undefined) update.defaultAudioAiCommand = defaultAudioAiCommand;
             if (apiKeys && typeof apiKeys === 'object') {
                 for (const [key, value] of Object.entries(apiKeys)) {
                     if (value) {
@@ -456,6 +488,16 @@ export default function (botManager: BotManager) {
         } catch (error) {
             logger.error('Failed to fetch commands:', error);
             res.status(500).json({ error: 'Failed to fetch commands' });
+        }
+    });
+
+    router.get('/commands/stats', authenticate, authorizeAdmin, async (_req, res) => {
+        try {
+            const settings = await SettingsModel.findOne().lean() as any;
+            res.json(settings?.commandStats || {});
+        } catch (error) {
+            logger.error('Failed to fetch command stats:', error);
+            res.status(500).json({ error: 'Failed to fetch command stats' });
         }
     });
 
@@ -1149,6 +1191,55 @@ export default function (botManager: BotManager) {
         }
     });
 
+    // ── SMTP Settings ─────────────────────────────────────────────────────────
+    // Keep these above /integrations/:id so "smtp" is not treated as an id.
+    router.get('/integrations/smtp', authenticate, authorizeAdmin, async (_req, res) => {
+        try {
+            const settings = await SettingsModel.findOne().lean() as any;
+            res.json(settings?.smtp || {});
+        } catch (error) {
+            logger.error('Failed to fetch SMTP settings:', error);
+            res.status(500).json({ error: 'Failed to fetch SMTP settings' });
+        }
+    });
+
+    router.put('/integrations/smtp', authenticate, authorizeAdmin, async (req: any, res) => {
+        try {
+            const { host, port, secure, user, pass, fromName, fromEmail } = req.body;
+            await SettingsModel.findOneAndUpdate(
+                {},
+                { $set: { 'smtp.host': host, 'smtp.port': port, 'smtp.secure': secure, 'smtp.user': user, 'smtp.pass': pass, 'smtp.fromName': fromName, 'smtp.fromEmail': fromEmail } },
+                { upsert: true }
+            );
+            await addAuditLog(req.user?.userId, req.user?.username, 'update', 'smtp-settings');
+            res.json({ success: true });
+        } catch (error) {
+            logger.error('Failed to save SMTP settings:', error);
+            res.status(500).json({ error: 'Failed to save SMTP settings' });
+        }
+    });
+
+    router.post('/integrations/smtp/test', authenticate, authorizeAdmin, async (_req, res) => {
+        try {
+            const settings = await SettingsModel.findOne().lean() as any;
+            const smtp = settings?.smtp;
+            if (!smtp?.host || !smtp?.user || !smtp?.pass) {
+                return res.status(400).json({ error: 'SMTP not fully configured' });
+            }
+            const nodemailer = await import('nodemailer');
+            const transporter = nodemailer.default.createTransport({
+                host: smtp.host, port: smtp.port || 587,
+                secure: smtp.secure || false,
+                auth: { user: smtp.user, pass: smtp.pass }
+            });
+            await transporter.verify();
+            res.json({ success: true, message: 'SMTP connection verified successfully' });
+        } catch (error: any) {
+            logger.error('SMTP connection test failed:', error);
+            res.status(400).json({ error: error.message || 'SMTP connection failed' });
+        }
+    });
+
     router.put('/integrations/:id', authenticate, authorizeAdmin, async (req: any, res) => {
         try {
             const { name, type, url, events, secret, enabled } = req.body;
@@ -1238,51 +1329,6 @@ export default function (botManager: BotManager) {
             res.json({ success: true });
         } catch (error) {
             res.status(500).json({ error: 'Failed to delete auto-reply rule' });
-        }
-    });
-
-    // ── SMTP Settings ─────────────────────────────────────────────────────────
-    router.get('/integrations/smtp', authenticate, authorizeAdmin, async (_req, res) => {
-        try {
-            const settings = await SettingsModel.findOne().lean() as any;
-            res.json(settings?.smtp || {});
-        } catch (error) {
-            res.status(500).json({ error: 'Failed to fetch SMTP settings' });
-        }
-    });
-
-    router.put('/integrations/smtp', authenticate, authorizeAdmin, async (req: any, res) => {
-        try {
-            const { host, port, secure, user, pass, fromName, fromEmail } = req.body;
-            await SettingsModel.findOneAndUpdate(
-                {},
-                { $set: { 'smtp.host': host, 'smtp.port': port, 'smtp.secure': secure, 'smtp.user': user, 'smtp.pass': pass, 'smtp.fromName': fromName, 'smtp.fromEmail': fromEmail } },
-                { upsert: true }
-            );
-            await addAuditLog(req.user?.id, req.user?.username, 'update', 'smtp-settings');
-            res.json({ success: true });
-        } catch (error) {
-            res.status(500).json({ error: 'Failed to save SMTP settings' });
-        }
-    });
-
-    router.post('/integrations/smtp/test', authenticate, authorizeAdmin, async (_req, res) => {
-        try {
-            const settings = await SettingsModel.findOne().lean() as any;
-            const smtp = settings?.smtp;
-            if (!smtp?.host || !smtp?.user || !smtp?.pass) {
-                return res.status(400).json({ error: 'SMTP not fully configured' });
-            }
-            const nodemailer = await import('nodemailer');
-            const transporter = nodemailer.default.createTransport({
-                host: smtp.host, port: smtp.port || 587,
-                secure: smtp.secure || false,
-                auth: { user: smtp.user, pass: smtp.pass }
-            });
-            await transporter.verify();
-            res.json({ success: true, message: 'SMTP connection verified successfully' });
-        } catch (error: any) {
-            res.status(400).json({ error: error.message || 'SMTP connection failed' });
         }
     });
 

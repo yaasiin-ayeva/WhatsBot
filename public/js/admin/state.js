@@ -36,6 +36,7 @@ window.AdminState = {
   availableEvents:          [],
   chatsSearchTimer:         null,
   chatsSearchMode:          false,
+  commandPrefix:            '/',
 };
 
 // ── Central API helper ────────────────────────────────────────────────────────

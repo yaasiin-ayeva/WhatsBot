@@ -34,7 +34,12 @@ export const run = async (message: Message, args: string[] = null, userI18n: Use
 
 async function getWeather(city: string): Promise<{ description: string, icon: string, city: string, localtime: string }> {
 
-    const url = AppConfig.instance.getWeatherApiUrl(EnvConfig.OPENWEATHERMAP_API_KEY, city);
+    const apiKey = process.env.OPENWEATHERMAP_API_KEY || EnvConfig.OPENWEATHERMAP_API_KEY;
+    if (!apiKey) {
+        throw new Error('OPENWEATHERMAP_API_KEY is not configured.');
+    }
+
+    const url = AppConfig.instance.getWeatherApiUrl(apiKey, city);
     const response = await axios.get(url);
     const data = response.data;
 

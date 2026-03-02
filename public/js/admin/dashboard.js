@@ -47,9 +47,10 @@ async function loadDashboardData() {
     const cmdWidget = document.getElementById('top-commands-widget');
     if (cmdWidget && analytics?.topCommands?.length) {
       const max = analytics.topCommands[0]?.count || 1;
+      const prefix = window.AdminState.commandPrefix || '/';
       cmdWidget.innerHTML = analytics.topCommands.map(c => `
         <div class="flex items-center gap-3 mb-2">
-          <span class="text-xs font-mono font-semibold text-gray-700 w-24 shrink-0">!${escHtml(c.name)}</span>
+          <span class="text-xs font-mono font-semibold text-gray-700 w-24 shrink-0">${prefix}${escHtml(c.name)}</span>
           <div class="flex-grow bg-gray-100 rounded-full h-1.5">
             <div class="bg-indigo-500 h-1.5 rounded-full" style="width:${Math.round((c.count/max)*100)}%"></div>
           </div>

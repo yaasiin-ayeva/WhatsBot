@@ -794,6 +794,7 @@
             <select id="ar-aiprovider" class="field">
               <option value="gemini">Gemini (Google)</option>
               <option value="openai">OpenAI (GPT)</option>
+              <option value="claude">Claude (Anthropic)</option>
             </select>
           </div>
           <div>
@@ -827,18 +828,20 @@
       </div>
       <div class="bg-white border border-gray-200 rounded-2xl p-5">
         <div class="text-sm font-semibold text-gray-800 mb-1">API Key Status</div>
-        <div class="text-xs text-gray-500 mb-4">Loaded from environment at startup</div>
+        <div class="text-xs text-gray-500 mb-4">Loaded from environment or restored from backoffice settings at startup</div>
         <div class="grid grid-cols-3 gap-3" id="api-keys-status-grid"></div>
       </div>
       <div class="bg-white border border-gray-200 rounded-2xl p-5">
         <div class="text-sm font-semibold text-gray-800 mb-1">Update Keys & Local Voice Runtime</div>
         <div class="text-xs text-gray-500 mb-4">Stored securely and applied at runtime. Leave blank to keep current value.</div>
         <div class="grid grid-cols-2 gap-4">
-          <div><label class="text-xs font-semibold text-gray-500 block mb-1">GEMINI_API_KEY</label><input class="field" type="password" id="key-GEMINI_API_KEY" placeholder="Enter new value…" autocomplete="new-password"></div>
-          <div><label class="text-xs font-semibold text-gray-500 block mb-1">CHAT_GPT_API_KEY</label><input class="field" type="password" id="key-CHAT_GPT_API_KEY" placeholder="Enter new value…" autocomplete="new-password"></div>
-          <div><label class="text-xs font-semibold text-gray-500 block mb-1">OPENWEATHERMAP_API_KEY</label><input class="field" type="password" id="key-OPENWEATHERMAP_API_KEY" placeholder="Enter new value…" autocomplete="new-password"></div>
+          <div><label class="text-xs font-semibold text-gray-500 block mb-1"><span class="inline-flex items-center gap-1"><a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-indigo-600" title="Open Google AI Studio"><i class="fas fa-info-circle"></i></a><span>GEMINI_API_KEY</span></span></label><input class="field" type="password" id="key-GEMINI_API_KEY" placeholder="Enter new value…" autocomplete="new-password"></div>
+          <div><label class="text-xs font-semibold text-gray-500 block mb-1"><span class="inline-flex items-center gap-1"><a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-indigo-600" title="Open OpenAI API keys"><i class="fas fa-info-circle"></i></a><span>CHAT_GPT_API_KEY</span></span></label><input class="field" type="password" id="key-CHAT_GPT_API_KEY" placeholder="Enter new value…" autocomplete="new-password"></div>
+          <div><label class="text-xs font-semibold text-gray-500 block mb-1"><span class="inline-flex items-center gap-1"><a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-indigo-600" title="Open Anthropic Console"><i class="fas fa-info-circle"></i></a><span>ANTHROPIC_API_KEY</span></span></label><input class="field" type="password" id="key-ANTHROPIC_API_KEY" placeholder="Enter new value…" autocomplete="new-password"></div>
+          <div><label class="text-xs font-semibold text-gray-500 block mb-1"><span class="inline-flex items-center gap-1"><a href="https://www.weatherapi.com/my/" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-indigo-600" title="Open WeatherAPI dashboard"><i class="fas fa-info-circle"></i></a><span>OPENWEATHERMAP_API_KEY</span></span></label><input class="field" type="password" id="key-OPENWEATHERMAP_API_KEY" placeholder="Enter new value…" autocomplete="new-password"></div>
           <div><label class="text-xs font-semibold text-gray-500 block mb-1">SHERPA_ONNX_ASR_ENCODER_PATH</label><input class="field" type="text" id="key-SHERPA_ONNX_ASR_ENCODER_PATH" placeholder="/opt/sherpa/asr/encoder.onnx" autocomplete="off"></div>
           <div><label class="text-xs font-semibold text-gray-500 block mb-1">SHERPA_ONNX_ASR_DECODER_PATH</label><input class="field" type="text" id="key-SHERPA_ONNX_ASR_DECODER_PATH" placeholder="/opt/sherpa/asr/decoder.onnx" autocomplete="off"></div>
+          <div><label class="text-xs font-semibold text-gray-500 block mb-1">SHERPA_ONNX_ASR_TOKENS_PATH</label><input class="field" type="text" id="key-SHERPA_ONNX_ASR_TOKENS_PATH" placeholder="/opt/sherpa/asr/tokens.txt" autocomplete="off"></div>
           <div><label class="text-xs font-semibold text-gray-500 block mb-1">SHERPA_ONNX_TTS_MODEL_PATH</label><input class="field" type="text" id="key-SHERPA_ONNX_TTS_MODEL_PATH" placeholder="/opt/sherpa/tts/model.onnx" autocomplete="off"></div>
           <div><label class="text-xs font-semibold text-gray-500 block mb-1">SHERPA_ONNX_TTS_TOKENS_PATH</label><input class="field" type="text" id="key-SHERPA_ONNX_TTS_TOKENS_PATH" placeholder="/opt/sherpa/tts/tokens.txt" autocomplete="off"></div>
           <div><label class="text-xs font-semibold text-gray-500 block mb-1">SHERPA_ONNX_TTS_LEXICON_PATH</label><input class="field" type="text" id="key-SHERPA_ONNX_TTS_LEXICON_PATH" placeholder="/opt/sherpa/tts/lexicon.txt (optional)" autocomplete="off"></div>
@@ -848,6 +851,7 @@
         <div class="text-sm font-semibold text-gray-800 mb-4">Download Settings</div>
         <div class="flex items-center gap-8">
           <div><label class="text-xs font-semibold text-gray-500 block mb-1">Max File Size (MB)</label><input type="number" id="setting-maxFileSizeMb" class="field" style="max-width:140px;" min="1" max="2000"></div>
+          <div><label class="text-xs font-semibold text-gray-500 block mb-1">Voice AI Provider</label><select id="setting-defaultAudioAiCommand" class="field" style="min-width:220px;"><option value="chat">Gemini</option><option value="gpt">OpenAI GPT</option><option value="claude">Claude</option></select></div>
           <div class="flex items-center gap-3 mt-4">
             <div class="toggle-track" id="toggle-autoDownload" onclick="toggleAutoDownload()"><div class="toggle-thumb"></div></div>
             <div><div class="text-sm font-medium text-gray-800">Auto-download</div><div class="text-xs text-gray-500">Automatically download media from URLs</div></div>

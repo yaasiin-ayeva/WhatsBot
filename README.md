@@ -28,6 +28,7 @@
 - **Voice Chat**: Send voice messages and get audio responses powered by Gemini AI + local `sherpa-onnx`
 - **Gemini AI Chat**: Advanced AI conversations with Google's Gemini model (`/chat`)
 - **ChatGPT Integration**: Alternative AI powered by OpenAI's GPT models (`/gpt`)
+- **Claude Integration**: Alternative AI powered by Anthropic Claude (`/claude`)
 
 ### Social Media Downloads
 Download videos from **6 platforms** without watermarks:
@@ -78,6 +79,7 @@ Just send the URL directly or use `/get <url>` - supports up to **150MB** files!
 | `/onboard` | Get tutorial video | `/onboard` |
 | `/chat <message>` | Chat with Gemini AI | `/chat Tell me a story` |
 | `/gpt <message>` | Chat with ChatGPT | `/gpt Explain quantum physics` |
+| `/claude <message>` | Chat with Claude | `/claude Summarize this article` |
 | **Voice Messages** | Send audio for AI voice chat | Just send a voice message |
 | `/get <url>` | Download social media video | `/get https://tiktok.com/...` |
 | **Direct URL** | Just paste the URL | `https://instagram.com/...` |
@@ -104,7 +106,7 @@ docker run -d -p 3000:3000 yaasiinayeva/whatsbot
 git clone https://github.com/yaasiin-ayeva/WhatsBot.git
 cd WhatsBot
 cp .env.example .env
-# Edit .env with your API keys (see Configuration section)
+# Edit .env with your core runtime settings (see Configuration section)
 
 docker-compose up --build -d
 
@@ -127,7 +129,7 @@ git clone https://github.com/yaasiin-ayeva/WhatsBot.git
 cd WhatsBot
 npm install
 cp .env.example .env
-# Edit .env with your API keys
+# Edit .env with your core runtime settings
 
 npm install pm2 -g
 
@@ -162,7 +164,7 @@ npm run dev
 
 ## Configuration
 
-### Required Environment Variables
+### Core Environment Variables
 
 Create a `.env` file from the template:
 ```bash
@@ -179,35 +181,18 @@ PORT=3000
 PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 ```
 
-#### AI Services
-```bash
-# Google Gemini AI (Primary chatbot)
-GEMINI_API_KEY=your_key_here
-# Get from: https://aistudio.google.com/app/apikey
+#### AI And Weather Keys
+Configure `GEMINI_API_KEY`, `CHAT_GPT_API_KEY`, `ANTHROPIC_API_KEY`, and `OPENWEATHERMAP_API_KEY` from the admin backoffice after first login.
 
-# OpenAI ChatGPT (Alternative chatbot)
-CHAT_GPT_PROJECT_ID=your_project_id
-CHAT_GPT_ORG_ID=your_org_id
-CHAT_GPT_API_KEY=your_api_key
-# Get from: https://platform.openai.com/api-keys
-```
+These values are stored in the database and restored at startup, so they no longer need to be kept in `.env`.
 
 #### Speech Services
-```bash
-# sherpa-onnx (Local speech for voice messages)
-SHERPA_ONNX_ASR_ENCODER_PATH=/absolute/path/to/asr/encoder.onnx
-SHERPA_ONNX_ASR_DECODER_PATH=/absolute/path/to/asr/decoder.onnx
-SHERPA_ONNX_TTS_MODEL_PATH=/absolute/path/to/tts/model.onnx
-SHERPA_ONNX_TTS_TOKENS_PATH=/absolute/path/to/tts/tokens.txt
-SHERPA_ONNX_TTS_LEXICON_PATH=/absolute/path/to/tts/lexicon.txt
-```
+Local sherpa-onnx voice models are downloaded and configured automatically at runtime.
+
+Their resolved paths are stored in the backoffice settings, so no sherpa model paths are required in `.env`.
 
 #### Other Services
 ```bash
-# Weather API
-OPENWEATHERMAP_API_KEY=your_key_here
-# Get from: https://www.weatherapi.com/my/
-
 # Database & Authentication
 MONGODB_URI=mongodb://localhost:27017/whatsbot
 JWT_SECRET=your_secret_here
@@ -260,6 +245,7 @@ WhatsBot/
 │   ├── commands/             # All bot commands
 │   │   ├── chat.command.ts   # Gemini AI
 │   │   ├── gpt.command.ts    # ChatGPT
+│   │   ├── claude.command.ts # Claude
 │   │   ├── get.command.ts    # Social media downloader
 │   │   ├── translate.command.ts
 │   │   ├── meteo.command.ts
@@ -271,6 +257,7 @@ WhatsBot/
 │   │   ├── get.util.ts       # Video downloaders
 │   │   ├── gemini.util.ts    # Gemini AI client
 │   │   ├── chat-gpt.util.ts  # ChatGPT client
+│   │   ├── claude.util.ts    # Claude client
 │   │   ├── i18n.util.ts      # Internationalization
 │   │   └── ...
 │   ├── crm/                  # CRM system
@@ -410,6 +397,7 @@ This project is licensed under the  [MIT License](LICENSE).
 - [whatsapp-web.js](https://github.com/pedroslopez/whatsapp-web.js) - WhatsApp Web API wrapper
 - [Google Gemini](https://ai.google.dev/) - AI model
 - [OpenAI](https://openai.com/) - ChatGPT API
+- [Anthropic](https://www.anthropic.com/) - Claude API
 - [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) - Local speech-to-text and text-to-speech
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp) - Video downloader
 - All [contributors](https://github.com/yaasiin-ayeva/WhatsBot/graphs/contributors) who helped improve this project

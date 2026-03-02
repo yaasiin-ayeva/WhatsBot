@@ -49,9 +49,10 @@ function getRecognizer() {
 
     const encoder = process.env.SHERPA_ONNX_ASR_ENCODER_PATH;
     const decoder = process.env.SHERPA_ONNX_ASR_DECODER_PATH;
+    const tokens = process.env.SHERPA_ONNX_ASR_TOKENS_PATH;
 
-    if (!encoder || !decoder) {
-        throw new Error("sherpa-onnx ASR models not available. Ensure the bot has started and models have been downloaded.");
+    if (!encoder || !decoder || !tokens) {
+        throw new Error("sherpa-onnx ASR config is incomplete. SHERPA_ONNX_ASR_ENCODER_PATH, SHERPA_ONNX_ASR_DECODER_PATH, and SHERPA_ONNX_ASR_TOKENS_PATH are required.");
     }
 
     const whisperConfig: any = {
@@ -67,6 +68,7 @@ function getRecognizer() {
     recognizerInstance = new sherpaOnnx.OfflineRecognizer({
         modelConfig: {
             whisper: whisperConfig,
+            tokens,
             numThreads: parseInt(process.env.SHERPA_ONNX_NUM_THREADS || "1", 10),
             provider: process.env.SHERPA_ONNX_PROVIDER || "cpu"
         }

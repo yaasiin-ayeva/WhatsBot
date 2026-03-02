@@ -9,7 +9,7 @@ export const run = (message: Message, args: string[] = null, userI18n: UserI18n)
 
     const commandKeys = [
         'onboard', 'help', 'ping', 'langlist', 'translate',
-        'chat', 'meme', 'joke', 'get', 'meteo'
+        'chat', 'gpt', 'claude', 'meme', 'joke', 'get', 'meteo'
     ];
 
     let content = "";

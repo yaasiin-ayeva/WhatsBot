@@ -16,6 +16,7 @@ esbuild.build({
         'sharp',
         'langdetect',
         'puppeteer',
+        'sherpa-onnx-node',
     ],
     target: 'node20',
     format: 'cjs',

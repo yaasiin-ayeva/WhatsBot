@@ -1,4 +1,4 @@
-// ── Bot Status ──────────────────────────────────────────────────────────────
+// Bot Status
 
 window.loadBotStatus = async function () {
   const AS = window.AdminState;
@@ -55,7 +55,7 @@ window.reconnectBot = async function () {
   }
 };
 
-// ── Live Logs (SSE) ────────────────────────────────────────────────────────
+// Live Logs (SSE)
 
 function startLogStream() {
   const AS = window.AdminState;

@@ -1,4 +1,4 @@
-// ── Campaigns ─────────────────────────────────────────────────────────────────
+// Campaigns
 async function loadCampaigns() {
   const AS = window.AdminState;
   try {
@@ -77,7 +77,7 @@ function renderCampaigns(list) {
   });
 }
 
-// ── Campaign Modal ─────────────────────────────────────────────────────────────
+// Campaign Modal
 window.openCampaignModal = function (prefill = null) {
   const AS = window.AdminState;
   document.getElementById('campaign-modal-title').textContent = prefill ? 'Duplicate Campaign' : 'New Campaign';
@@ -290,7 +290,7 @@ window.retryCampaign = async function () {
   }
 };
 
-// ── Campaign Extras (pause / resume / cancel / archive / export) ───────────────
+// Campaign Extras (pause / resume / cancel / archive / export)
 window.pauseCampaign = async function (id) {
   try { await apiFetch(`/crm/campaigns/${id}/pause`, 'PATCH'); showToast('Campaign paused', 'success'); loadCampaigns(); }
   catch { showToast('Failed to pause campaign', 'error'); }
@@ -342,7 +342,7 @@ window.filterDeliveryReport = function (status) {
   });
 };
 
-// ── Contact Selector (inside campaign modal) ───────────────────────────────────
+// Contact Selector (inside campaign modal)
 async function loadAvailableContacts(langFilter = '', preSelected = []) {
   const AS = window.AdminState;
   try {

@@ -1,4 +1,4 @@
-// ── Templates ──────────────────────────────────────────────────────────────
+// Templates
 
 const catStyle = {
   general:    'bg-gray-100 text-gray-600',
@@ -187,7 +187,7 @@ window.useTemplate = function (id) {
   document.getElementById('campaigns-tab').click();
 };
 
-// ── Template Extras ────────────────────────────────────────────────────────
+// Template Extras
 
 window.pinTemplate = async function (id) {
   try { await apiFetch(`/crm/templates/${id}/pin`, 'PATCH'); loadTemplates(); }

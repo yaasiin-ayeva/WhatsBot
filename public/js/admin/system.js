@@ -1,4 +1,4 @@
-// ── Commands ────────────────────────────────────────────────────────────────
+// Commands
 
 async function loadCommands() {
   const AS = window.AdminState;
@@ -59,7 +59,7 @@ window.toggleCommand = async function (name) {
   }
 };
 
-// ── Users ───────────────────────────────────────────────────────────────────
+// Users
 
 async function loadUsers() {
   const AS = window.AdminState;
@@ -177,7 +177,7 @@ window.deleteUser = async function (id) {
   }
 };
 
-// ── Audit Logs ──────────────────────────────────────────────────────────────
+// Audit Logs
 
 window.loadAuditLogs = async function (page = 1) {
   const AS = window.AdminState;
@@ -217,7 +217,7 @@ function renderAuditLogs(logs, meta) {
   renderPagination(meta, loadAuditLogs, 'audit-pagination');
 }
 
-// ── Settings ────────────────────────────────────────────────────────────────
+// Settings
 
 async function loadSettings() {
   const AS = window.AdminState;
@@ -311,7 +311,7 @@ window.toggleAutoDownload = function () {
   if (AS.autoDownloadEnabled) t.classList.add('on'); else t.classList.remove('on');
 };
 
-// ── Direct Message ──────────────────────────────────────────────────────────
+// Direct Message
 
 window.openMessageModal = function (phone, name) {
   const AS = window.AdminState;

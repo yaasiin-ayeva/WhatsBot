@@ -1,4 +1,4 @@
-// ── Integrations ────────────────────────────────────────────────────────────
+// Integrations
 
 async function loadIntegrations() {
   const AS = window.AdminState;
@@ -163,7 +163,7 @@ window.closeIntegrationModal = function () {
   AS.currentIntegrationId = null;
 };
 
-// ── Auto-Reply ──────────────────────────────────────────────────────────────
+// Auto-Reply
 
 async function loadAutoReplies() {
   const AS = window.AdminState;
@@ -279,7 +279,7 @@ window.closeAutoReplyModal = function () {
   AS.currentAutoReplyId = null;
 };
 
-// ── Email table ─────────────────────────────────────────────────────────────
+// Email table
 
 function renderEmailIntegrationTable(rows) {
   const tbody = document.getElementById('email-table-body');
@@ -308,7 +308,7 @@ function renderEmailIntegrationTable(rows) {
   }).join('');
 }
 
-// ── SMTP Settings ───────────────────────────────────────────────────────────
+// SMTP Settings
 
 async function loadSmtpSettings() {
   try {
@@ -350,7 +350,7 @@ window.testSmtp = async function () {
   }
 };
 
-// ── Inbound API ─────────────────────────────────────────────────────────────
+// Inbound API
 
 async function loadInboundApiKey() {
   try {

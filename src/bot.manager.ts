@@ -208,6 +208,7 @@ export class BotManager {
             if (!user.isMe) {
                 const inboxBody = content || (message.type === MessageTypes.VOICE ? '[Voice message]' : '[Empty message]');
                 const inboxType = message.type === MessageTypes.TEXT ? 'text' : 'other';
+                const isGroup = chat?.isGroup ?? false;
                 const msgDoc = await MessageModel.create({
                     phoneNumber: user.number,
                     body: inboxBody,
@@ -215,7 +216,10 @@ export class BotManager {
                     direction: 'in',
                     sentVia: 'whatsapp',
                     read: false,
-                    timestamp: new Date()
+                    timestamp: new Date(),
+                    isGroup,
+                    groupId: isGroup ? message.from : undefined,
+                    senderName: isGroup ? (user.pushname || user.name || user.number) : undefined,
                 });
                 messageEmitter.emit('message', msgDoc.toObject());
 

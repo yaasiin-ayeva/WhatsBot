@@ -1,4 +1,4 @@
-// ── Chats (merged inbox + archive) ─────────────────────────────────────────
+// Chats (merged inbox + archive)
 
 async function loadChats() {
   const AS = window.AdminState;

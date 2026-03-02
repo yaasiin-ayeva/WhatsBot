@@ -1,4 +1,4 @@
-// ── Toast notifications ───────────────────────────────────────────────────────
+// Toast notifications
 window.showToast = function (message, type = 'success') {
   const colors = { success: 'bg-green-600', error: 'bg-red-600', warning: 'bg-amber-500', info: 'bg-blue-600' };
   const icons  = { success: 'fa-check-circle', error: 'fa-exclamation-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
@@ -14,7 +14,7 @@ window.showToast = function (message, type = 'success') {
   }, 3200);
 };
 
-// ── Pagination ────────────────────────────────────────────────────────────────
+// Pagination
 function renderPagination(meta, loadFn, containerId) {
   const div = document.getElementById(containerId);
   if (!div) return;
@@ -40,7 +40,7 @@ function renderPagination(meta, loadFn, containerId) {
   div.appendChild(btn('<i class="fas fa-chevron-right text-xs"></i>', meta.page + 1, meta.page === meta.pages, false));
 }
 
-// ── Generic utilities ─────────────────────────────────────────────────────────
+// Generic utilities
 function fmtDate(d) {
   if (!d) return '—';
   const dt = new Date(d);
@@ -64,7 +64,7 @@ function escHtml(str) {
 
 function redirect(path) { window.location.href = path; }
 
-// ── Chat / message helpers ────────────────────────────────────────────────────
+// Chat / message helpers
 function avatarColor(str) {
   const colors = ['#128C7E','#25D366','#075E54','#34B7F1','#6366f1','#8b5cf6','#ec4899','#f59e0b','#10b981','#ef4444'];
   let h = 0; for (let i = 0; i < (str||'').length; i++) h = (h * 31 + str.charCodeAt(i)) & 0xffff;

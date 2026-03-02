@@ -10,7 +10,7 @@
         <img src="public/botavatar.gif" alt="WhatsBot Preview" width="40%" style="max-width: 300px; border-radius: 8px;">
         <p>
             <strong>A simple WhatsApp bot with AI, social media downloads, CRM, and multilingual support</strong><br>
-            Built with NodeJS & TypeScript, powered by Gemini & ChatGPT APIs
+            Built with NodeJS & TypeScript, powered by Gemini, OpenAI GPT, Claude, and local sherpa-onnx speech
         </p>
         <p>
             🎯 Try it live: <a href="https://wa.me/qr/SBHRATABRAZVA1" target="_blank">WhatsBot Playground</a> or scan the QR code below:
@@ -24,47 +24,11 @@
 
 ## Features
 
-### AI-Powered Conversations
-- **Voice Chat**: Send voice messages and get audio responses powered by Gemini AI + local `sherpa-onnx`
-- **Gemini AI Chat**: Advanced AI conversations with Google's Gemini model (`/chat`)
-- **ChatGPT Integration**: Alternative AI powered by OpenAI's GPT models (`/gpt`)
-- **Claude Integration**: Alternative AI powered by Anthropic Claude (`/claude`)
-
-### Social Media Downloads
-Download videos from **6 platforms** without watermarks:
-- TikTok
-- Twitter/X
-- LinkedIn
-- Facebook
-- Pinterest
-- Instagram (Reels & Posts)
-- YouTube (wip)
-- Snapchat (wip)
-
-Just send the URL directly or use `/get <url>` - supports up to **150MB** files!
-
-### Multilingual Support
-- **Auto Language Detection**: Detects user language from phone number (100+ countries)
-- **Translation**: Translate text to any language (`/translate <lang-code> <text>`)
-- **Available Languages**: View with `/langlist`
-- **Supported Bot Languages**: English, French (automatic based on user location)
-
-### Fun & Utilities
-- **Memes**: Random memes (`/meme`)
-- **Jokes**: Two-part or single-line jokes (`/joke`)
-- **Weather**: Current weather for any city (`/meteo <city>`)
-- **Ping**: Check bot latency (`/ping`)
-- **Help**: Interactive command guide (`/help`)
-- **Onboarding**: Tutorial video (`/onboard`)
-
-### CRM & Campaign Management
-**Admin Panel** at `/admin`:
-- **Contact Tracking**: Auto-save all bot users with language detection
-- **Bulk Messaging**: Send campaigns to filtered contacts
-- **Message Templates**: Save and reuse message templates
-- **Schedule Campaigns**: Send immediately or schedule for later
-- **Analytics Dashboard**: Track contacts, interactions, and campaign performance
-- **Language Filtering**: Filter contacts by English, French, or Other
+- **AI chat**: Gemini (`/chat`), OpenAI GPT (`/gpt`), Claude (`/claude`)
+- **Voice chat**: local `sherpa-onnx` STT/TTS with admin-selectable reply model
+- **Downloads**: social media video download via direct URL or `/get` (up to 150 MB)
+- **Utilities**: translation, weather, memes, jokes, onboarding, ping, help
+- **Backoffice** at `/admin`: dashboard, contacts, chats/inbox, scoring, campaigns, templates, scheduled messages, bot status/logs, command toggles, users, audit log, integrations, settings
 
 ---
 
@@ -80,7 +44,7 @@ Just send the URL directly or use `/get <url>` - supports up to **150MB** files!
 | `/chat <message>` | Chat with Gemini AI | `/chat Tell me a story` |
 | `/gpt <message>` | Chat with ChatGPT | `/gpt Explain quantum physics` |
 | `/claude <message>` | Chat with Claude | `/claude Summarize this article` |
-| **Voice Messages** | Send audio for AI voice chat | Just send a voice message |
+| **Voice Messages** | Send audio for AI voice chat (provider set in admin settings) | Just send a voice message |
 | `/get <url>` | Download social media video | `/get https://tiktok.com/...` |
 | **Direct URL** | Just paste the URL | `https://instagram.com/...` |
 | `/translate <lang> <text>` | Translate to any language | `/translate es Hello world` |
@@ -186,6 +150,8 @@ Configure `GEMINI_API_KEY`, `CHAT_GPT_API_KEY`, `ANTHROPIC_API_KEY`, and `OPENWE
 
 These values are stored in the database and restored at startup, so they no longer need to be kept in `.env`.
 
+Until those keys are configured in the admin panel, AI and weather commands will not work.
+
 #### Speech Services
 Local sherpa-onnx voice models are downloaded and configured automatically at runtime.
 
@@ -215,100 +181,34 @@ npm run create-admin
 ### 2. Access Admin Panel
 Navigate to: `http://localhost:3000/admin`
 
-### 3. Admin Features
-- **Dashboard**: View total contacts, language breakdown, statistics
-- **Contact Management**: Search, filter (by language), export contacts
-- **Campaign Manager**: Create and schedule bulk messages
-- **Template Manager**: Save reusable message templates
-- **Campaign Analytics**: Track sent/failed messages
+### 3. Complete Initial Configuration
+After logging in, open **Settings** and configure:
+- AI / weather API keys
+- voice reply provider for voice notes
 
-**API Endpoints** (protected with JWT):
+### 4. Admin Features
+- **Core**: dashboard, contacts, analytics, campaigns, templates
+- **Operations**: chats inbox, scheduled messages, bot status, reconnect, live logs
+- **Automation**: scoring rules, auto-replies, webhooks, Slack/Discord, SMTP/email, inbound API
+- **Admin**: command enable/disable, users/roles, audit log, settings
+
+**Key API groups** (JWT-protected unless noted):
 ```
-POST /crm/auth/login          # Login
-GET  /crm/contacts            # List contacts
-POST /crm/campaigns           # Create campaign
-GET  /crm/campaigns           # List campaigns
-POST /crm/templates           # Create template
-GET  /crm/templates           # List templates
-POST /crm/send-message        # Send individual message
-```
-
----
-
-## 📁 Project Structure
-
-```
-WhatsBot/
-├── src/
-│   ├── index.ts              # Entry point with error handlers
-│   ├── bot.manager.ts        # WhatsApp bot core logic
-│   ├── commands/             # All bot commands
-│   │   ├── chat.command.ts   # Gemini AI
-│   │   ├── gpt.command.ts    # ChatGPT
-│   │   ├── claude.command.ts # Claude
-│   │   ├── get.command.ts    # Social media downloader
-│   │   ├── translate.command.ts
-│   │   ├── meteo.command.ts
-│   │   ├── meme.command.ts
-│   │   ├── joke.command.ts
-│   │   └── ...
-│   ├── configs/              # Configuration files
-│   ├── utils/                # Utility functions
-│   │   ├── get.util.ts       # Video downloaders
-│   │   ├── gemini.util.ts    # Gemini AI client
-│   │   ├── chat-gpt.util.ts  # ChatGPT client
-│   │   ├── claude.util.ts    # Claude client
-│   │   ├── i18n.util.ts      # Internationalization
-│   │   └── ...
-│   ├── crm/                  # CRM system
-│   │   ├── models/           # Database models
-│   │   ├── api/              # CRM API routes
-│   │   └── middlewares/      # Auth middleware
-│   ├── crons/                # Scheduled tasks
-│   │   ├── cleanup.cron.ts   # File cleanup (hourly)
-│   │   └── campaign.cron.ts  # Campaign scheduler
-│   └── views/                # EJS templates
-│       ├── index.ejs         # Main dashboard
-│       ├── qr.ejs            # QR scanner
-│       └── admin.ejs         # CRM panel
-├── public/
-│   ├── downloads/            # Temporary file storage
-│   └── botavatar.gif         # Bot avatar
-├── logs/                     # Application logs
-├── .bot/                     # yt-dlp binary
-├── ecosystem.config.js       # PM2 configuration
-├── Dockerfile                # Docker image
-├── docker-compose.yml        # Docker Compose
-└── package.json              # Dependencies
+/crm/auth/*               # auth
+/crm/contacts*            # contacts + import/export + tags/block/archive
+/crm/inbox*               # inbox + reply + stream
+/crm/campaigns*           # create/send/pause/resume/retry/export
+/crm/templates*           # revisions, pin, approval, duplicate, restore
+/crm/scheduled-messages*  # one-off scheduled messages
+/crm/scoring/*            # scoring rules + leaderboard
+/crm/integrations*        # webhooks / notifications / email
+/crm/auto-reply*          # auto-reply rules
+/crm/bot/*, /crm/logs/*   # bot status + reconnect + logs
+/crm/users*, /crm/audit-logs, /crm/settings
+/crm/inbound/*            # external send endpoint + API key
 ```
 
 ---
-
-## Technology Stack
-
-### Core Technologies
-- **Runtime**: Node.js 20+ with TypeScript
-- **WhatsApp**: whatsapp-web.js (custom fork)
-- **Web Framework**: Express.js + EJS templating
-- **Database**: MongoDB with Mongoose
-- **Process Manager**: PM2
-
-### AI & Speech
-- **AI Models**: Google Gemini AI, OpenAI GPT
-- **Speech-to-Text**: sherpa-onnx
-- **Text-to-Speech**: sherpa-onnx
-- **Language Detection**: langdetect
-
-### Media Processing
-- **Video Download**: yt-dlp, btch-downloader
-- **Video Processing**: FFmpeg (fluent-ffmpeg)
-- **Browser Automation**: Puppeteer
-
-### Other Services
-- **Translation**: Google Translate API
-- **Weather**: WeatherAPI.com
-- **Memes**: meme-api.com
-- **Jokes**: jokeapi.dev
 
 ---
 
@@ -383,7 +283,7 @@ curl http://localhost:3000/health
 ### Common Issues
 1. **Bot won't start**: Check `PUPPETEER_EXECUTABLE_PATH` in `.env`
 2. **QR code not showing**: Check port 3000 is not in use
-3. **Downloads failing**: Update yt-dlp binary or check API keys
+3. **Downloads failing**: Check source URL support, network access, yt-dlp startup download, and FFmpeg conversion
 4. **Memory errors**: Check PM2 memory limits in `ecosystem.config.js`
 
 ---

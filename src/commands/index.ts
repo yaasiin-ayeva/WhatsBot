@@ -11,4 +11,5 @@ export default {
     joke: require("./joke.command"),
     get: require("./get.command"),
     meteo: require("./meteo.command"),
+    recap: require("./recap.command"),
 }

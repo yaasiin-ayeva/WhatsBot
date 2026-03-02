@@ -1,4 +1,4 @@
-// ── Contacts ──────────────────────────────────────────────────────────────────
+// Contacts
 async function loadContacts(page = 1) {
   const AS = window.AdminState;
   AS.contactsPage = page;
@@ -125,7 +125,7 @@ window.importContacts = async function () {
   }
 };
 
-// ── Tags ──────────────────────────────────────────────────────────────────────
+// Tags
 window.openTagModal = function (contactId) {
   const AS = window.AdminState;
   AS.currentContactId = contactId;

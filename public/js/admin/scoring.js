@@ -1,4 +1,4 @@
-// ── Contact Scoring ─────────────────────────────────────────────────────────
+// Contact Scoring
 
 async function loadScoring() {
   const AS = window.AdminState;

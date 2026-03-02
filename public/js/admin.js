@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function () {
 
-  // ─── Boot ──────────────────────────────────────────────────────────────────
+  // Boot
   checkAuth();
   initSidebarToggle();
   initTabSwitching();
@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function () {
   initFormHandlers();
   loadContacts();
 
-  // ─── Auth ──────────────────────────────────────────────────────────────────
+  // Auth
   async function checkAuth() {
     const token = localStorage.getItem('token');
     if (!token) return redirect('/admin/login');
@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function () {
     redirect('/admin/login');
   });
 
-  // ─── Sidebar Toggle ────────────────────────────────────────────────────────
+  // Sidebar Toggle
   function initSidebarToggle() {
     if (localStorage.getItem('sidebarCollapsed') === 'true') {
       document.body.classList.add('sidebar-collapsed');
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // ─── Tab Switching ─────────────────────────────────────────────────────────
+  // Tab Switching
   function initTabSwitching() {
     const tabMap = {
       'dashboard-tab':          { section: 'dashboard-section',          onLoad: loadDashboardData },
@@ -57,6 +57,7 @@ document.addEventListener('DOMContentLoaded', function () {
       'scoring-tab':            { section: 'scoring-section',            onLoad: loadScoring },
       'scheduled-messages-tab': { section: 'scheduled-messages-section', onLoad: loadScheduledMessages },
       'integrations-tab':       { section: 'integrations-section',       onLoad: loadIntegrations },
+      'groups-tab':             { section: 'groups-section',             onLoad: loadGroups },
     };
 
     document.querySelectorAll('.nav-item').forEach(item => {
@@ -83,7 +84,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // ─── Search handlers ───────────────────────────────────────────────────────
+  // Search handlers
   function initSearchHandlers() {
     const AS = window.AdminState;
 

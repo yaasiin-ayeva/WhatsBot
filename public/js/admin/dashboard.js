@@ -1,4 +1,4 @@
-// ── Dashboard ─────────────────────────────────────────────────────────────────
+// Dashboard
 async function loadDashboardData() {
   try {
     const [contactsData, campaignsData, templatesData, recentData, analytics] = await Promise.all([
@@ -98,7 +98,7 @@ function renderRecentContacts(contacts) {
   });
 }
 
-// ── Analytics ─────────────────────────────────────────────────────────────────
+// Analytics
 async function loadAnalytics() {
   try {
     const data = await apiFetch('/crm/analytics');

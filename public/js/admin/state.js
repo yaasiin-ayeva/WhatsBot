@@ -1,4 +1,4 @@
-// ── Shared mutable state ─────────────────────────────────────────────────────
+// Shared mutable state
 // All admin modules read/write through this single object so state
 // remains consistent across files without a bundler.
 window.AdminState = {
@@ -37,9 +37,10 @@ window.AdminState = {
   chatsSearchTimer:         null,
   chatsSearchMode:          false,
   commandPrefix:            '/',
+  recapGroups:              [],
 };
 
-// ── Central API helper ────────────────────────────────────────────────────────
+// Central API helper
 async function apiFetch(url, method = 'GET', body = null) {
   const opts = {
     method,

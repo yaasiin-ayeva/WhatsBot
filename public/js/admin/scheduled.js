@@ -1,4 +1,4 @@
-// ── Scheduled Messages ──────────────────────────────────────────────────────
+// Scheduled Messages
 
 async function loadScheduledMessages() {
   try {

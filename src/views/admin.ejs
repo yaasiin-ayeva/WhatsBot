@@ -62,6 +62,30 @@
     ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+    /* ── WhatsApp-style inbox ──────────────────────────────────── */
+    .chat-bg { background-color: #e5ddd5; }
+    .conv-item { display:flex; align-items:center; gap:10px; padding:10px 14px; cursor:pointer; border-bottom:1px solid #f0f0f0; transition:background .1s; }
+    .conv-item:hover { background:#f0f4ff; }
+    .conv-item.active { background:#e8eeff; }
+    .conv-avatar { width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1rem; flex-shrink:0; color:#fff; }
+    .msg-row-in  { display:flex; justify-content:flex-start; padding:2px 12px; }
+    .msg-row-out { display:flex; justify-content:flex-end;   padding:2px 12px; }
+    .msg-bubble { max-width:68%; padding:7px 11px 4px; border-radius:8px; font-size:0.84rem; line-height:1.5; word-break:break-word; white-space:pre-wrap; box-shadow:0 1px 2px rgba(0,0,0,.12); position:relative; }
+    .msg-bubble-in  { background:#fff; border-radius:0 8px 8px 8px; }
+    .msg-bubble-in::before  { content:''; position:absolute; left:-7px; top:0; border:7px solid transparent; border-right-color:#fff; border-top:0; }
+    .msg-bubble-out { background:#dcf8c6; border-radius:8px 0 8px 8px; }
+    .msg-bubble-out::after  { content:''; position:absolute; right:-7px; top:0; border:7px solid transparent; border-left-color:#dcf8c6; border-top:0; }
+    .msg-time { font-size:0.67rem; color:#999; text-align:right; margin-top:2px; }
+    .msg-time-in { color:#aaa; }
+    .date-sep { display:flex; align-items:center; justify-content:center; margin:10px 0; }
+    .date-sep span { background:rgba(255,255,255,.75); color:#777; font-size:0.7rem; font-weight:600; padding:3px 12px; border-radius:999px; box-shadow:0 1px 2px rgba(0,0,0,.08); }
+    .chat-input-bar { background:#f0f0f0; border-top:1px solid #d9d9d9; padding:10px 14px; display:flex; align-items:flex-end; gap:10px; }
+    .chat-input-bar textarea { flex-grow:1; background:#fff; border:none; border-radius:20px; padding:9px 14px; font-size:0.87rem; resize:none; outline:none; max-height:120px; line-height:1.4; }
+    .chat-send-btn { width:42px; height:42px; border-radius:50%; background:#25d366; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:background .15s; }
+    .chat-send-btn:hover { background:#1daf57; }
+    .chat-header-bar { background:#075e54; color:#fff; padding:10px 16px; display:flex; align-items:center; gap:12px; flex-shrink:0; }
+    .chat-header-bar .chat-avatar { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.9rem; flex-shrink:0; }
+    .unread-dot { width:20px; height:20px; border-radius:50%; background:#25d366; color:#fff; font-size:0.65rem; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   </style>
 </head>
 <body class="min-h-screen flex">
@@ -81,14 +105,18 @@
     <a href="#" id="dashboard-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-home"></i></span><span>Dashboard</span></a>
     <a href="#" id="contacts-tab" class="nav-item active"><span class="nav-icon"><i class="fas fa-users"></i></span><span>Contacts</span></a>
     <a href="#" id="analytics-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-chart-line"></i></span><span>Analytics</span></a>
+    <a href="#" id="chats-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-comments"></i></span><span>Chats</span><span id="chats-badge" class="ml-auto bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full hidden">0</span></a>
+    <a href="#" id="scoring-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-star"></i></span><span>Contact Scoring</span></a>
     <div class="nav-group-label">Messaging</div>
     <a href="#" id="campaigns-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-bullhorn"></i></span><span>Campaigns</span></a>
     <a href="#" id="templates-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-layer-group"></i></span><span>Templates</span></a>
+    <a href="#" id="scheduled-messages-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-clock"></i></span><span>Scheduled</span></a>
     <div class="nav-group-label">System</div>
     <a href="#" id="bot-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-robot"></i></span><span>Bot Status</span></a>
     <a href="#" id="commands-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-terminal"></i></span><span>Commands</span></a>
     <a href="#" id="users-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-user-shield"></i></span><span>Users</span></a>
     <a href="#" id="audit-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-history"></i></span><span>Audit Log</span></a>
+    <a href="#" id="integrations-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-plug"></i></span><span>Integrations</span></a>
     <a href="#" id="settings-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-cog"></i></span><span>Settings</span></a>
   </nav>
   <div class="px-4 py-3 border-t border-gray-100 flex-shrink-0">
@@ -107,12 +135,23 @@
 
   <!-- Dashboard -->
   <div id="dashboard-section" class="section-content hidden p-6">
-    <div class="mb-6"><h1 class="text-2xl font-bold text-gray-900">Dashboard</h1><p class="text-sm text-gray-500 mt-1">Overview of your bot activity</p></div>
-    <div class="grid grid-cols-4 gap-4 mb-6">
-      <div class="stat-card"><div class="text-2xl font-bold text-gray-900" id="total-contacts">—</div><div class="text-xs text-gray-500 mt-1 font-medium">Total Contacts</div></div>
+    <div class="mb-5"><h1 class="text-2xl font-bold text-gray-900">Dashboard</h1><p class="text-sm text-gray-500 mt-1">Overview of your bot activity</p></div>
+    <div id="health-banner" class="hidden mb-4 flex items-center gap-3 bg-red-50 border border-red-200 text-red-800 rounded-xl px-4 py-3 text-sm font-medium"><i class="fas fa-exclamation-triangle text-red-500"></i><span id="health-banner-text"></span></div>
+    <div class="grid grid-cols-4 gap-4 mb-5">
+      <div class="stat-card"><div class="text-2xl font-bold text-gray-900" id="total-contacts">—</div><div class="text-xs text-gray-500 mt-1 font-medium">Total Contacts</div><div id="contacts-delta" class="text-xs mt-1 hidden"></div></div>
       <div class="stat-card"><div class="text-2xl font-bold text-gray-900" id="total-campaigns">—</div><div class="text-xs text-gray-500 mt-1 font-medium">Campaigns</div></div>
-      <div class="stat-card"><div class="text-2xl font-bold text-gray-900" id="total-messages">—</div><div class="text-xs text-gray-500 mt-1 font-medium">Messages Sent</div></div>
+      <div class="stat-card"><div class="text-2xl font-bold text-gray-900" id="total-messages">—</div><div class="text-xs text-gray-500 mt-1 font-medium">Messages Today</div><div id="messages-delta" class="text-xs mt-1 hidden"></div></div>
       <div class="stat-card"><div class="text-2xl font-bold text-gray-900" id="total-templates">—</div><div class="text-xs text-gray-500 mt-1 font-medium">Templates</div></div>
+    </div>
+    <div class="grid gap-4 mb-4" style="grid-template-columns:1fr 1fr;">
+      <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+        <div class="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between"><h2 class="font-semibold text-gray-900 text-sm">Top Commands</h2><span class="text-xs text-gray-400">All time</span></div>
+        <div id="top-commands-widget" class="p-4 text-sm text-gray-400 italic">Loading…</div>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+        <div class="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between"><h2 class="font-semibold text-gray-900 text-sm">Recent Activity</h2><span class="text-xs text-gray-400">Audit log</span></div>
+        <div id="recent-audit-widget" class="p-4 text-sm text-gray-400 italic">Loading…</div>
+      </div>
     </div>
     <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden">
       <div class="px-6 py-4 border-b border-gray-100"><h2 class="font-semibold text-gray-900 text-sm">Recent Contacts</h2></div>
@@ -283,6 +322,120 @@
     </div>
   </div>
 
+  <!-- Inbox -->
+  <!-- Chats (Inbox + Conversations merged) -->
+  <div id="chats-section" class="section-content hidden" style="height:calc(100vh - 64px);flex-direction:column;">
+    <div class="flex flex-grow overflow-hidden">
+
+      <!-- LEFT: chat list sidebar -->
+      <div class="bg-white border-r border-gray-200 flex flex-col flex-shrink-0" style="width:300px;">
+        <!-- Header -->
+        <div class="px-4 pt-3 pb-2 border-b border-gray-100 flex-shrink-0">
+          <div class="flex items-center justify-between mb-2">
+            <span class="font-bold text-gray-900 text-base">Chats</span>
+            <span id="chats-mode-label" class="text-xs text-gray-400"></span>
+          </div>
+          <!-- Search bar -->
+          <div class="relative">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" style="font-size:0.68rem;"></i>
+            <input type="text" id="chats-search" placeholder="Search name, phone or message…"
+              class="field py-1.5 pl-8 pr-8 text-xs" oninput="handleChatsSearch(this.value)">
+            <button id="chats-search-clear" onclick="clearChatsSearch()"
+              class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 hidden">
+              <i class="fas fa-times-circle text-xs"></i>
+            </button>
+          </div>
+        </div>
+        <!-- Thread list -->
+        <div id="chats-list" class="overflow-y-auto flex-grow"></div>
+      </div>
+
+      <!-- RIGHT: chat panel -->
+      <div class="flex-grow flex flex-col overflow-hidden">
+
+        <!-- WA-style teal header (hidden until a chat is selected) -->
+        <div id="chat-header" class="chat-header-bar hidden">
+          <div id="chat-header-avatar" class="chat-avatar" style="background:#128C7E;"></div>
+          <div class="flex-grow min-w-0">
+            <div class="font-semibold text-sm truncate" id="chat-phone-label">—</div>
+            <div class="text-xs opacity-70 truncate" id="chat-contact-name"></div>
+          </div>
+        </div>
+
+        <!-- Messages -->
+        <div id="chat-messages" class="flex-grow overflow-y-auto py-3 chat-bg">
+          <div class="flex items-center justify-center h-full select-none">
+            <div id="chat-empty" class="text-center">
+              <div class="w-20 h-20 bg-white bg-opacity-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-comments text-4xl" style="color:#b2dfdb;"></i>
+              </div>
+              <p class="text-gray-500 text-sm font-medium">Your chats</p>
+              <p class="text-gray-400 text-xs mt-1">Select a conversation or search above</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reply bar -->
+        <div id="chat-reply-box" class="chat-input-bar hidden">
+          <textarea id="reply-input" rows="1" placeholder="Type a message…"
+            oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';"
+            onkeydown="if(event.ctrlKey&&event.key==='Enter'){event.preventDefault();sendReply();}"></textarea>
+          <button class="chat-send-btn" onclick="sendReply()" title="Send (Ctrl+Enter)">
+            <i class="fas fa-paper-plane text-white text-sm"></i>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Scheduled Messages -->
+  <div id="scheduled-messages-section" class="section-content hidden p-6">
+    <div class="flex items-center justify-between mb-5">
+      <div><h1 class="text-2xl font-bold text-gray-900">Scheduled Messages</h1><p class="text-sm text-gray-500 mt-0.5">One-off messages sent at a specific date &amp; time</p></div>
+      <button onclick="openScheduledModal()" class="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"><i class="fas fa-plus text-xs"></i> New Scheduled Message</button>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+      <table class="w-full text-left"><thead><tr class="border-b border-gray-100 bg-gray-50">
+        <th class="px-5 py-3 text-xs font-semibold text-gray-500">Recipient</th>
+        <th class="px-5 py-3 text-xs font-semibold text-gray-500">Message</th>
+        <th class="px-5 py-3 text-xs font-semibold text-gray-500">Scheduled For</th>
+        <th class="px-5 py-3 text-xs font-semibold text-gray-500">Status</th>
+        <th class="px-5 py-3 text-xs font-semibold text-gray-500">Actions</th>
+      </tr></thead><tbody id="scheduled-messages-body"></tbody></table>
+      <div id="scheduled-messages-empty" class="text-center py-12 text-gray-400 hidden"><i class="fas fa-clock text-3xl mb-2"></i><p class="text-sm">No scheduled messages yet</p></div>
+    </div>
+  </div>
+
+  <!-- Contact Scoring -->
+  <div id="scoring-section" class="section-content hidden p-6">
+    <div class="mb-6"><h1 class="text-2xl font-bold text-gray-900">Contact Scoring</h1><p class="text-sm text-gray-500 mt-0.5">Define point rules and view the leaderboard</p></div>
+    <div class="grid gap-6" style="grid-template-columns:1fr 1fr;">
+      <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+          <h2 class="font-semibold text-gray-900 text-sm">Score Rules</h2>
+          <button onclick="addScoreRule()" class="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold"><i class="fas fa-plus text-xs"></i> Add Rule</button>
+        </div>
+        <table class="w-full text-left"><thead><tr class="border-b border-gray-100 bg-gray-50">
+          <th class="px-4 py-2.5 text-xs font-semibold text-gray-500">Action</th>
+          <th class="px-4 py-2.5 text-xs font-semibold text-gray-500">Label</th>
+          <th class="px-4 py-2.5 text-xs font-semibold text-gray-500">Points</th>
+          <th class="px-4 py-2.5 text-xs font-semibold text-gray-500">Enabled</th>
+          <th class="px-4 py-2.5 text-xs font-semibold text-gray-500"></th>
+        </tr></thead><tbody id="score-rules-body"></tbody></table>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-100"><h2 class="font-semibold text-gray-900 text-sm">Leaderboard</h2></div>
+        <table class="w-full text-left"><thead><tr class="border-b border-gray-100 bg-gray-50">
+          <th class="px-4 py-2.5 text-xs font-semibold text-gray-500">Rank</th>
+          <th class="px-4 py-2.5 text-xs font-semibold text-gray-500">Name</th>
+          <th class="px-4 py-2.5 text-xs font-semibold text-gray-500">Phone</th>
+          <th class="px-4 py-2.5 text-xs font-semibold text-gray-500">Score</th>
+        </tr></thead><tbody id="leaderboard-body"></tbody></table>
+      </div>
+    </div>
+  </div>
+
   <!-- Audit Log -->
   <div id="audit-section" class="section-content hidden p-6">
     <div class="mb-6"><h1 class="text-2xl font-bold text-gray-900">Audit Log</h1><p class="text-sm text-gray-500 mt-0.5">Record of all admin actions</p></div>
@@ -311,6 +464,334 @@
       <div class="px-5 py-3 border-t border-gray-100 flex items-center justify-between">
         <div class="text-xs text-gray-500">Total: <span id="audit-total">0</span></div>
         <div id="audit-pagination" class="flex items-center gap-1"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Integrations -->
+  <div id="integrations-section" class="section-content hidden p-6">
+    <div class="mb-6 flex items-center justify-between">
+      <div><h1 class="text-2xl font-bold text-gray-900">Integrations</h1><p class="text-sm text-gray-500 mt-0.5">Connect WhatsBot to external services and automate responses</p></div>
+    </div>
+
+    <!-- Sub-tabs -->
+    <div class="flex border-b border-gray-200 mb-6 gap-1 flex-wrap">
+      <button class="ctab active" id="itab-webhooks" onclick="switchIntegrationTab('webhooks')"><i class="fas fa-globe mr-1.5"></i>Webhooks</button>
+      <button class="ctab" id="itab-notifications" onclick="switchIntegrationTab('notifications')"><i class="fas fa-bell mr-1.5"></i>Slack / Discord</button>
+      <button class="ctab" id="itab-email" onclick="switchIntegrationTab('email')"><i class="fas fa-envelope mr-1.5"></i>Email</button>
+      <button class="ctab" id="itab-autoreply" onclick="switchIntegrationTab('autoreply')"><i class="fas fa-robot mr-1.5"></i>Auto-Reply</button>
+      <button class="ctab" id="itab-inbound" onclick="switchIntegrationTab('inbound')"><i class="fas fa-key mr-1.5"></i>Inbound API</button>
+    </div>
+
+    <!-- Webhooks panel -->
+    <div id="ipanel-webhooks">
+      <div class="flex items-center justify-between mb-4">
+        <p class="text-sm text-gray-500">POST a JSON payload to your URL whenever selected events occur.</p>
+        <button onclick="openIntegrationModal(null,'webhook')" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700"><i class="fas fa-plus mr-1.5"></i>Add Webhook</button>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <table class="w-full">
+          <thead class="bg-gray-50 border-b border-gray-100">
+            <tr>
+              <th class="px-5 py-3 text-xs font-semibold text-gray-500 text-left">Name</th>
+              <th class="px-5 py-3 text-xs font-semibold text-gray-500 text-left">URL</th>
+              <th class="px-5 py-3 text-xs font-semibold text-gray-500 text-left">Events</th>
+              <th class="px-5 py-3 text-xs font-semibold text-gray-500 text-left">Status</th>
+              <th class="px-5 py-3 text-xs font-semibold text-gray-500 text-left">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="webhooks-table-body"><tr><td colspan="5" class="text-center py-12 text-gray-400 text-sm"><i class="fas fa-globe text-3xl mb-3 block opacity-30"></i>No webhooks configured</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Slack/Discord panel -->
+    <div id="ipanel-notifications" class="hidden">
+      <div class="flex items-center justify-between mb-4">
+        <p class="text-sm text-gray-500">Send formatted notifications to Slack or Discord channels via incoming webhooks.</p>
+        <div class="flex gap-2">
+          <button onclick="openIntegrationModal(null,'slack')" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700"><i class="fab fa-slack mr-1.5"></i>Add Slack</button>
+          <button onclick="openIntegrationModal(null,'discord')" class="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700"><i class="fab fa-discord mr-1.5"></i>Add Discord</button>
+        </div>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <table class="w-full">
+          <thead class="bg-gray-50 border-b border-gray-100">
+            <tr>
+              <th class="px-5 py-3 text-xs font-semibold text-gray-500 text-left">Name</th>
+              <th class="px-5 py-3 text-xs font-semibold text-gray-500 text-left">Type</th>
+              <th class="px-5 py-3 text-xs font-semibold text-gray-500 text-left">Events</th>
+              <th class="px-5 py-3 text-xs font-semibold text-gray-500 text-left">Status</th>
+              <th class="px-5 py-3 text-xs font-semibold text-gray-500 text-left">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="notifications-table-body"><tr><td colspan="5" class="text-center py-12 text-gray-400 text-sm"><i class="fas fa-bell text-3xl mb-3 block opacity-30"></i>No notification integrations configured</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Email panel -->
+    <div id="ipanel-email" class="hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- SMTP Config -->
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <div><h3 class="text-base font-semibold text-gray-900">SMTP Server</h3><p class="text-xs text-gray-500 mt-0.5">Configure your outgoing email server</p></div>
+            <button onclick="testSmtp()" class="px-3 py-1.5 text-xs border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 font-medium"><i class="fas fa-vial mr-1"></i>Test Connection</button>
+          </div>
+          <div class="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
+            <div class="grid grid-cols-3 gap-3">
+              <div class="col-span-2">
+                <label class="text-xs font-semibold text-gray-500 block mb-1">SMTP Host</label>
+                <input id="smtp-host" class="field text-sm" placeholder="smtp.gmail.com">
+              </div>
+              <div>
+                <label class="text-xs font-semibold text-gray-500 block mb-1">Port</label>
+                <input id="smtp-port" type="number" class="field text-sm" value="587" placeholder="587">
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs font-semibold text-gray-500 block mb-1">Username / Email</label>
+                <input id="smtp-user" class="field text-sm" placeholder="you@gmail.com">
+              </div>
+              <div>
+                <label class="text-xs font-semibold text-gray-500 block mb-1">Password / App Key</label>
+                <input id="smtp-pass" type="password" class="field text-sm" placeholder="••••••••••••">
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs font-semibold text-gray-500 block mb-1">From Name</label>
+                <input id="smtp-from-name" class="field text-sm" placeholder="WhatsBot">
+              </div>
+              <div>
+                <label class="text-xs font-semibold text-gray-500 block mb-1">From Email</label>
+                <input id="smtp-from-email" class="field text-sm" placeholder="noreply@yourdomain.com">
+              </div>
+            </div>
+            <div class="flex items-center gap-2 pt-1">
+              <input type="checkbox" id="smtp-secure" class="accent-indigo-600 w-4 h-4">
+              <label for="smtp-secure" class="text-sm text-gray-600">Use TLS/SSL (port 465)</label>
+            </div>
+            <div class="pt-2">
+              <button onclick="saveSmtp()" class="w-full py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700">Save SMTP Settings</button>
+            </div>
+          </div>
+          <!-- Provider hints -->
+          <div class="mt-4 bg-blue-50 border border-blue-100 rounded-xl p-4">
+            <p class="text-xs font-semibold text-blue-700 mb-2"><i class="fas fa-lightbulb mr-1"></i>Quick Setup Hints</p>
+            <div class="space-y-1 text-xs text-blue-600">
+              <p><strong>Gmail:</strong> host=smtp.gmail.com, port=587, secure=off — use an App Password</p>
+              <p><strong>Outlook:</strong> host=smtp-mail.outlook.com, port=587, secure=off</p>
+              <p><strong>SendGrid:</strong> host=smtp.sendgrid.net, port=587, user=apikey, pass=SG.xxx</p>
+              <p><strong>Brevo:</strong> host=smtp-relay.brevo.com, port=587, user=your-email</p>
+            </div>
+          </div>
+        </div>
+        <!-- Email Recipients / Integrations -->
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <div><h3 class="text-base font-semibold text-gray-900">Email Integrations</h3><p class="text-xs text-gray-500 mt-0.5">Send event notifications to email addresses</p></div>
+            <button onclick="openIntegrationModal(null,'email')" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700"><i class="fas fa-plus mr-1.5"></i>Add</button>
+          </div>
+          <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <table class="w-full">
+              <thead class="bg-gray-50 border-b border-gray-100">
+                <tr>
+                  <th class="px-4 py-3 text-xs font-semibold text-gray-500 text-left">Name</th>
+                  <th class="px-4 py-3 text-xs font-semibold text-gray-500 text-left">Recipients</th>
+                  <th class="px-4 py-3 text-xs font-semibold text-gray-500 text-left">Events</th>
+                  <th class="px-4 py-3 text-xs font-semibold text-gray-500 text-left">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="email-table-body"><tr><td colspan="4" class="text-center py-10 text-gray-400 text-sm"><i class="fas fa-envelope text-3xl mb-3 block opacity-30"></i>No email integrations configured</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Auto-Reply panel -->
+    <div id="ipanel-autoreply" class="hidden">
+      <div class="flex items-center justify-between mb-4">
+        <p class="text-sm text-gray-500">Automatically reply to incoming messages based on keyword rules or AI.</p>
+        <button onclick="openAutoReplyModal(null)" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700"><i class="fas fa-plus mr-1.5"></i>Add Rule</button>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <table class="w-full">
+          <thead class="bg-gray-50 border-b border-gray-100">
+            <tr>
+              <th class="px-5 py-3 text-xs font-semibold text-gray-500 text-left">Name</th>
+              <th class="px-5 py-3 text-xs font-semibold text-gray-500 text-left">Trigger</th>
+              <th class="px-5 py-3 text-xs font-semibold text-gray-500 text-left">Match</th>
+              <th class="px-5 py-3 text-xs font-semibold text-gray-500 text-left">Response</th>
+              <th class="px-5 py-3 text-xs font-semibold text-gray-500 text-left">Cooldown</th>
+              <th class="px-5 py-3 text-xs font-semibold text-gray-500 text-left">Enabled</th>
+              <th class="px-5 py-3 text-xs font-semibold text-gray-500 text-left">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="autoreply-table-body"><tr><td colspan="7" class="text-center py-12 text-gray-400 text-sm"><i class="fas fa-robot text-3xl mb-3 block opacity-30"></i>No auto-reply rules configured</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Inbound API panel -->
+    <div id="ipanel-inbound" class="hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Key management card -->
+        <div>
+          <h3 class="text-base font-semibold text-gray-900 mb-1">API Key</h3>
+          <p class="text-sm text-gray-500 mb-4">Allow external systems to send WhatsApp messages programmatically — no login required, just the key.</p>
+          <div class="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+            <div>
+              <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-2">Your Secret Key</label>
+              <div class="flex gap-2">
+                <div class="relative flex-1">
+                  <input id="inbound-api-key-input" type="password" class="field font-mono text-sm pr-10" readonly placeholder="No key yet — click Rotate to generate">
+                  <button onclick="toggleKeyVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600" title="Show/hide"><i id="key-eye-icon" class="fas fa-eye text-sm"></i></button>
+                </div>
+                <button onclick="copyInboundKey()" class="px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 flex-shrink-0" title="Copy to clipboard"><i class="fas fa-copy"></i></button>
+              </div>
+            </div>
+            <button onclick="rotateInboundKey()" class="w-full py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 flex items-center justify-center gap-2">
+              <i class="fas fa-sync-alt"></i> Rotate Key
+            </button>
+            <p class="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2"><i class="fas fa-exclamation-triangle mr-1"></i>Rotating invalidates the current key immediately. Update all integrations using it.</p>
+          </div>
+        </div>
+        <!-- Usage card -->
+        <div>
+          <h3 class="text-base font-semibold text-gray-900 mb-1">API Reference</h3>
+          <p class="text-sm text-gray-500 mb-4">Send a message to any WhatsApp number using a simple HTTP request.</p>
+          <div class="bg-gray-900 rounded-xl overflow-hidden">
+            <div class="flex items-center justify-between px-4 py-2.5 border-b border-gray-700">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+              </div>
+              <span class="text-xs text-gray-400 font-mono">POST /crm/inbound/send</span>
+              <button onclick="copyApiExample()" class="text-xs text-gray-400 hover:text-white"><i class="fas fa-copy"></i></button>
+            </div>
+            <pre id="inbound-api-example" class="text-green-300 p-4 text-xs leading-relaxed overflow-x-auto">curl -X POST https://your-domain/crm/inbound/send \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: YOUR_API_KEY" \
+  -d '{
+    "phoneNumber": "22890123456",
+    "message": "Hello from the API!"
+  }'</pre>
+          </div>
+          <div class="mt-3 bg-white border border-gray-200 rounded-xl p-4 space-y-2">
+            <p class="text-xs font-semibold text-gray-600">Response</p>
+            <pre class="text-xs text-gray-500 font-mono">{"success": true}  // 200 OK
+{"error": "..."}   // 4xx on failure</pre>
+            <div class="pt-2 space-y-1 text-xs text-gray-500">
+              <p><span class="font-mono bg-gray-100 px-1 rounded">x-api-key</span> — header or body field <span class="font-mono bg-gray-100 px-1 rounded">apiKey</span></p>
+              <p><span class="font-mono bg-gray-100 px-1 rounded">phoneNumber</span> — digits only, no + or spaces</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Integration Modal -->
+  <div id="integration-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-backdrop">
+    <div class="modal-box bg-white rounded-2xl shadow-2xl w-full max-w-lg p-7 relative">
+      <button onclick="closeIntegrationModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><i class="fas fa-times fa-lg"></i></button>
+      <h2 id="integration-modal-title" class="text-xl font-bold text-gray-900 mb-5">Add Webhook</h2>
+      <div class="space-y-4">
+        <div>
+          <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Name</label>
+          <input id="int-name" class="field" placeholder="e.g. My Webhook">
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">URL</label>
+          <input id="int-url" class="field" placeholder="https://hooks.example.com/…">
+        </div>
+        <div id="int-secret-wrap">
+          <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Secret (optional, for signature verification)</label>
+          <input id="int-secret" class="field font-mono" placeholder="leave blank to skip">
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-2">Events to subscribe</label>
+          <div id="int-events-list" class="grid grid-cols-2 gap-2"></div>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="toggle-track" id="int-enabled-toggle" onclick="toggleIntEnabled()" title="Enabled"></div>
+          <span class="text-sm text-gray-600">Enabled</span>
+        </div>
+      </div>
+      <div class="flex justify-end gap-3 mt-6">
+        <button onclick="closeIntegrationModal()" class="px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
+        <button onclick="saveIntegration()" class="px-5 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auto-Reply Modal -->
+  <div id="autoreply-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-backdrop">
+    <div class="modal-box bg-white rounded-2xl shadow-2xl w-full max-w-lg p-7 relative overflow-y-auto" style="max-height:90vh;">
+      <button onclick="closeAutoReplyModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><i class="fas fa-times fa-lg"></i></button>
+      <h2 id="autoreply-modal-title" class="text-xl font-bold text-gray-900 mb-5">Add Auto-Reply Rule</h2>
+      <div class="space-y-4">
+        <div>
+          <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Rule Name</label>
+          <input id="ar-name" class="field" placeholder="e.g. Greeting Reply">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Match Type</label>
+            <select id="ar-matchtype" class="field">
+              <option value="contains">Contains</option>
+              <option value="exact">Exact</option>
+              <option value="startsWith">Starts With</option>
+              <option value="regex">Regex</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Priority</label>
+            <input id="ar-priority" type="number" class="field" value="0" min="0">
+          </div>
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Trigger Keyword / Pattern</label>
+          <input id="ar-trigger" class="field font-mono" placeholder="hello">
+        </div>
+        <div class="flex items-center gap-3">
+          <input type="checkbox" id="ar-useai" onchange="toggleArAI()" class="w-4 h-4 accent-indigo-600">
+          <label for="ar-useai" class="text-sm text-gray-700 font-medium">Use AI to generate response</label>
+        </div>
+        <div id="ar-static-wrap">
+          <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Static Response</label>
+          <textarea id="ar-response" class="field" rows="3" placeholder="Hi! Thanks for reaching out. How can I help you?"></textarea>
+        </div>
+        <div id="ar-ai-wrap" class="hidden space-y-3">
+          <div>
+            <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">AI Provider</label>
+            <select id="ar-aiprovider" class="field">
+              <option value="gemini">Gemini (Google)</option>
+              <option value="openai">OpenAI (GPT)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">System Prompt</label>
+            <textarea id="ar-aiprompt" class="field" rows="3" placeholder="You are a helpful WhatsApp assistant. Reply briefly and helpfully."></textarea>
+          </div>
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Cooldown per contact (minutes)</label>
+          <input id="ar-cooldown" type="number" class="field" value="60" min="0">
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="toggle-track on" id="ar-enabled-toggle" onclick="toggleArEnabled()" title="Enabled"></div>
+          <span class="text-sm text-gray-600">Enabled</span>
+        </div>
+      </div>
+      <div class="flex justify-end gap-3 mt-6">
+        <button onclick="closeAutoReplyModal()" class="px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancel</button>
+        <button onclick="saveAutoReply()" class="px-5 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700">Save</button>
       </div>
     </div>
   </div>
@@ -387,6 +868,15 @@
               <textarea id="campaign-message" rows="7" class="field resize-none" placeholder="Write your message…" oninput="updateWaPreview()"></textarea>
             </div>
             <div><label class="text-xs font-semibold text-gray-500 block mb-1">Use Template</label><select id="template-selector" onchange="applyTemplateToModal()" class="field"><option value="">— Select a template —</option></select></div>
+            <div>
+              <label class="text-xs font-semibold text-gray-500 block mb-1">Media Attachment (optional)</label>
+              <div class="flex gap-2 items-center">
+                <input id="campaign-media-url" class="field text-xs" placeholder="Paste image / video URL…" oninput="updateMediaPreview()">
+                <button type="button" onclick="document.getElementById('campaign-media-url').value='';updateMediaPreview()" class="text-gray-400 hover:text-red-500 flex-shrink-0" title="Clear"><i class="fas fa-times"></i></button>
+              </div>
+              <div id="media-preview-wrap" class="hidden mt-2"><img id="media-preview-img" src="" alt="preview" class="max-h-24 rounded-lg border border-gray-200 object-contain"></div>
+              <p class="text-xs text-gray-400 mt-1">Supported: image (jpg/png/gif/webp), video (mp4), document (pdf). Must be a direct public URL.</p>
+            </div>
           </div>
           <div><div class="text-xs font-semibold text-gray-500 mb-2">Preview</div><div class="wa-bg"><div class="wa-bubble" id="wa-preview">Your message will appear here…</div></div></div>
         </div>
@@ -436,8 +926,17 @@
               <label class="text-xs font-semibold text-gray-500 block mb-1" id="recurring-day-label">Day</label>
               <input type="number" id="campaign-recurringDay" class="field" style="max-width:120px;" min="0" max="31">
             </div>
+            <div><label class="text-xs font-semibold text-gray-500 block mb-1">Throttle Rate (msg/min)</label><input type="number" id="campaign-throttle" class="field" style="max-width:120px;" min="1" max="600" value="60"></div>
+            <div><label class="text-xs font-semibold text-gray-500 block mb-1">Expiry Date (optional)</label><input type="datetime-local" id="campaign-expires" class="field"></div>
+            <div><label class="text-xs font-semibold text-gray-500 block mb-1">Exclude Tags (comma-separated)</label><input type="text" id="campaign-exclude-tags" class="field" placeholder="e.g. vip, opted-out"></div>
+            <div><label class="text-xs font-semibold text-gray-500 block mb-1">Campaign Notes</label><textarea id="campaign-notes" rows="2" class="field resize-none" placeholder="Internal notes…"></textarea></div>
           </div>
-          <div><div class="text-xs font-semibold text-gray-500 mb-2">Preview</div><div class="wa-bg"><div class="wa-bubble" id="wa-preview-2">Your message will appear here…</div></div></div>
+          <div class="space-y-4">
+            <div><div class="text-xs font-semibold text-gray-500 mb-2">Preview</div><div class="wa-bg"><div class="wa-bubble" id="wa-preview-2">Your message will appear here…</div></div></div>
+            <div class="border border-gray-200 rounded-xl p-4 space-y-3">
+              <div class="flex items-center gap-2"><label class="text-xs font-semibold text-gray-600">A/B Test</label><input type="checkbox" id="ab-test-toggle" onchange="toggleAbTest()" class="rounded"></div>
+              <div id="ab-test-wrap" class="hidden"><label class="text-xs font-semibold text-gray-500 block mb-1">Variant B Message</label><textarea id="campaign-variant-b" rows="4" class="field resize-none text-xs" placeholder="Alternate message for odd-indexed contacts…"></textarea></div>
+            </div>
         </div>
       </div>
     </div>
@@ -472,15 +971,25 @@
       <h2 class="text-lg font-bold text-gray-900">Delivery Report — <span id="delivery-campaign-name" class="text-indigo-600"></span></h2>
       <button onclick="closeDeliveryModal()" class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"><i class="fas fa-times"></i></button>
     </div>
+    <div class="px-5 py-3 border-b border-gray-100 flex items-center gap-2 flex-shrink-0 bg-gray-50">
+      <span class="text-xs text-gray-500 font-medium mr-1">Filter:</span>
+      <button onclick="filterDeliveryReport('all')" class="delivery-filter-btn text-xs px-3 py-1 rounded-lg font-semibold bg-indigo-600 text-white">All</button>
+      <button onclick="filterDeliveryReport('sent')" class="delivery-filter-btn text-xs px-3 py-1 rounded-lg font-semibold bg-gray-100 text-gray-600 hover:bg-gray-200">Sent</button>
+      <button onclick="filterDeliveryReport('failed')" class="delivery-filter-btn text-xs px-3 py-1 rounded-lg font-semibold bg-gray-100 text-gray-600 hover:bg-gray-200">Failed</button>
+      <button onclick="filterDeliveryReport('replied')" class="delivery-filter-btn text-xs px-3 py-1 rounded-lg font-semibold bg-gray-100 text-gray-600 hover:bg-gray-200">Replied</button>
+      <span id="delivery-summary" class="ml-auto text-xs text-gray-400"></span>
+    </div>
     <div class="overflow-y-auto flex-grow">
       <table class="w-full text-left"><thead><tr class="border-b border-gray-100 bg-gray-50">
         <th class="px-5 py-3 text-xs font-semibold text-gray-500">Phone</th>
         <th class="px-5 py-3 text-xs font-semibold text-gray-500">Status</th>
         <th class="px-5 py-3 text-xs font-semibold text-gray-500">Error</th>
         <th class="px-5 py-3 text-xs font-semibold text-gray-500">Sent At</th>
+        <th class="px-5 py-3 text-xs font-semibold text-gray-500">Replied At</th>
       </tr></thead><tbody id="delivery-report-body"></tbody></table>
     </div>
     <div class="px-6 py-3.5 border-t border-gray-100 bg-gray-50 flex justify-end gap-2 flex-shrink-0">
+      <button onclick="exportDeliveryReport(currentDeliveryCampaignId)" class="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 bg-white hover:bg-gray-50 px-3 py-2 rounded-xl font-medium"><i class="fas fa-download text-xs"></i> Export CSV</button>
       <button onclick="closeDeliveryModal()" class="text-sm text-gray-600 px-4 py-2 rounded-xl border border-gray-200 hover:bg-white font-medium">Close</button>
       <button id="retry-failed-btn" onclick="retryCampaign()" class="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-xl text-sm font-semibold"><i class="fas fa-redo text-xs"></i> Retry Failed</button>
     </div>
@@ -605,6 +1114,78 @@
   </div>
 </div>
 
+<!-- Revision History Modal -->
+<div id="revision-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+  <div class="modal-backdrop absolute inset-0" onclick="closeRevisionModal()"></div>
+  <div class="modal-box relative bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden" style="max-height:80vh;display:flex;flex-direction:column;">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
+      <h2 class="text-lg font-bold text-gray-900">Revision History — <span id="revision-template-name" class="text-indigo-600"></span></h2>
+      <button onclick="closeRevisionModal()" class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="overflow-y-auto flex-grow">
+      <table class="w-full text-left"><thead><tr class="border-b border-gray-100 bg-gray-50">
+        <th class="px-5 py-3 text-xs font-semibold text-gray-500">Rev</th>
+        <th class="px-5 py-3 text-xs font-semibold text-gray-500">Saved By</th>
+        <th class="px-5 py-3 text-xs font-semibold text-gray-500">Date</th>
+        <th class="px-5 py-3 text-xs font-semibold text-gray-500">Preview</th>
+        <th class="px-5 py-3 text-xs font-semibold text-gray-500"></th>
+      </tr></thead><tbody id="revision-list-body"></tbody></table>
+    </div>
+    <div class="px-6 py-3 border-t border-gray-100 bg-gray-50 flex justify-end">
+      <button onclick="closeRevisionModal()" class="text-sm text-gray-600 px-4 py-2 rounded-xl border border-gray-200 hover:bg-white font-medium">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Template Live Preview Modal -->
+<div id="template-preview-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+  <div class="modal-backdrop absolute inset-0" onclick="closeTemplatePreviewModal()"></div>
+  <div class="modal-box relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <h2 class="text-lg font-bold text-gray-900">Live Preview</h2>
+      <button onclick="closeTemplatePreviewModal()" class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="p-5 space-y-4">
+      <div class="grid grid-cols-3 gap-3">
+        <div><label class="text-xs font-semibold text-gray-500 block mb-1">Name</label><input id="preview-sample-name" type="text" class="field py-1.5 text-sm" placeholder="Alice" oninput="updateTemplatePreview()"></div>
+        <div><label class="text-xs font-semibold text-gray-500 block mb-1">Phone</label><input id="preview-sample-phone" type="text" class="field py-1.5 text-sm" placeholder="123456789" oninput="updateTemplatePreview()"></div>
+        <div><label class="text-xs font-semibold text-gray-500 block mb-1">Date</label><input id="preview-sample-date" type="text" class="field py-1.5 text-sm" placeholder="Today" oninput="updateTemplatePreview()"></div>
+      </div>
+      <div><div class="text-xs font-semibold text-gray-500 mb-2">Rendered output</div><div class="wa-bg"><div class="wa-bubble whitespace-pre-wrap" id="template-preview-output">…</div></div></div>
+    </div>
+    <div class="px-6 py-3 border-t border-gray-100 bg-gray-50 flex justify-end">
+      <button onclick="closeTemplatePreviewModal()" class="text-sm text-gray-600 px-4 py-2 rounded-xl border border-gray-200 hover:bg-white font-medium">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Scheduled Message Modal -->
+<div id="scheduled-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+  <div class="modal-backdrop absolute inset-0" onclick="closeScheduledModal()"></div>
+  <div class="modal-box relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <h2 class="text-lg font-bold text-gray-900">New Scheduled Message</h2>
+      <button onclick="closeScheduledModal()" class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="p-6 space-y-4">
+      <div>
+        <label class="text-xs font-semibold text-gray-500 block mb-1">Recipient Phone *</label>
+        <div class="flex gap-2">
+          <input id="sched-phone" class="field flex-grow" placeholder="e.g. 22890123456">
+          <button type="button" onclick="openScheduledContactPicker()" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-2 rounded-xl font-semibold flex-shrink-0"><i class="fas fa-address-book"></i></button>
+        </div>
+        <div id="sched-contact-name" class="text-xs text-green-600 mt-1 hidden"></div>
+      </div>
+      <div><label class="text-xs font-semibold text-gray-500 block mb-1">Message *</label><textarea id="sched-message" rows="4" class="field resize-none" placeholder="Write your message…"></textarea></div>
+      <div><label class="text-xs font-semibold text-gray-500 block mb-1">Send At *</label><input type="datetime-local" id="sched-at" class="field"></div>
+    </div>
+    <div class="px-6 py-3.5 border-t border-gray-100 bg-gray-50 flex justify-end gap-2">
+      <button onclick="closeScheduledModal()" class="text-sm text-gray-600 px-4 py-2 rounded-xl border border-gray-200 hover:bg-white font-medium">Cancel</button>
+      <button onclick="saveScheduledMessage()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl text-sm font-semibold"><i class="fas fa-clock text-xs mr-1.5"></i>Schedule</button>
+    </div>
+  </div>
+</div>
+
 <script src="/public/js/admin.js"></script>
 <script>
   function updateWaPreview() {
@@ -658,6 +1239,36 @@
     else if (type === 'monthly') { wrap.classList.remove('hidden'); label.textContent = 'Day of month (1–31)'; document.getElementById('campaign-recurringDay').max = 31; document.getElementById('campaign-recurringDay').min = 1; }
     else { wrap.classList.add('hidden'); }
     updateScheduleSummary();
+  }
+  function toggleAbTest() {
+    const on = document.getElementById('ab-test-toggle').checked;
+    document.getElementById('ab-test-wrap').classList.toggle('hidden', !on);
+  }
+  function closeRevisionModal() { document.getElementById('revision-modal').classList.add('hidden'); }
+  function closeTemplatePreviewModal() { document.getElementById('template-preview-modal').classList.add('hidden'); }
+  function closeScheduledModal() { document.getElementById('scheduled-modal').classList.add('hidden'); }
+  function closeIntegrationModal() { document.getElementById('integration-modal').classList.add('hidden'); }
+  function closeAutoReplyModal()   { document.getElementById('autoreply-modal').classList.add('hidden'); }
+  function toggleIntEnabled() {
+    const t = document.getElementById('int-enabled-toggle');
+    t.classList.toggle('on');
+  }
+  function toggleArEnabled() {
+    const t = document.getElementById('ar-enabled-toggle');
+    t.classList.toggle('on');
+  }
+  function toggleArAI() {
+    const on = document.getElementById('ar-useai').checked;
+    document.getElementById('ar-static-wrap').classList.toggle('hidden', on);
+    document.getElementById('ar-ai-wrap').classList.toggle('hidden', !on);
+  }
+  function updateMediaPreview() {
+    const url = document.getElementById('campaign-media-url').value.trim();
+    const wrap = document.getElementById('media-preview-wrap');
+    const img  = document.getElementById('media-preview-img');
+    if (url && /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(url)) {
+      img.src = url; wrap.classList.remove('hidden');
+    } else { wrap.classList.add('hidden'); }
   }
   document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('campaign-name')?.addEventListener('input', updateScheduleSummary);

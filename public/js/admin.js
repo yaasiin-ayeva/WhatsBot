@@ -23,6 +23,16 @@ document.addEventListener('DOMContentLoaded', function () {
   let analyticsCharts   = {};
   let auditPage         = 1;
   let qrInstance        = null;
+  let currentInboxPhone  = null;
+  let inboxEventSource   = null;
+  let scoreRules         = [];
+  let inboxConversations = [];
+  let integrations       = [];
+  let autoReplies        = [];
+  let currentIntegrationId = null;
+  let currentAutoReplyId   = null;
+  let currentIntegrationTab = 'webhooks';
+  let availableEvents      = [];
 
   // ─── Boot ────────────────────────────────────────────────
   checkAuth();
@@ -46,6 +56,8 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   document.getElementById('logout').addEventListener('click', () => {
+    stopLogStream();
+    stopInboxStream();
     localStorage.removeItem('token');
     redirect('/admin/login');
   });
@@ -63,6 +75,10 @@ document.addEventListener('DOMContentLoaded', function () {
       'users-tab':     { section: 'users-section',     onLoad: loadUsers },
       'audit-tab':     { section: 'audit-section',     onLoad: () => loadAuditLogs(1) },
       'settings-tab':  { section: 'settings-section',  onLoad: loadSettings },
+      'chats-tab':              { section: 'chats-section',              onLoad: loadChats },
+      'scoring-tab':            { section: 'scoring-section',            onLoad: loadScoring },
+      'scheduled-messages-tab': { section: 'scheduled-messages-section', onLoad: loadScheduledMessages },
+      'integrations-tab':       { section: 'integrations-section',       onLoad: loadIntegrations },
     };
 
     document.querySelectorAll('.nav-item').forEach(item => {
@@ -76,8 +92,13 @@ document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         item.classList.add('active');
 
-        document.querySelectorAll('.section-content').forEach(s => s.classList.add('hidden'));
-        document.getElementById(conf.section).classList.remove('hidden');
+        document.querySelectorAll('.section-content').forEach(s => {
+          s.classList.add('hidden');
+          s.style.removeProperty('display'); // clear any inline display so hidden class takes effect
+        });
+        const sectionEl = document.getElementById(conf.section);
+        sectionEl.classList.remove('hidden');
+        if (conf.section === 'chats-section') sectionEl.style.display = 'flex';
 
         if (conf.onLoad) conf.onLoad();
       });
@@ -112,17 +133,79 @@ document.addEventListener('DOMContentLoaded', function () {
   // ─── Dashboard ────────────────────────────────────────────
   async function loadDashboardData() {
     try {
-      const [contactsData, campaignsData, templatesData, recentData] = await Promise.all([
+      const [contactsData, campaignsData, templatesData, recentData, analytics] = await Promise.all([
         apiFetch('/crm/contacts?limit=1'),
         apiFetch('/crm/campaigns'),
         apiFetch('/crm/templates'),
         apiFetch('/crm/contacts?limit=5&sort=-lastInteraction'),
+        apiFetch('/crm/analytics').catch(() => null),
       ]);
 
       document.getElementById('total-contacts').textContent  = contactsData.meta.total;
       document.getElementById('total-campaigns').textContent = campaignsData.length;
-      document.getElementById('total-messages').textContent  = campaignsData.reduce((s, c) => s + (c.sentCount || 0), 0);
+      document.getElementById('total-messages').textContent  = analytics?.messagesDelta?.today ?? 0;
       document.getElementById('total-templates').textContent = templatesData.length;
+
+      // Delta indicators
+      if (analytics?.contactsDelta) {
+        const { today, yesterday } = analytics.contactsDelta;
+        const diff = today - yesterday;
+        const el = document.getElementById('contacts-delta');
+        if (el) {
+          el.className = `text-xs mt-1 ${diff >= 0 ? 'text-green-600' : 'text-red-500'}`;
+          el.textContent = `${diff >= 0 ? '+' : ''}${diff} vs yesterday`;
+          el.classList.remove('hidden');
+        }
+      }
+      if (analytics?.messagesDelta) {
+        const { today, yesterday } = analytics.messagesDelta;
+        const diff = today - yesterday;
+        const el = document.getElementById('messages-delta');
+        if (el) {
+          el.className = `text-xs mt-1 ${diff >= 0 ? 'text-green-600' : 'text-red-500'}`;
+          el.textContent = `${diff >= 0 ? '+' : ''}${diff} vs yesterday`;
+          el.classList.remove('hidden');
+        }
+      }
+
+      // Health banner
+      const banner = document.getElementById('health-banner');
+      const bannerText = document.getElementById('health-banner-text');
+      if (banner && analytics?.failedCampaigns?.length) {
+        bannerText.textContent = `${analytics.failedCampaigns.length} campaign(s) failed in the last 7 days`;
+        banner.classList.remove('hidden');
+      } else if (banner) {
+        banner.classList.add('hidden');
+      }
+
+      // Top commands widget
+      const cmdWidget = document.getElementById('top-commands-widget');
+      if (cmdWidget && analytics?.topCommands?.length) {
+        const max = analytics.topCommands[0]?.count || 1;
+        cmdWidget.innerHTML = analytics.topCommands.map(c => `
+          <div class="flex items-center gap-3 mb-2">
+            <span class="text-xs font-mono font-semibold text-gray-700 w-24 shrink-0">!${escHtml(c.name)}</span>
+            <div class="flex-grow bg-gray-100 rounded-full h-1.5">
+              <div class="bg-indigo-500 h-1.5 rounded-full" style="width:${Math.round((c.count/max)*100)}%"></div>
+            </div>
+            <span class="text-xs text-gray-500 w-8 text-right shrink-0">${c.count}</span>
+          </div>`).join('');
+      } else if (cmdWidget) {
+        cmdWidget.innerHTML = '<p class="text-xs text-gray-400">No commands used yet</p>';
+      }
+
+      // Recent audit widget
+      const auditWidget = document.getElementById('recent-audit-widget');
+      if (auditWidget && analytics?.recentAudit?.length) {
+        auditWidget.innerHTML = analytics.recentAudit.map(a => `
+          <div class="flex items-center gap-2 mb-2 text-xs">
+            <span class="text-gray-400 shrink-0">${fmtDate(a.timestamp)}</span>
+            <span class="font-semibold text-gray-700">${escHtml(a.username || '?')}</span>
+            <span class="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-mono">${escHtml(a.action)}</span>
+          </div>`).join('');
+      } else if (auditWidget) {
+        auditWidget.innerHTML = '<p class="text-xs text-gray-400">No recent activity</p>';
+      }
 
       renderRecentContacts(recentData.data);
     } catch (err) {
@@ -482,7 +565,7 @@ document.addEventListener('DOMContentLoaded', function () {
         <td class="px-5 py-3">${recurring}</td>
         <td class="px-5 py-3 text-sm text-gray-500">${c.scheduledAt ? fmtDate(c.scheduledAt) : '—'}</td>
         <td class="px-5 py-3">
-          <div class="flex items-center gap-1">
+          <div class="flex items-center gap-1 flex-wrap">
             <button onclick="viewCampaign('${c._id}')" title="View"
               class="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors text-sm">
               <i class="fas fa-eye"></i>
@@ -491,6 +574,26 @@ document.addEventListener('DOMContentLoaded', function () {
               class="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors text-sm">
               <i class="fas fa-chart-bar"></i>
             </button>
+            ${c.status === 'sending' || c.status === 'scheduled' ? `
+            <button onclick="pauseCampaign('${c._id}')" title="Pause"
+              class="p-1.5 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors text-sm">
+              <i class="fas fa-pause"></i>
+            </button>` : ''}
+            ${c.status === 'paused' ? `
+            <button onclick="resumeCampaign('${c._id}')" title="Resume"
+              class="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors text-sm">
+              <i class="fas fa-play"></i>
+            </button>` : ''}
+            ${['sending','scheduled','paused'].includes(c.status) ? `
+            <button onclick="cancelCampaign('${c._id}')" title="Cancel"
+              class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm">
+              <i class="fas fa-ban"></i>
+            </button>` : ''}
+            ${['sent','failed','cancelled'].includes(c.status) ? `
+            <button onclick="archiveCampaign('${c._id}')" title="Archive"
+              class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors text-sm">
+              <i class="fas fa-archive"></i>
+            </button>` : ''}
             <button onclick="duplicateCampaign('${c._id}')" title="Duplicate"
               class="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors text-sm">
               <i class="fas fa-copy"></i>
@@ -575,6 +678,15 @@ document.addEventListener('DOMContentLoaded', function () {
     const recurringDayVal = document.getElementById('campaign-recurringDay')?.value;
     const recurringDay  = recurringDayVal ? parseInt(recurringDayVal, 10) : undefined;
     const contacts      = Array.from(document.querySelectorAll('#selected-contacts-list .sel-chip')).map(el => el.dataset.phone);
+    const throttleRate  = parseInt(document.getElementById('campaign-throttle')?.value || '60', 10);
+    const expiresAt     = document.getElementById('campaign-expires')?.value || null;
+    const excludeTagsRaw = document.getElementById('campaign-exclude-tags')?.value || '';
+    const excludeTags   = excludeTagsRaw.split(',').map(t => t.trim()).filter(Boolean);
+    const notes         = document.getElementById('campaign-notes')?.value || '';
+    const abVariantB    = document.getElementById('ab-test-toggle')?.checked
+      ? (document.getElementById('campaign-variant-b')?.value || '')
+      : '';
+    const mediaUrl = document.getElementById('campaign-media-url')?.value.trim() || '';
 
     if (!name || !message) { showToast('Name and message are required', 'warning'); return; }
     if (!contacts.length)  { showToast('Select at least one recipient', 'warning'); return; }
@@ -582,8 +694,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const sendBtn = document.getElementById('campaign-send-btn');
     sendBtn.disabled = true;
     try {
-      const body = { name, message, scheduledAt, contacts, recurringType };
+      const body = { name, message, scheduledAt, contacts, recurringType, throttleRate, excludeTags, notes, abVariantB, mediaUrl };
       if (recurringDay !== undefined && !isNaN(recurringDay)) body.recurringDay = recurringDay;
+      if (expiresAt) body.expiresAt = expiresAt;
       await apiFetch('/crm/campaigns', 'POST', body);
       showToast(scheduledAt ? 'Campaign scheduled!' : 'Campaign sent!', 'success');
       closeCampaignModal();
@@ -655,23 +768,33 @@ document.addEventListener('DOMContentLoaded', function () {
       const report = await apiFetch(`/crm/campaigns/${campaignId}/delivery-report`);
       const tbody  = document.getElementById('delivery-report-body');
       tbody.innerHTML = '';
-      if (!report || !report.length) {
-        tbody.innerHTML = `<tr><td colspan="4" class="px-5 py-8 text-center text-sm text-gray-400">No delivery data yet</td></tr>`;
+      const deliveryData = report?.deliveryReport || report || [];
+      if (!deliveryData.length) {
+        tbody.innerHTML = `<tr><td colspan="5" class="px-5 py-8 text-center text-sm text-gray-400">No delivery data yet</td></tr>`;
       } else {
         const statusColors = { sent: 'bg-green-100 text-green-700', failed: 'bg-red-100 text-red-600', skipped: 'bg-gray-100 text-gray-500' };
-        report.forEach(r => {
+        deliveryData.forEach(r => {
           const tr = document.createElement('tr');
           tr.className = 'trow';
+          tr.dataset.status = r.status;
+          tr.dataset.replied = r.repliedAt ? 'yes' : 'no';
           tr.innerHTML = `
             <td class="px-5 py-2.5 text-sm text-gray-700 font-mono">${r.phone}</td>
             <td class="px-5 py-2.5"><span class="text-xs font-bold px-2 py-0.5 rounded-full ${statusColors[r.status] || ''}">${r.status}</span></td>
             <td class="px-5 py-2.5 text-xs text-red-500">${escHtml(r.error || '—')}</td>
             <td class="px-5 py-2.5 text-xs text-gray-500">${r.sentAt ? fmtDate(r.sentAt) : '—'}</td>
+            <td class="px-5 py-2.5 text-xs ${r.repliedAt ? 'text-green-600 font-semibold' : 'text-gray-400'}">${r.repliedAt ? fmtDate(r.repliedAt) : '—'}</td>
           `;
           tbody.appendChild(tr);
         });
+        // Delivery summary
+        const total = deliveryData.length, sent = deliveryData.filter(r => r.status === 'sent').length;
+        const failed = deliveryData.filter(r => r.status === 'failed').length;
+        const replied = deliveryData.filter(r => r.repliedAt).length;
+        const summary = document.getElementById('delivery-summary');
+        if (summary) summary.textContent = `${sent} sent · ${failed} failed · ${replied} replied / ${total} total`;
       }
-      const hasFailures = (report || []).some(r => r.status === 'failed');
+      const hasFailures = deliveryData.some(r => r.status === 'failed');
       document.getElementById('retry-failed-btn').classList.toggle('hidden', !hasFailures);
       document.getElementById('delivery-modal').classList.remove('hidden');
     } catch {
@@ -865,29 +988,59 @@ document.addEventListener('DOMContentLoaded', function () {
         </div>`;
       return;
     }
-    list.forEach(t => {
+    const pinnedFirst = [...list].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+    pinnedFirst.forEach(t => {
       const cls = catStyle[t.category] || catStyle.general;
+      const approvalColors = { draft: 'bg-gray-100 text-gray-500', pending: 'bg-yellow-100 text-yellow-700', approved: 'bg-green-100 text-green-700' };
+      const approvalCls = approvalColors[t.approvalStatus] || approvalColors.draft;
       const div = document.createElement('div');
-      div.className = 'tmpl-card bg-white border border-gray-200 rounded-2xl overflow-hidden';
+      div.className = `tmpl-card bg-white border rounded-2xl overflow-hidden ${t.pinned ? 'border-indigo-300' : 'border-gray-200'}`;
       div.dataset.templateId = t._id;
       div.innerHTML = `
         <div class="p-4 border-b border-gray-100 flex items-center justify-between gap-2">
-          <h3 class="font-semibold text-gray-900 truncate">${escHtml(t.name)}</h3>
-          <span class="text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${cls}">${t.category || 'general'}</span>
+          <div class="flex items-center gap-1.5 min-w-0">
+            ${t.pinned ? '<i class="fas fa-thumbtack text-indigo-500 text-xs shrink-0"></i>' : ''}
+            <h3 class="font-semibold text-gray-900 truncate">${escHtml(t.name)}</h3>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <span class="text-xs font-semibold px-2 py-0.5 rounded-full ${cls}">${t.category || 'general'}</span>
+            <span class="text-xs font-semibold px-2 py-0.5 rounded-full ${approvalCls}">${t.approvalStatus || 'draft'}</span>
+          </div>
         </div>
         <div class="p-4">
-          <p class="text-sm text-gray-600 leading-relaxed whitespace-pre-line line-clamp-4 mb-4">${escHtml(t.content)}</p>
-          <div class="flex items-center gap-2 border-t border-gray-100 pt-3">
+          <p class="text-sm text-gray-600 leading-relaxed whitespace-pre-line line-clamp-4 mb-3">${escHtml(t.content)}</p>
+          <div class="flex items-center gap-1 text-xs text-gray-400 mb-3">
+            <i class="fas fa-chart-bar text-xs"></i><span>${t.usageCount || 0} uses</span>
+            <span class="mx-1">·</span>
+            <i class="fas fa-history text-xs"></i><span>v${t.revision || 0}</span>
+          </div>
+          <div class="flex items-center gap-1.5 border-t border-gray-100 pt-3">
             <button onclick="useTemplate('${t._id}')"
               class="flex-1 text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 py-1.5 rounded-lg font-semibold text-center">
-              <i class="fas fa-bullhorn mr-1"></i> Use in Campaign
+              <i class="fas fa-bullhorn mr-1"></i> Use
             </button>
             <button onclick="openEditTemplateModal('${t._id}', ${JSON.stringify(t.name)}, ${JSON.stringify(t.content)}, '${escHtml(t.category || 'general')}')"
-              class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg">
+              title="Edit" class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg">
               <i class="fas fa-pen text-xs"></i>
             </button>
+            <button onclick="openTemplatePreviewModal('${t._id}')"
+              title="Live preview" class="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg">
+              <i class="fas fa-eye text-xs"></i>
+            </button>
+            <button onclick="pinTemplate('${t._id}')"
+              title="${t.pinned ? 'Unpin' : 'Pin'}" class="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg">
+              <i class="fas fa-thumbtack text-xs"></i>
+            </button>
+            <button onclick="duplicateTemplate('${t._id}')"
+              title="Duplicate" class="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg">
+              <i class="fas fa-copy text-xs"></i>
+            </button>
+            <button onclick="viewRevisions('${t._id}', ${JSON.stringify(t.name)})"
+              title="Revisions" class="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg">
+              <i class="fas fa-history text-xs"></i>
+            </button>
             <button onclick="deleteTemplate('${t._id}')"
-              class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
+              title="Delete" class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
               <i class="fas fa-trash text-xs"></i>
             </button>
           </div>
@@ -1448,6 +1601,864 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function redirect(path) { window.location.href = path; }
+
+  // ─── Shared helpers ───────────────────────────────────────
+  function avatarColor(str) {
+    const colors = ['#128C7E','#25D366','#075E54','#34B7F1','#6366f1','#8b5cf6','#ec4899','#f59e0b','#10b981','#ef4444'];
+    let h = 0; for (let i = 0; i < (str||'').length; i++) h = (h * 31 + str.charCodeAt(i)) & 0xffff;
+    return colors[h % colors.length];
+  }
+  function avatarInitials(name) {
+    const parts = (name || '?').split(' ').filter(Boolean);
+    return parts.length >= 2 ? (parts[0][0]+parts[1][0]).toUpperCase() : (name||'?').slice(0,2).toUpperCase();
+  }
+  function fmtMsgTime(ts) {
+    if (!ts) return '';
+    const d = new Date(ts); const now = new Date();
+    const isToday = d.toDateString() === now.toDateString();
+    return isToday
+      ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      : d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  }
+  function buildBubble(m) {
+    const isOut = m.direction === 'out';
+    const rowCls = isOut ? 'msg-row-out' : 'msg-row-in';
+    const bubbleCls = isOut ? 'msg-bubble msg-bubble-out' : 'msg-bubble msg-bubble-in';
+    const timeColor = isOut ? '#5a7a5c' : '#999';
+    return `<div class="${rowCls}">
+      <div class="${bubbleCls}">
+        ${escHtml(m.body)}
+        <div class="msg-time" style="color:${timeColor}">${fmtMsgTime(m.timestamp)}</div>
+      </div>
+    </div>`;
+  }
+  function buildDateSeparator(label) {
+    return `<div class="date-sep"><span>${escHtml(label)}</span></div>`;
+  }
+  function renderMsgList(msgs, containerId) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    el.innerHTML = '';
+    if (!msgs || !msgs.length) {
+      el.innerHTML = '<p class="text-center text-xs text-gray-400 mt-10">No messages yet</p>';
+      return;
+    }
+    let lastDate = '';
+    msgs.forEach(m => {
+      const d = new Date(m.timestamp);
+      const dateStr = d.toLocaleDateString([], { weekday:'long', month:'short', day:'numeric' });
+      if (dateStr !== lastDate) {
+        el.insertAdjacentHTML('beforeend', buildDateSeparator(dateStr));
+        lastDate = dateStr;
+      }
+      el.insertAdjacentHTML('beforeend', buildBubble(m));
+    });
+    el.scrollTop = el.scrollHeight;
+  }
+  function appendBubble(m, containerId) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    el.insertAdjacentHTML('beforeend', buildBubble(m));
+    el.scrollTop = el.scrollHeight;
+  }
+
+  // ─── Chats (merged inbox + archive) ──────────────────────
+  let chatsSearchTimer = null;
+  let chatsSearchMode = false; // false = live inbox, true = search results
+
+  async function loadChats() {
+    setChatsMode(false, '');
+    try {
+      inboxConversations = await apiFetch('/crm/inbox');
+      renderChatList(inboxConversations, false);
+      updateChatsBadge();
+      startInboxStream();
+    } catch {
+      showToast('Failed to load chats', 'error');
+    }
+  }
+
+  window.handleChatsSearch = function (q) {
+    const clearBtn = document.getElementById('chats-search-clear');
+    if (clearBtn) clearBtn.classList.toggle('hidden', !q);
+    clearTimeout(chatsSearchTimer);
+    if (!q) { loadChats(); return; }
+    chatsSearchTimer = setTimeout(async () => {
+      setChatsMode(true, q);
+      const el = document.getElementById('chats-list');
+      if (el) el.innerHTML = '<p class="text-xs text-gray-400 text-center pt-6 px-4 animate-pulse">Searching…</p>';
+      try {
+        const threads = await apiFetch(`/crm/conversations/search?q=${encodeURIComponent(q)}`);
+        renderChatList(threads, true);
+      } catch {
+        showToast('Search failed', 'error');
+      }
+    }, 350);
+  };
+
+  window.clearChatsSearch = function () {
+    const input = document.getElementById('chats-search');
+    if (input) input.value = '';
+    document.getElementById('chats-search-clear')?.classList.add('hidden');
+    loadChats();
+  };
+
+  function setChatsMode(isSearch, q) {
+    chatsSearchMode = isSearch;
+    const label = document.getElementById('chats-mode-label');
+    if (!label) return;
+    label.textContent = isSearch ? (q ? `"${q}"` : 'Search') : '';
+  }
+
+  function renderChatList(list, isSearchMode) {
+    const el = document.getElementById('chats-list');
+    if (!el) return;
+    if (!list.length) {
+      el.innerHTML = `<p class="text-xs text-gray-400 text-center pt-10 px-4">${isSearchMode ? 'No results found' : 'No conversations yet'}</p>`;
+      return;
+    }
+    el.innerHTML = '';
+    list.forEach(item => {
+      // Search results have .messages; inbox items have .unread
+      const phone    = item.phoneNumber;
+      const contact  = item.contact;
+      const name     = contact?.name || contact?.pushName || phone;
+      const color    = avatarColor(name);
+      const initials = avatarInitials(name);
+      const preview  = item.lastMessage || (item.messages?.[item.messages.length - 1]?.body) || '—';
+      const ts       = item.lastTimestamp || item.messages?.[item.messages.length - 1]?.timestamp;
+      const isActive = phone === currentInboxPhone;
+
+      const div = document.createElement('div');
+      div.className = `conv-item${isActive ? ' active' : ''}`;
+      div.dataset.phone = phone;
+      div.onclick = () => isSearchMode
+        ? openSearchThread(item)
+        : openConversation(phone, contact);
+
+      div.innerHTML = `
+        <div class="conv-avatar" style="background:${color};">${initials}</div>
+        <div class="flex-grow min-w-0">
+          <div class="flex items-center justify-between gap-1">
+            <span class="text-sm font-semibold text-gray-900 truncate">${escHtml(name)}</span>
+            <span class="text-xs text-gray-400 flex-shrink-0">${fmtMsgTime(ts)}</span>
+          </div>
+          <div class="flex items-center justify-between gap-1 mt-0.5">
+            <p class="text-xs text-gray-500 truncate">${escHtml(preview)}</p>
+            ${!isSearchMode && (item.unread > 0) ? `<div class="unread-dot flex-shrink-0">${item.unread}</div>` : ''}
+            ${isSearchMode ? `<span class="text-xs text-indigo-400 flex-shrink-0">${item.matchCount} msg</span>` : ''}
+          </div>
+        </div>`;
+      el.appendChild(div);
+    });
+  }
+
+  window.openConversation = async function (phone, contact = null) {
+    currentInboxPhone = phone;
+    setChatHeader(phone, contact?.name || contact?.pushName || phone);
+    document.querySelectorAll('#chats-list .conv-item').forEach(d =>
+      d.classList.toggle('active', d.dataset.phone === phone));
+    try {
+      const { messages } = await apiFetch(`/crm/inbox/${encodeURIComponent(phone)}`);
+      renderMsgList(messages, 'chat-messages');
+      inboxConversations = inboxConversations.map(c => c.phoneNumber === phone ? { ...c, unread: 0 } : c);
+      updateChatsBadge();
+      document.querySelectorAll('#chats-list .conv-item').forEach(d => {
+        if (d.dataset.phone === phone) d.querySelector('.unread-dot')?.remove();
+      });
+    } catch {
+      showToast('Failed to load messages', 'error');
+    }
+  };
+
+  function openSearchThread(thread) {
+    currentInboxPhone = thread.phoneNumber;
+    const name = thread.contact?.name || thread.contact?.pushName || thread.phoneNumber;
+    setChatHeader(thread.phoneNumber, name);
+    document.querySelectorAll('#chats-list .conv-item').forEach(d =>
+      d.classList.toggle('active', d.dataset.phone === thread.phoneNumber));
+    renderMsgList(thread.messages, 'chat-messages');
+  }
+
+  function setChatHeader(phone, displayName) {
+    const color    = avatarColor(displayName);
+    const initials = avatarInitials(displayName);
+    const avatar   = document.getElementById('chat-header-avatar');
+    if (avatar) { avatar.textContent = initials; avatar.style.background = color; }
+    document.getElementById('chat-phone-label').textContent = displayName;
+    document.getElementById('chat-contact-name').textContent = displayName !== phone ? phone : '';
+    document.getElementById('chat-header').classList.remove('hidden');
+    document.getElementById('chat-reply-box').classList.remove('hidden');
+    const empty = document.getElementById('chat-empty');
+    if (empty) empty.style.display = 'none';
+  }
+
+  window.sendReply = async function () {
+    const input = document.getElementById('reply-input');
+    const message = input?.value.trim();
+    if (!message || !currentInboxPhone) return;
+    input.value = '';
+    input.style.height = 'auto';
+    try {
+      const msg = await apiFetch(`/crm/inbox/${encodeURIComponent(currentInboxPhone)}/reply`, 'POST', { message });
+      appendBubble(msg, 'chat-messages');
+      // Update preview in list
+      const conv = inboxConversations.find(c => c.phoneNumber === currentInboxPhone);
+      if (conv) { conv.lastMessage = msg.body; conv.lastTimestamp = msg.timestamp; }
+      if (!chatsSearchMode) renderChatList(inboxConversations, false);
+    } catch {
+      showToast('Failed to send reply', 'error');
+    }
+  };
+
+  function startInboxStream() {
+    if (inboxEventSource) return;
+    const token = localStorage.getItem('token');
+    inboxEventSource = new EventSource(`/crm/inbox/stream?token=${encodeURIComponent(token)}`);
+    inboxEventSource.onmessage = e => {
+      try {
+        const msg = JSON.parse(e.data);
+        const existing = inboxConversations.find(c => c.phoneNumber === msg.phoneNumber);
+        if (existing) {
+          existing.lastMessage = msg.body;
+          existing.lastTimestamp = msg.timestamp;
+          if (msg.direction === 'in' && msg.phoneNumber !== currentInboxPhone)
+            existing.unread = (existing.unread || 0) + 1;
+        } else if (msg.direction === 'in') {
+          inboxConversations.unshift({ phoneNumber: msg.phoneNumber, lastMessage: msg.body, lastTimestamp: msg.timestamp, unread: 1, contact: null });
+        }
+        if (!chatsSearchMode) renderChatList(inboxConversations, false);
+        updateChatsBadge();
+        if (msg.phoneNumber === currentInboxPhone) appendBubble(msg, 'chat-messages');
+      } catch (_) {}
+    };
+  }
+
+  function stopInboxStream() {
+    if (inboxEventSource) { inboxEventSource.close(); inboxEventSource = null; }
+  }
+
+  function updateChatsBadge() {
+    const total = inboxConversations.reduce((s, c) => s + (c.unread || 0), 0);
+    const badge = document.getElementById('chats-badge');
+    if (!badge) return;
+    if (total > 0) { badge.textContent = total; badge.classList.remove('hidden'); }
+    else badge.classList.add('hidden');
+  }
+
+  // ─── Scheduled Messages ───────────────────────────────────
+  async function loadScheduledMessages() {
+    try {
+      const msgs = await apiFetch('/crm/scheduled-messages');
+      renderScheduledMessages(msgs);
+    } catch {
+      showToast('Failed to load scheduled messages', 'error');
+    }
+  }
+
+  function renderScheduledMessages(msgs) {
+    const tbody = document.getElementById('scheduled-messages-body');
+    const empty = document.getElementById('scheduled-messages-empty');
+    if (!tbody) return;
+    if (!msgs.length) {
+      tbody.innerHTML = '';
+      if (empty) empty.classList.remove('hidden');
+      return;
+    }
+    if (empty) empty.classList.add('hidden');
+    const statusBadge = s => ({
+      pending: '<span class="badge badge-scheduled">Pending</span>',
+      sent:    '<span class="badge badge-sent">Sent</span>',
+      failed:  '<span class="badge badge-failed">Failed</span>',
+      cancelled: '<span class="badge badge-draft">Cancelled</span>'
+    }[s] || s);
+    tbody.innerHTML = msgs.map(m => `
+      <tr class="trow border-b border-gray-100">
+        <td class="px-5 py-3 text-sm">
+          <div class="font-medium text-gray-800">${escHtml(m.contactName || m.phoneNumber)}</div>
+          ${m.contactName ? `<div class="text-xs text-gray-400">${escHtml(m.phoneNumber)}</div>` : ''}
+        </td>
+        <td class="px-5 py-3 text-sm text-gray-600 max-w-xs truncate">${escHtml(m.message)}</td>
+        <td class="px-5 py-3 text-sm text-gray-700">${fmtDate(m.scheduledAt)}</td>
+        <td class="px-5 py-3">${statusBadge(m.status)}</td>
+        <td class="px-5 py-3">
+          ${m.status === 'pending' ? `<button onclick="deleteScheduledMessage('${m._id}')" class="text-xs text-red-500 hover:text-red-700 font-semibold"><i class="fas fa-trash"></i></button>` : ''}
+        </td>
+      </tr>`).join('');
+  }
+
+  window.openScheduledModal = function () {
+    document.getElementById('sched-phone').value = '';
+    document.getElementById('sched-message').value = '';
+    document.getElementById('sched-at').value = '';
+    document.getElementById('sched-contact-name').classList.add('hidden');
+    document.getElementById('scheduled-modal').classList.remove('hidden');
+  };
+
+  window.openScheduledContactPicker = function () {
+    // Reuse the contact list — prompt for phone from contacts
+    const phone = prompt('Enter phone number or leave blank to pick from contacts:');
+    if (phone) {
+      document.getElementById('sched-phone').value = phone.replace(/\D/g, '');
+    }
+  };
+
+  window.saveScheduledMessage = async function () {
+    const phoneNumber = document.getElementById('sched-phone').value.trim().replace(/\D/g, '');
+    const message    = document.getElementById('sched-message').value.trim();
+    const scheduledAt = document.getElementById('sched-at').value;
+    if (!phoneNumber) return showToast('Phone number is required', 'error');
+    if (!message)     return showToast('Message is required', 'error');
+    if (!scheduledAt) return showToast('Scheduled time is required', 'error');
+    if (new Date(scheduledAt) <= new Date()) return showToast('Scheduled time must be in the future', 'error');
+    try {
+      await apiFetch('/crm/scheduled-messages', 'POST', { phoneNumber, message, scheduledAt });
+      document.getElementById('scheduled-modal').classList.add('hidden');
+      showToast('Message scheduled', 'success');
+      loadScheduledMessages();
+    } catch {
+      showToast('Failed to schedule message', 'error');
+    }
+  };
+
+  window.deleteScheduledMessage = async function (id) {
+    if (!confirm('Cancel this scheduled message?')) return;
+    try {
+      await apiFetch(`/crm/scheduled-messages/${id}`, 'DELETE');
+      showToast('Scheduled message cancelled', 'success');
+      loadScheduledMessages();
+    } catch {
+      showToast('Failed to cancel message', 'error');
+    }
+  };
+
+  // ─── Contact Scoring ──────────────────────────────────────
+  async function loadScoring() {
+    try {
+      const [rules, leaderboard] = await Promise.all([
+        apiFetch('/crm/scoring/rules'),
+        apiFetch('/crm/contacts/leaderboard?limit=10'),
+      ]);
+      scoreRules = rules;
+      renderScoreRules(rules);
+      renderLeaderboard(leaderboard);
+    } catch {
+      showToast('Failed to load scoring data', 'error');
+    }
+  }
+
+  function renderScoreRules(rules) {
+    const tbody = document.getElementById('score-rules-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    if (!rules.length) {
+      tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-8 text-center text-sm text-gray-400">No rules yet. Click "Add Rule" to create one.</td></tr>`;
+      return;
+    }
+    rules.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.className = 'trow';
+      tr.innerHTML = `
+        <td class="px-4 py-2.5 text-xs font-mono text-gray-700">${escHtml(r.action)}</td>
+        <td class="px-4 py-2.5 text-sm text-gray-700">${escHtml(r.label)}</td>
+        <td class="px-4 py-2.5">
+          <input type="number" value="${r.points}" min="-100" max="1000"
+            class="w-20 border border-gray-200 rounded-lg px-2 py-1 text-sm text-center"
+            onchange="saveScoreRule('${r._id}', this.value, null)">
+        </td>
+        <td class="px-4 py-2.5">
+          <input type="checkbox" ${r.enabled ? 'checked' : ''}
+            onchange="saveScoreRule('${r._id}', null, this.checked)" class="rounded">
+        </td>
+        <td class="px-4 py-2.5">
+          <button onclick="deleteScoreRule('${r._id}')"
+            class="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg text-xs">
+            <i class="fas fa-trash"></i>
+          </button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  window.saveScoreRule = async function (id, points, enabled) {
+    try {
+      const update = {};
+      if (points !== null) update.points = Number(points);
+      if (enabled !== null) update.enabled = enabled;
+      await apiFetch(`/crm/scoring/rules/${id}`, 'PUT', update);
+      showToast('Rule saved', 'success');
+    } catch {
+      showToast('Failed to save rule', 'error');
+    }
+  };
+
+  window.addScoreRule = async function () {
+    const actions = ['first_interaction','message_received','command_used','campaign_reply'];
+    const usedActions = scoreRules.map(r => r.action);
+    const available = actions.filter(a => !usedActions.includes(a));
+    if (!available.length) { showToast('All actions already have rules', 'info'); return; }
+    const action = available[0];
+    try {
+      await apiFetch('/crm/scoring/rules', 'POST', { action, label: action.replace(/_/g, ' '), points: 1, enabled: true });
+      showToast('Rule created', 'success');
+      loadScoring();
+    } catch {
+      showToast('Failed to create rule', 'error');
+    }
+  };
+
+  window.deleteScoreRule = async function (id) {
+    if (!confirm('Delete this scoring rule?')) return;
+    try {
+      await apiFetch(`/crm/scoring/rules/${id}`, 'DELETE');
+      showToast('Rule deleted', 'success');
+      loadScoring();
+    } catch {
+      showToast('Failed to delete rule', 'error');
+    }
+  };
+
+  function renderLeaderboard(contacts) {
+    const tbody = document.getElementById('leaderboard-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    if (!contacts.length) {
+      tbody.innerHTML = `<tr><td colspan="4" class="px-4 py-8 text-center text-sm text-gray-400">No contacts scored yet</td></tr>`;
+      return;
+    }
+    contacts.forEach((c, i) => {
+      const tr = document.createElement('tr');
+      tr.className = 'trow';
+      tr.innerHTML = `
+        <td class="px-4 py-2.5 text-sm font-bold text-gray-500">${i + 1}</td>
+        <td class="px-4 py-2.5 text-sm text-gray-800">${escHtml(c.name || c.pushName || '—')}</td>
+        <td class="px-4 py-2.5 text-xs font-mono text-gray-600">${c.phoneNumber}</td>
+        <td class="px-4 py-2.5 text-sm font-bold text-indigo-600">${c.score || 0}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // ─── Campaign Extras ──────────────────────────────────────
+  window.pauseCampaign = async function (id) {
+    try { await apiFetch(`/crm/campaigns/${id}/pause`, 'PATCH'); showToast('Campaign paused', 'success'); loadCampaigns(); }
+    catch { showToast('Failed to pause campaign', 'error'); }
+  };
+  window.resumeCampaign = async function (id) {
+    try { await apiFetch(`/crm/campaigns/${id}/resume`, 'PATCH'); showToast('Campaign resumed', 'success'); loadCampaigns(); }
+    catch { showToast('Failed to resume campaign', 'error'); }
+  };
+  window.cancelCampaign = async function (id) {
+    if (!confirm('Cancel this campaign?')) return;
+    try { await apiFetch(`/crm/campaigns/${id}/cancel`, 'PATCH'); showToast('Campaign cancelled', 'success'); loadCampaigns(); }
+    catch { showToast('Failed to cancel campaign', 'error'); }
+  };
+  window.archiveCampaign = async function (id) {
+    try { await apiFetch(`/crm/campaigns/${id}/archive`, 'PATCH'); showToast('Campaign archived', 'success'); loadCampaigns(); }
+    catch { showToast('Failed to archive campaign', 'error'); }
+  };
+
+  window.exportDeliveryReport = async function (id) {
+    if (!id) return;
+    try {
+      const res = await fetch(`/crm/campaigns/${id}/delivery-report/export`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      if (!res.ok) throw new Error('Export failed');
+      const blob = await res.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `delivery-report-${id}.csv`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch {
+      showToast('Export failed', 'error');
+    }
+  };
+
+  window.filterDeliveryReport = function (status) {
+    document.querySelectorAll('.delivery-filter-btn').forEach(btn => {
+      const active = btn.getAttribute('onclick')?.includes(`'${status}'`);
+      btn.classList.toggle('bg-indigo-600', active);
+      btn.classList.toggle('text-white', active);
+      btn.classList.toggle('bg-gray-100', !active);
+      btn.classList.toggle('text-gray-600', !active);
+    });
+    document.querySelectorAll('#delivery-report-body tr').forEach(tr => {
+      if (status === 'all') { tr.style.display = ''; return; }
+      if (status === 'replied') { tr.style.display = tr.dataset.replied === 'yes' ? '' : 'none'; return; }
+      tr.style.display = tr.dataset.status === status ? '' : 'none';
+    });
+  };
+
+  // ─── Template Extras ──────────────────────────────────────
+  window.pinTemplate = async function (id) {
+    try { await apiFetch(`/crm/templates/${id}/pin`, 'PATCH'); loadTemplates(); }
+    catch { showToast('Failed to toggle pin', 'error'); }
+  };
+
+  window.duplicateTemplate = async function (id) {
+    try { await apiFetch(`/crm/templates/${id}/duplicate`, 'POST'); showToast('Template duplicated', 'success'); loadTemplates(); }
+    catch { showToast('Failed to duplicate template', 'error'); }
+  };
+
+  window.changeApproval = async function (id, status) {
+    try { await apiFetch(`/crm/templates/${id}/approval`, 'PATCH', { approvalStatus: status }); loadTemplates(); }
+    catch { showToast('Failed to update approval', 'error'); }
+  };
+
+  window.viewRevisions = async function (id, name) {
+    try {
+      const revisions = await apiFetch(`/crm/templates/${id}/revisions`);
+      document.getElementById('revision-template-name').textContent = name || id;
+      currentTemplateId = id;
+      const tbody = document.getElementById('revision-list-body');
+      tbody.innerHTML = '';
+      if (!revisions.length) {
+        tbody.innerHTML = `<tr><td colspan="5" class="px-5 py-8 text-center text-sm text-gray-400">No revisions yet</td></tr>`;
+      } else {
+        revisions.forEach(r => {
+          const tr = document.createElement('tr');
+          tr.className = 'trow';
+          tr.innerHTML = `
+            <td class="px-5 py-2.5 text-sm font-bold text-gray-600">v${r.revision}</td>
+            <td class="px-5 py-2.5 text-sm text-gray-700">${escHtml(r.savedBy || '—')}</td>
+            <td class="px-5 py-2.5 text-xs text-gray-500">${fmtDate(r.savedAt)}</td>
+            <td class="px-5 py-2.5 text-xs text-gray-500 font-mono truncate" style="max-width:160px;">${escHtml((r.content || '').substring(0, 60))}…</td>
+            <td class="px-5 py-2.5">
+              <button onclick="restoreRevision('${id}', ${r.revision})"
+                class="text-xs text-indigo-600 hover:text-indigo-800 font-semibold">Restore</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+      document.getElementById('revision-modal').classList.remove('hidden');
+    } catch {
+      showToast('Failed to load revisions', 'error');
+    }
+  };
+
+  window.restoreRevision = async function (templateId, rev) {
+    if (!confirm(`Restore to revision v${rev}? Current version will be saved as a new revision.`)) return;
+    try {
+      await apiFetch(`/crm/templates/${templateId}/revisions/${rev}/restore`, 'POST');
+      showToast('Template restored', 'success');
+      document.getElementById('revision-modal').classList.add('hidden');
+      loadTemplates();
+    } catch {
+      showToast('Failed to restore revision', 'error');
+    }
+  };
+
+  window.openTemplatePreviewModal = function (id) {
+    const t = templates.find(x => x._id === id);
+    if (!t) return;
+    currentTemplateId = id;
+    document.getElementById('preview-sample-name').value  = '';
+    document.getElementById('preview-sample-phone').value = '';
+    document.getElementById('preview-sample-date').value  = new Date().toLocaleDateString();
+    updateTemplatePreview();
+    document.getElementById('template-preview-modal').classList.remove('hidden');
+  };
+
+  window.updateTemplatePreview = function () {
+    const t = templates.find(x => x._id === currentTemplateId);
+    if (!t) return;
+    const vars = {
+      name:  document.getElementById('preview-sample-name')?.value  || 'Friend',
+      phone: document.getElementById('preview-sample-phone')?.value || '0000000000',
+      date:  document.getElementById('preview-sample-date')?.value  || new Date().toLocaleDateString(),
+    };
+    const preview = resolveVariablesLocal(t.content, vars);
+    const el = document.getElementById('template-preview-output');
+    if (el) el.textContent = preview;
+  };
+
+  function resolveVariablesLocal(template, vars) {
+    return template.replace(/\{\{(\w+)(?:\|([^}]*))?\}\}|\{(\w+)\}/g, (_, k1, fallback, k2) => {
+      const key = k1 || k2;
+      return vars[key] || fallback || '';
+    });
+  }
+
+  // ─── Integrations ─────────────────────────────────────────────────────────
+  async function loadIntegrations() {
+    try {
+      [integrations, availableEvents] = await Promise.all([
+        apiFetch('/crm/integrations'),
+        apiFetch('/crm/integrations/events')
+      ]);
+      renderIntegrationsTab();
+      loadInboundApiKey();
+    } catch (e) {
+      showToast('Failed to load integrations', 'error');
+    }
+  }
+
+  window.switchIntegrationTab = function(tab) {
+    currentIntegrationTab = tab;
+    ['webhooks', 'notifications', 'autoreply', 'inbound'].forEach(t => {
+      document.getElementById(`ipanel-${t}`)?.classList.toggle('hidden', t !== tab);
+      document.getElementById(`itab-${t}`)?.classList.toggle('active', t === tab);
+    });
+    if (tab === 'autoreply') loadAutoReplies();
+    else renderIntegrationsTab();
+  };
+
+  function renderIntegrationsTab() {
+    const webhookRows = integrations.filter(i => i.type === 'webhook');
+    const notifRows   = integrations.filter(i => i.type === 'slack' || i.type === 'discord');
+    renderIntegrationTable('webhooks-table-body', webhookRows, 5);
+    renderIntegrationTable('notifications-table-body', notifRows, 5);
+  }
+
+  function renderIntegrationTable(tbodyId, rows, colspan) {
+    const tbody = document.getElementById(tbodyId);
+    if (!tbody) return;
+    if (!rows.length) {
+      tbody.innerHTML = `<tr><td colspan="${colspan}" class="text-center py-8 text-gray-400 text-sm">No integrations configured</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = rows.map(i => {
+      const statusBadge = i.lastStatus === 'ok'
+        ? `<span class="badge badge-sent">OK</span>`
+        : i.lastStatus === 'error'
+        ? `<span class="badge badge-failed" title="${i.lastError || ''}">Error</span>`
+        : `<span class="badge badge-draft">—</span>`;
+      const typeBadge = i.type === 'slack'
+        ? `<span class="badge" style="background:#e8f5e9;color:#2e7d32;">Slack</span>`
+        : i.type === 'discord'
+        ? `<span class="badge" style="background:#ede7f6;color:#4527a0;">Discord</span>`
+        : `<span class="badge badge-scheduled">Webhook</span>`;
+      const events = (i.events || []).map(e => `<span class="tag-chip">${e}</span>`).join(' ') || '—';
+      const enabledBadge = i.enabled
+        ? `<span class="badge badge-sent">ON</span>`
+        : `<span class="badge badge-draft">OFF</span>`;
+      return `<tr class="trow border-b border-gray-50">
+        <td class="px-5 py-3 text-sm font-medium text-gray-900">${i.name}</td>
+        ${colspan === 5 && i.type !== 'webhook' ? `<td class="px-5 py-3">${typeBadge}</td>` : ''}
+        <td class="px-5 py-3 text-xs text-gray-500 max-w-xs truncate" title="${i.url}">${i.url}</td>
+        <td class="px-5 py-3 text-xs">${events}</td>
+        <td class="px-5 py-3">${statusBadge} ${enabledBadge}</td>
+        <td class="px-5 py-3 flex items-center gap-2">
+          <button onclick="openIntegrationModal('${i._id}')" class="text-xs text-indigo-600 hover:underline">Edit</button>
+          <button onclick="testIntegration('${i._id}')" class="text-xs text-gray-500 hover:text-gray-800" title="Test fire"><i class="fas fa-paper-plane"></i> Test</button>
+          <button onclick="deleteIntegration('${i._id}')" class="text-xs text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  window.openIntegrationModal = async function(id, forceType) {
+    currentIntegrationId = id;
+    const existing = id ? integrations.find(i => i._id === id) : null;
+    const type = forceType || existing?.type || 'webhook';
+    document.getElementById('integration-modal-title').textContent = id ? 'Edit Integration' : `Add ${type.charAt(0).toUpperCase() + type.slice(1)}`;
+
+    document.getElementById('int-name').value    = existing?.name   || '';
+    document.getElementById('int-url').value     = existing?.url    || '';
+    document.getElementById('int-secret').value  = existing?.secret || '';
+    document.getElementById('int-secret-wrap').classList.toggle('hidden', type !== 'webhook');
+
+    const enabledToggle = document.getElementById('int-enabled-toggle');
+    enabledToggle.classList.toggle('on', existing?.enabled !== false);
+    enabledToggle.dataset.type = type;
+
+    // Render event checkboxes
+    const list = document.getElementById('int-events-list');
+    list.innerHTML = availableEvents.map(ev => `
+      <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+        <input type="checkbox" value="${ev}" class="accent-indigo-600" ${(existing?.events || []).includes(ev) ? 'checked' : ''}>
+        <span class="font-mono text-xs">${ev}</span>
+      </label>`).join('');
+
+    document.getElementById('integration-modal').classList.remove('hidden');
+  };
+
+  window.saveIntegration = async function() {
+    const name    = document.getElementById('int-name').value.trim();
+    const url     = document.getElementById('int-url').value.trim();
+    const secret  = document.getElementById('int-secret').value.trim();
+    const enabled = document.getElementById('int-enabled-toggle').classList.contains('on');
+    const type    = document.getElementById('int-enabled-toggle').dataset.type || 'webhook';
+    const events  = [...document.querySelectorAll('#int-events-list input:checked')].map(c => c.value);
+
+    if (!name || !url) return showToast('Name and URL are required', 'error');
+    try {
+      if (currentIntegrationId) {
+        await apiFetch(`/crm/integrations/${currentIntegrationId}`, 'PUT', { name, type, url, events, secret, enabled });
+      } else {
+        await apiFetch('/crm/integrations', 'POST', { name, type, url, events, secret, enabled });
+      }
+      closeIntegrationModal();
+      await loadIntegrations();
+      showToast('Integration saved');
+    } catch {
+      showToast('Failed to save integration', 'error');
+    }
+  };
+
+  window.deleteIntegration = async function(id) {
+    if (!confirm('Delete this integration?')) return;
+    try {
+      await apiFetch(`/crm/integrations/${id}`, 'DELETE');
+      await loadIntegrations();
+      showToast('Integration deleted');
+    } catch {
+      showToast('Failed to delete', 'error');
+    }
+  };
+
+  window.testIntegration = async function(id) {
+    try {
+      await apiFetch(`/crm/integrations/${id}/test`, 'POST');
+      showToast('Test event fired — check your endpoint');
+    } catch {
+      showToast('Test failed', 'error');
+    }
+  };
+
+  window.closeIntegrationModal = function() {
+    document.getElementById('integration-modal').classList.add('hidden');
+    currentIntegrationId = null;
+  };
+
+  // ── Auto-Reply ───────────────────────────────────────────────────────────
+  async function loadAutoReplies() {
+    try {
+      autoReplies = await apiFetch('/crm/auto-reply');
+      renderAutoReplies();
+    } catch {
+      showToast('Failed to load auto-reply rules', 'error');
+    }
+  }
+
+  function renderAutoReplies() {
+    const tbody = document.getElementById('autoreply-table-body');
+    if (!tbody) return;
+    if (!autoReplies.length) {
+      tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-gray-400 text-sm">No rules configured</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = autoReplies.map(r => {
+      const responseText = r.useAI
+        ? `<span class="badge badge-scheduled">AI (${r.aiProvider})</span>`
+        : `<span class="text-xs text-gray-600 truncate max-w-xs block" title="${r.response}">${r.response.substring(0, 50)}${r.response.length > 50 ? '…' : ''}</span>`;
+      const enabled = r.enabled
+        ? `<span class="badge badge-sent">ON</span>`
+        : `<span class="badge badge-draft">OFF</span>`;
+      return `<tr class="trow border-b border-gray-50">
+        <td class="px-5 py-3 text-sm font-medium text-gray-900">${r.name}</td>
+        <td class="px-5 py-3 font-mono text-xs text-gray-700">${r.trigger}</td>
+        <td class="px-5 py-3 text-xs text-gray-500">${r.matchType}</td>
+        <td class="px-5 py-3 text-xs">${responseText}</td>
+        <td class="px-5 py-3 text-xs text-gray-500">${r.cooldownMinutes}m</td>
+        <td class="px-5 py-3">${enabled}</td>
+        <td class="px-5 py-3 flex items-center gap-2">
+          <button onclick="openAutoReplyModal('${r._id}')" class="text-xs text-indigo-600 hover:underline">Edit</button>
+          <button onclick="deleteAutoReply('${r._id}')" class="text-xs text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  window.openAutoReplyModal = function(id) {
+    currentAutoReplyId = id;
+    const existing = id ? autoReplies.find(r => r._id === id) : null;
+    document.getElementById('autoreply-modal-title').textContent = id ? 'Edit Auto-Reply Rule' : 'Add Auto-Reply Rule';
+
+    document.getElementById('ar-name').value      = existing?.name     || '';
+    document.getElementById('ar-trigger').value   = existing?.trigger  || '';
+    document.getElementById('ar-matchtype').value = existing?.matchType || 'contains';
+    document.getElementById('ar-priority').value  = existing?.priority ?? 0;
+    document.getElementById('ar-response').value  = existing?.response  || '';
+    document.getElementById('ar-cooldown').value  = existing?.cooldownMinutes ?? 60;
+    document.getElementById('ar-aiprovider').value = existing?.aiProvider || 'gemini';
+    document.getElementById('ar-aiprompt').value  = existing?.aiPrompt  || '';
+    document.getElementById('ar-useai').checked   = existing?.useAI || false;
+
+    const enabledToggle = document.getElementById('ar-enabled-toggle');
+    enabledToggle.classList.toggle('on', existing?.enabled !== false);
+
+    const useAI = existing?.useAI || false;
+    document.getElementById('ar-static-wrap').classList.toggle('hidden', useAI);
+    document.getElementById('ar-ai-wrap').classList.toggle('hidden', !useAI);
+
+    document.getElementById('autoreply-modal').classList.remove('hidden');
+  };
+
+  window.saveAutoReply = async function() {
+    const name            = document.getElementById('ar-name').value.trim();
+    const trigger         = document.getElementById('ar-trigger').value.trim();
+    const matchType       = document.getElementById('ar-matchtype').value;
+    const priority        = parseInt(document.getElementById('ar-priority').value) || 0;
+    const response        = document.getElementById('ar-response').value.trim();
+    const cooldownMinutes = parseInt(document.getElementById('ar-cooldown').value) || 60;
+    const useAI           = document.getElementById('ar-useai').checked;
+    const aiProvider      = document.getElementById('ar-aiprovider').value;
+    const aiPrompt        = document.getElementById('ar-aiprompt').value.trim();
+    const enabled         = document.getElementById('ar-enabled-toggle').classList.contains('on');
+
+    if (!name || !trigger) return showToast('Name and trigger are required', 'error');
+    if (!useAI && !response) return showToast('Provide a static response or enable AI', 'error');
+
+    const payload = { name, matchType, trigger, response, useAI, aiProvider, aiPrompt, cooldownMinutes, priority, enabled };
+    try {
+      if (currentAutoReplyId) {
+        await apiFetch(`/crm/auto-reply/${currentAutoReplyId}`, 'PUT', payload);
+      } else {
+        await apiFetch('/crm/auto-reply', 'POST', payload);
+      }
+      closeAutoReplyModal();
+      await loadAutoReplies();
+      showToast('Auto-reply rule saved');
+    } catch {
+      showToast('Failed to save rule', 'error');
+    }
+  };
+
+  window.deleteAutoReply = async function(id) {
+    if (!confirm('Delete this auto-reply rule?')) return;
+    try {
+      await apiFetch(`/crm/auto-reply/${id}`, 'DELETE');
+      await loadAutoReplies();
+      showToast('Rule deleted');
+    } catch {
+      showToast('Failed to delete', 'error');
+    }
+  };
+
+  window.closeAutoReplyModal = function() {
+    document.getElementById('autoreply-modal').classList.add('hidden');
+    currentAutoReplyId = null;
+  };
+
+  // ── Inbound API ──────────────────────────────────────────────────────────
+  async function loadInboundApiKey() {
+    try {
+      const data = await apiFetch('/crm/inbound/api-key');
+      document.getElementById('inbound-api-key-input').value = data.inboundApiKey || '';
+    } catch { /* silent */ }
+  }
+
+  window.rotateInboundKey = async function() {
+    if (!confirm('Rotate the inbound API key? The old key will stop working immediately.')) return;
+    try {
+      const data = await apiFetch('/crm/inbound/api-key/rotate', 'POST');
+      document.getElementById('inbound-api-key-input').value = data.inboundApiKey;
+      showToast('API key rotated — copy and store it safely');
+    } catch {
+      showToast('Failed to rotate key', 'error');
+    }
+  };
+
+  window.copyInboundKey = function() {
+    const val = document.getElementById('inbound-api-key-input').value;
+    if (!val) return showToast('No key to copy', 'error');
+    navigator.clipboard.writeText(val).then(() => showToast('Key copied to clipboard'));
+  };
 
   async function apiFetch(url, method = 'GET', body = null) {
     const opts = {

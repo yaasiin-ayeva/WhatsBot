@@ -1,4 +1,4 @@
-import { checkScheduledCampaigns } from "./campaign.cron";
+import { checkScheduledCampaigns, checkScheduledMessages } from "./campaign.cron";
 import { cleanupOldDownloads, checkDiskSpace } from "./cleanup.cron";
 import { BotManager } from "../bot.manager";
 import { CronJob } from "cron";
@@ -9,6 +9,15 @@ export function initCrons(botManager: BotManager) {
     new CronJob(
         "* * * * *",
         () => checkScheduledCampaigns(botManager),
+        null,
+        true,
+        "Africa/Lome"
+    );
+
+    // Check scheduled messages every minute
+    new CronJob(
+        "* * * * *",
+        () => checkScheduledMessages(botManager),
         null,
         true,
         "Africa/Lome"
@@ -32,5 +41,5 @@ export function initCrons(botManager: BotManager) {
         "Africa/Lome"
     );
 
-    logger.info("Cron jobs initialized (campaigns, cleanup, disk-space)");
+    logger.info("Cron jobs initialized (campaigns, scheduled-messages, cleanup, disk-space)");
 }

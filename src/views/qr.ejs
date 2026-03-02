@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WhatsBot — Scan QR Code</title>
+  <title>WhatsBot QR Pairing</title>
+  <meta name="description" content="Internal QR pairing page used to link a WhatsApp session to WhatsBot.">
+  <meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
+  <meta name="theme-color" content="#4f46e5">
   <link rel="icon" href="/public/favicon.png">
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -210,7 +213,7 @@
         }
         if (data.qrScanned) {
           setStatus('success', 'Authenticated! Redirecting…');
-          setTimeout(() => { window.location.href = '/'; }, 1200);
+          setTimeout(() => { window.location.href = '/status'; }, 1200);
         } else if (data.qrCodeData) {
           setStatus('waiting', 'Waiting for scan…');
         }

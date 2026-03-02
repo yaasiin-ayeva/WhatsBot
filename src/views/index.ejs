@@ -3,8 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WhatsBot — Status</title>
+  <title>WhatsBot Status Dashboard | WhatsApp Bot Health & Availability</title>
+  <meta name="description" content="Monitor WhatsBot health, uptime, connection state, QR status, and live runtime details from the public status dashboard.">
+  <meta name="robots" content="index,follow">
+  <meta name="theme-color" content="#4f46e5">
+  <link rel="canonical" href="<%= pageUrl %>">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="WhatsBot Status Dashboard">
+  <meta property="og:description" content="Public status page for WhatsBot showing bot health, availability, QR state, uptime, and platform details.">
+  <meta property="og:image" content="<%= imageUrl %>">
+  <meta property="og:url" content="<%= pageUrl %>">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="WhatsBot Status Dashboard">
+  <meta name="twitter:description" content="Check whether WhatsBot is online, connected, and ready to automate WhatsApp workflows.">
+  <meta name="twitter:image" content="<%= imageUrl %>">
   <link rel="icon" href="/public/favicon.png">
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "WhatsBot",
+      "applicationCategory": "BusinessApplication",
+      "description": "WhatsBot public status dashboard for WhatsApp automation health, uptime, and availability monitoring."
+    }
+  </script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
@@ -247,7 +269,12 @@
 
         $('val-status').textContent   = d.status      || '—';
         $('val-qr').textContent       = d.qrScanned   ? 'Yes ✓' : 'No';
-        $('val-contact').textContent  = d.botContact  || '—';
+        const contactEl = $('val-contact');
+        if (d.botContact) {
+          contactEl.innerHTML = `<a href="https://wa.me/${d.botContact}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:text-indigo-800 underline">wa.me/${d.botContact}</a>`;
+        } else {
+          contactEl.textContent = '—';
+        }
         $('val-pushname').textContent = d.botPushName || '—';
         $('val-platform').textContent = d.botPlatform || '—';
         $('val-uptime').textContent   = formatUptime(parseFloat(d.uptime));

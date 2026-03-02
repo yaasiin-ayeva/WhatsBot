@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsBot CRM | WhatsApp Automation, Inbox, Campaigns, and AI</title>
+  <meta name="description" content="Run WhatsApp campaigns, manage a shared inbox, automate replies, and operate your CRM from one WhatsBot dashboard.">
+  <meta name="robots" content="index,follow">
+  <meta name="theme-color" content="#0f766e">
+  <link rel="canonical" href="<%= pageUrl %>">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="WhatsBot CRM">
+  <meta property="og:description" content="A WhatsApp-first CRM with campaigns, inbox, automations, AI replies, integrations, and admin controls.">
+  <meta property="og:image" content="<%= imageUrl %>">
+  <meta property="og:url" content="<%= pageUrl %>">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="WhatsBot CRM">
+  <meta name="twitter:description" content="Manage WhatsApp conversations, campaigns, AI workflows, and customer operations in one CRM.">
+  <meta name="twitter:image" content="<%= imageUrl %>">
+  <link rel="icon" href="/public/favicon.png">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
+    :root {
+      --ink: #0f172a;
+      --muted: #64748b;
+      --line: #dbe4ea;
+      --brand: #0f766e;
+      --brand-strong: #115e59;
+      --brand-soft: #ccfbf1;
+      --paper: #f8fafc;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top right, rgba(20,184,166,0.12), transparent 28%),
+        radial-gradient(circle at 10% 20%, rgba(15,118,110,0.10), transparent 22%),
+        linear-gradient(180deg, #ffffff 0%, #f8fafc 52%, #eef6f5 100%);
+    }
+    a { color: inherit; text-decoration: none; }
+    .wrap { width: min(1120px, calc(100% - 32px)); margin: 0 auto; }
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 22px 0;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--brand), #14b8a6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      box-shadow: 0 10px 24px rgba(15,118,110,0.20);
+    }
+    .brand-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.08rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .brand-sub {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .link-btn, .primary-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 11px 16px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, color 0.15s ease;
+    }
+    .link-btn {
+      color: #0f172a;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.88);
+    }
+    .link-btn:hover, .primary-btn:hover { transform: translateY(-1px); }
+    .primary-btn {
+      color: white;
+      background: linear-gradient(135deg, var(--brand), #14b8a6);
+      box-shadow: 0 10px 22px rgba(15,118,110,0.18);
+    }
+    .hero {
+      padding: 48px 0 72px;
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 32px;
+      align-items: center;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.85);
+      border: 1px solid #cde7e3;
+      color: var(--brand-strong);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(2.6rem, 5vw, 4.8rem);
+      line-height: 0.98;
+      letter-spacing: -0.05em;
+      margin: 18px 0 18px;
+      max-width: 9ch;
+    }
+    .hero-copy {
+      font-size: 1rem;
+      line-height: 1.8;
+      color: #334155;
+      max-width: 60ch;
+    }
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 26px;
+    }
+    .proof {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      margin-top: 26px;
+      color: var(--muted);
+      font-size: 0.86rem;
+      font-weight: 600;
+    }
+    .proof span {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .hero-panel {
+      position: relative;
+      background: rgba(255,255,255,0.92);
+      border: 1px solid #d8ebe7;
+      border-radius: 28px;
+      padding: 22px;
+      box-shadow: 0 22px 60px rgba(15,23,42,0.08);
+      overflow: hidden;
+    }
+    .hero-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(20,184,166,0.08), transparent 45%);
+      pointer-events: none;
+    }
+    .status-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #edf4f2;
+      margin-bottom: 18px;
+      position: relative;
+      z-index: 1;
+    }
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      background: #ecfdf5;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 0 4px rgba(34,197,94,0.14);
+    }
+    .metric-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .metric {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 18px;
+      padding: 16px;
+    }
+    .metric-label {
+      font-size: 0.74rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 700;
+    }
+    .metric-value {
+      margin-top: 8px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+    }
+    .feature-list {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 10px;
+    }
+    .feature-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 0;
+      border-bottom: 1px solid #edf4f2;
+      color: #334155;
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+    .feature-row:last-child { border-bottom: none; }
+    .feature-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 10px;
+      background: var(--brand-soft);
+      color: var(--brand-strong);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .section {
+      padding: 0 0 72px;
+    }
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 22px;
+      align-items: end;
+    }
+    .section-kicker {
+      font-size: 0.78rem;
+      color: var(--brand-strong);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+    .section-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(1.8rem, 3vw, 3rem);
+      letter-spacing: -0.04em;
+      line-height: 1.04;
+      margin: 0;
+      max-width: 11ch;
+    }
+    .section-copy {
+      color: var(--muted);
+      max-width: 58ch;
+      line-height: 1.8;
+      font-size: 0.96rem;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: rgba(255,255,255,0.90);
+      border: 1px solid #deebe8;
+      border-radius: 24px;
+      padding: 22px;
+      box-shadow: 0 10px 28px rgba(15,23,42,0.04);
+    }
+    .card i {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #ecfeff;
+      color: #0f766e;
+      margin-bottom: 14px;
+    }
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.7;
+    }
+    .cta {
+      padding: 28px;
+      border-radius: 28px;
+      background: linear-gradient(135deg, #0f172a, #134e4a);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      box-shadow: 0 18px 44px rgba(15,23,42,0.16);
+    }
+    .cta h2 {
+      margin: 0 0 8px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(1.6rem, 2.8vw, 2.5rem);
+      letter-spacing: -0.04em;
+    }
+    .cta p {
+      margin: 0;
+      color: rgba(255,255,255,0.80);
+      line-height: 1.8;
+      max-width: 56ch;
+    }
+    .footer {
+      padding: 24px 0 34px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      border-top: 1px solid rgba(203,213,225,0.55);
+      flex-wrap: wrap;
+    }
+    .footer-links {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    @media (max-width: 960px) {
+      .hero, .cards { grid-template-columns: 1fr; }
+      .section-head, .cta { align-items: flex-start; flex-direction: column; }
+      h1, .section-title { max-width: none; }
+    }
+    @media (max-width: 640px) {
+      .nav { flex-direction: column; align-items: flex-start; gap: 14px; }
+      .nav-links, .hero-actions { width: 100%; }
+      .nav-links a, .hero-actions a { flex: 1; }
+      .metric-grid { grid-template-columns: 1fr; }
+      .cta, .card, .hero-panel { border-radius: 22px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <nav class="nav">
+      <a href="/" class="brand" aria-label="WhatsBot home">
+        <span class="brand-mark"><i class="fab fa-whatsapp"></i></span>
+        <span>
+          <span class="brand-title">WhatsBot CRM</span>
+          <span class="brand-sub">WhatsApp operations, campaigns, and AI</span>
+        </span>
+      </a>
+      <div class="nav-links">
+        <a class="link-btn" href="/status"><i class="fas fa-heartbeat"></i>Status</a>
+        <a class="link-btn" href="/qr"><i class="fas fa-qrcode"></i>Connect WhatsApp</a>
+        <a class="primary-btn" href="/admin/login"><i class="fas fa-shield-alt"></i>Open CRM</a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <div>
+        <div class="eyebrow"><i class="fas fa-bolt"></i>WhatsApp-first CRM</div>
+        <h1>Run your customer pipeline inside chat.</h1>
+        <p class="hero-copy">
+          WhatsBot brings your shared inbox, campaigns, AI replies, contact scoring, automations, and admin controls into one operational dashboard built around WhatsApp conversations.
+        </p>
+        <div class="hero-actions">
+          <a class="primary-btn" href="/admin/login"><i class="fas fa-arrow-right"></i>Launch Admin Panel</a>
+          <a class="link-btn" href="/status"><i class="fas fa-signal"></i>View Live Status</a>
+        </div>
+        <div class="proof">
+          <span><i class="fas fa-comments"></i>Shared inbox</span>
+          <span><i class="fas fa-bullhorn"></i>Campaign delivery</span>
+          <span><i class="fas fa-robot"></i>AI workflows</span>
+          <span><i class="fas fa-plug"></i>Backoffice integrations</span>
+        </div>
+      </div>
+
+      <div class="hero-panel" aria-label="WhatsBot feature summary">
+        <div class="status-strip">
+          <div>
+            <div style="font-size:0.78rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;">Operations Snapshot</div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:1.2rem;font-weight:700;letter-spacing:-0.03em;margin-top:4px;">One control layer for the bot</div>
+          </div>
+          <div class="status-chip"><span class="dot"></span>CRM Ready</div>
+        </div>
+        <div class="metric-grid">
+          <div class="metric">
+            <div class="metric-label">Inbox</div>
+            <div class="metric-value">Live</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">AI Modes</div>
+            <div class="metric-value">3</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Automation</div>
+            <div class="metric-value">Rules</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Channels</div>
+            <div class="metric-value">WA+</div>
+          </div>
+        </div>
+        <div class="feature-list">
+          <div class="feature-row">
+            <span class="feature-icon"><i class="fas fa-inbox"></i></span>
+            <span>Manage conversations, reply manually, and review contact history from the CRM inbox.</span>
+          </div>
+          <div class="feature-row">
+            <span class="feature-icon"><i class="fas fa-magic"></i></span>
+            <span>Use Gemini, GPT, or Claude for AI replies, with local speech transcription and synthesis.</span>
+          </div>
+          <div class="feature-row">
+            <span class="feature-icon"><i class="fas fa-layer-group"></i></span>
+            <span>Run campaigns, scheduled messages, templates, integrations, audit logs, and user controls from one panel.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">Built For Operations</div>
+          <h2 class="section-title">The CRM side is the product.</h2>
+        </div>
+        <p class="section-copy">
+          This is not just a bot runner. The backoffice is where teams manage live chats, orchestrate campaigns, enforce roles, review logs, and configure AI and integration behavior.
+        </p>
+      </div>
+      <div class="cards">
+        <div class="card">
+          <i class="fas fa-users"></i>
+          <h3>Shared Inbox & Contacts</h3>
+          <p>Track every contact, inspect message history, reply from the panel, and manage tags, language, score, and follow-up context.</p>
+        </div>
+        <div class="card">
+          <i class="fas fa-paper-plane"></i>
+          <h3>Campaigns & Scheduling</h3>
+          <p>Create campaigns, schedule messages, manage templates, review delivery status, and keep outbound messaging organized.</p>
+        </div>
+        <div class="card">
+          <i class="fas fa-sliders-h"></i>
+          <h3>Settings & Integrations</h3>
+          <p>Configure AI providers, SMTP, inbound APIs, webhooks, Slack, Discord, auto-replies, logs, and bot operations from one place.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="cta">
+        <div>
+          <h2>Launch the CRM. Keep the bot under control.</h2>
+          <p>Use the admin panel to manage production activity, or check the live status page before reconnecting the WhatsApp session.</p>
+        </div>
+        <div class="hero-actions" style="margin-top:0;">
+          <a class="primary-btn" href="/admin/login"><i class="fas fa-shield-alt"></i>Admin Login</a>
+          <a class="link-btn" href="/status" style="background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.14);color:white;"><i class="fas fa-heartbeat"></i>Status</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="wrap footer">
+    <div>WhatsBot CRM for WhatsApp automation, AI workflows, and customer operations.</div>
+    <div class="footer-links">
+      <a href="/status">Status</a>
+      <a href="/qr">QR Pairing</a>
+      <a href="/admin/login">Admin Login</a>
+      <a href="https://github.com/yaasiin-ayeva/WhatsBot" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </div>
+  </footer>
+</body>
+</html>

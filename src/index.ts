@@ -60,10 +60,12 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.get('/admin', (req, res) => {
+    res.set("X-Robots-Tag", "noindex, nofollow, noarchive, nosnippet");
     res.render('admin');
 });
 
 app.get('/admin/login', (req, res) => {
+    res.set("X-Robots-Tag", "noindex, nofollow, noarchive, nosnippet");
     res.render('admin-login');
 });
 

@@ -21,8 +21,10 @@ export const run = async (message: Message, args: string[], userI18n: UserI18n) 
 
     if (message.type === MessageTypes.VOICE) {
 
-        const audioPath = `${AppConfig.instance.getDownloadDir()}/${message.id.id}.wav`;
         const media = await message.downloadMedia();
+        const mime = media.mimetype?.split(';')[0] || 'audio/ogg';
+        const extension = mime.split('/')[1] || 'ogg';
+        const audioPath = `${AppConfig.instance.getDownloadDir()}/${message.id.id}.${extension}`;
 
         const base64 = media.data;
         const fileBuffer = Buffer.from(base64, 'base64');
@@ -32,13 +34,8 @@ export const run = async (message: Message, args: string[], userI18n: UserI18n) 
             fs.mkdirSync(dir, { recursive: true });
         }
 
-        fs.writeFile(audioPath, fileBuffer, (err) => {
-            if (err) {
-                logger.error(`Error saving file: ${err}`);
-            } else {
-                logger.info(`File saved successfully to ${audioPath}`);
-            }
-        });
+        fs.writeFileSync(audioPath, fileBuffer);
+        logger.info(`File saved successfully to ${audioPath}`);
 
         const transcript = await speechToText(audioPath);
         del_file(audioPath);
@@ -59,7 +56,7 @@ export const run = async (message: Message, args: string[], userI18n: UserI18n) 
         const chatReply = result.response.text() || 'No reply';
 
         if (message.type === MessageTypes.VOICE) {
-            if (!chat) await chat.sendStateRecording();
+            if (chat) await chat.sendStateRecording();
 
             try {
                 const filePath = await textToSpeech(chatReply, `${message.id.id}.wav`);

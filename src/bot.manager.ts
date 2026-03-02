@@ -15,6 +15,7 @@ import { CampaignModel } from "./crm/models/campaign.model";
 import { messageEmitter } from "./utils/message-emitter.util";
 import { AutoReplyModel } from "./crm/models/auto-reply.model";
 import { fireEvent } from "./utils/fire-event.util";
+import { claudeCompletion } from "./utils/claude.util";
 const qrcode = require('qrcode-terminal');
 
 // Per-contact auto-reply cooldown: phone → last triggered timestamp
@@ -73,6 +74,7 @@ export class BotManager {
         } catch (error) {
             logger.error("Downloader check failed:", error);
         }
+
     }
 
     private handleAuthenticated() {
@@ -179,7 +181,7 @@ export class BotManager {
         let chat = null;
         let userI18n: UserI18n;
 
-        const content = message.body.trim();
+        const content = message.body?.trim() || "";
 
         if (AppConfig.instance.getSupportedMessageTypes().indexOf(message.type) === -1) {
             return;
@@ -204,19 +206,25 @@ export class BotManager {
 
             // Persist incoming message for inbox
             if (!user.isMe) {
+                const inboxBody = content || (message.type === MessageTypes.VOICE ? '[Voice message]' : '[Empty message]');
+                const inboxType = message.type === MessageTypes.TEXT ? 'text' : 'other';
+                const isGroup = chat?.isGroup ?? false;
                 const msgDoc = await MessageModel.create({
                     phoneNumber: user.number,
-                    body: content,
-                    type: 'text',
+                    body: inboxBody,
+                    type: inboxType,
                     direction: 'in',
                     sentVia: 'whatsapp',
                     read: false,
-                    timestamp: new Date()
+                    timestamp: new Date(),
+                    isGroup,
+                    groupId: isGroup ? message.from : undefined,
+                    senderName: isGroup ? (user.pushname || user.name || user.number) : undefined,
                 });
                 messageEmitter.emit('message', msgDoc.toObject());
 
                 // Fire integration event
-                fireEvent('message.received', { phoneNumber: user.number, body: content }).catch(() => {});
+                fireEvent('message.received', { phoneNumber: user.number, body: inboxBody }).catch(() => {});
 
                 // Track campaign reply (mark first unacknowledged delivery for this phone)
                 const updated = await CampaignModel.updateOne(
@@ -274,7 +282,10 @@ export class BotManager {
 
     private async handleVoiceMessage(message: Message, userI18n: UserI18n) {
         const args = message.body.trim().split(/ +/).slice(1);
-        await commands[AppConfig.instance.getDefaultAudioAiCommand()].run(message, args, userI18n);
+        const settings = await SettingsModel.findOne().lean() as any;
+        const commandName = settings?.defaultAudioAiCommand || AppConfig.instance.getDefaultAudioAiCommand();
+        const selectedCommand = commands[commandName] ? commandName : AppConfig.instance.getDefaultAudioAiCommand();
+        await commands[selectedCommand].run(message, args, userI18n);
     }
 
     private async checkAutoReply(phoneNumber: string, content: string, chat: any): Promise<boolean> {
@@ -327,6 +338,12 @@ export class BotManager {
                             const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
                             const result = await model.generateContent(`${rule.aiPrompt}\n\nUser: ${content}`);
                             replyText = result.response.text() || rule.response;
+                        } else if (rule.aiProvider === 'claude') {
+                            const result = await claudeCompletion(
+                                content,
+                                rule.aiPrompt || 'You are a helpful WhatsApp assistant. Reply briefly.'
+                            );
+                            replyText = result?.content?.find((item: any) => item.type === 'text')?.text || rule.response;
                         }
                     } catch (aiErr) {
                         logger.warn('Auto-reply AI generation failed, using static response:', aiErr);

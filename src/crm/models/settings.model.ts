@@ -9,6 +9,11 @@ const settingsSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    defaultAudioAiCommand: {
+        type: String,
+        enum: ['chat', 'gpt', 'claude'],
+        default: 'chat'
+    },
     disabledCommands: {
         type: [String],
         default: []

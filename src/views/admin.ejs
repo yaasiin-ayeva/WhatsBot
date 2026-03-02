@@ -62,6 +62,25 @@
     ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+    /* ── Recap markdown rendering ───────────────────────────────── */
+    .recap-heading { display: block; font-weight: 700; color: #1e293b; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 1.1em; margin-bottom: 0.3em; }
+    #recap-result-body br + .recap-heading { margin-top: 1.4em; }
+    .recap-bullet { color: #4f46e5; font-weight: 700; margin-right: 2px; }
+    /* ── Collapsible sidebar ────────────────────────────────────── */
+    :root { --sidebar-collapsed-width: 64px; }
+    .sidebar { transition: width 0.22s cubic-bezier(0.4,0,0.2,1); overflow: hidden; }
+    .main-content { transition: margin-left 0.22s cubic-bezier(0.4,0,0.2,1); }
+    body.sidebar-collapsed .sidebar { width: var(--sidebar-collapsed-width); }
+    body.sidebar-collapsed .main-content { margin-left: var(--sidebar-collapsed-width); }
+    body.sidebar-collapsed .sb-label { display: none; }
+    body.sidebar-collapsed .nav-group-label { opacity: 0; pointer-events: none; height: 0; margin: 0; overflow: hidden; }
+    body.sidebar-collapsed .nav-item { justify-content: center; padding: 9px 0; }
+    body.sidebar-collapsed .nav-item .nav-icon { width: auto; font-size: 1rem; }
+    body.sidebar-collapsed #sidebar-footer-info { display: none; }
+    body.sidebar-collapsed #sidebar-footer-inner { justify-content: center; }
+    body.sidebar-collapsed #sidebar-header-text { display: none; }
+    body.sidebar-collapsed #sidebar-toggle-icon { transform: rotate(180deg); }
+    #sidebar-toggle-icon { transition: transform 0.22s cubic-bezier(0.4,0,0.2,1); }
     /* ── WhatsApp-style inbox ──────────────────────────────────── */
     .chat-bg { background-color: #e5ddd5; }
     .conv-item { display:flex; align-items:center; gap:10px; padding:10px 14px; cursor:pointer; border-bottom:1px solid #f0f0f0; transition:background .1s; }
@@ -94,38 +113,44 @@
 
 <!-- SIDEBAR -->
 <aside class="sidebar fixed h-full bg-white border-r border-gray-200 flex flex-col z-30 shadow-sm overflow-y-auto">
-  <div class="px-5 py-4 border-b border-gray-100 flex-shrink-0">
-    <div class="flex items-center gap-3">
-      <div class="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0"><i class="fab fa-whatsapp text-white text-lg"></i></div>
-      <div><div class="font-bold text-gray-900 text-sm">WhatsBot</div><div class="text-xs text-gray-400">CRM Dashboard</div></div>
+  <div class="px-4 py-4 border-b border-gray-100 flex-shrink-0">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0"><i class="fab fa-whatsapp text-white text-lg"></i></div>
+        <div id="sidebar-header-text" class="sb-label min-w-0"><div class="font-bold text-gray-900 text-sm">WhatsBot</div><div class="text-xs text-gray-400">CRM Dashboard</div></div>
+      </div>
+      <button id="sidebar-toggle" title="Toggle sidebar" class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0 ml-1">
+        <i id="sidebar-toggle-icon" class="fas fa-chevron-left text-xs"></i>
+      </button>
     </div>
   </div>
   <nav class="flex-1 px-3 py-2">
     <div class="nav-group-label">Overview</div>
-    <a href="#" id="dashboard-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-home"></i></span><span>Dashboard</span></a>
-    <a href="#" id="contacts-tab" class="nav-item active"><span class="nav-icon"><i class="fas fa-users"></i></span><span>Contacts</span></a>
-    <a href="#" id="analytics-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-chart-line"></i></span><span>Analytics</span></a>
-    <a href="#" id="chats-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-comments"></i></span><span>Chats</span><span id="chats-badge" class="ml-auto bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full hidden">0</span></a>
-    <a href="#" id="scoring-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-star"></i></span><span>Contact Scoring</span></a>
+    <a href="#" id="dashboard-tab" class="nav-item" title="Dashboard"><span class="nav-icon"><i class="fas fa-home"></i></span><span class="sb-label">Dashboard</span></a>
+    <a href="#" id="contacts-tab" class="nav-item active" title="Contacts"><span class="nav-icon"><i class="fas fa-users"></i></span><span class="sb-label">Contacts</span></a>
+    <a href="#" id="analytics-tab" class="nav-item" title="Analytics"><span class="nav-icon"><i class="fas fa-chart-line"></i></span><span class="sb-label">Analytics</span></a>
+    <a href="#" id="chats-tab" class="nav-item" title="Chats"><span class="nav-icon"><i class="fas fa-comments"></i></span><span class="sb-label">Chats</span><span id="chats-badge" class="ml-auto bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full hidden sb-label">0</span></a>
+    <a href="#" id="scoring-tab" class="nav-item" title="Contact Scoring"><span class="nav-icon"><i class="fas fa-star"></i></span><span class="sb-label">Contact Scoring</span></a>
+    <a href="#" id="groups-tab" class="nav-item" title="Group Recap"><span class="nav-icon"><i class="fas fa-book-open"></i></span><span class="sb-label">Group Recap</span></a>
     <div class="nav-group-label">Messaging</div>
-    <a href="#" id="campaigns-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-bullhorn"></i></span><span>Campaigns</span></a>
-    <a href="#" id="templates-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-layer-group"></i></span><span>Templates</span></a>
-    <a href="#" id="scheduled-messages-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-clock"></i></span><span>Scheduled</span></a>
+    <a href="#" id="campaigns-tab" class="nav-item" title="Campaigns"><span class="nav-icon"><i class="fas fa-bullhorn"></i></span><span class="sb-label">Campaigns</span></a>
+    <a href="#" id="templates-tab" class="nav-item" title="Templates"><span class="nav-icon"><i class="fas fa-layer-group"></i></span><span class="sb-label">Templates</span></a>
+    <a href="#" id="scheduled-messages-tab" class="nav-item" title="Scheduled"><span class="nav-icon"><i class="fas fa-clock"></i></span><span class="sb-label">Scheduled</span></a>
     <div class="nav-group-label">System</div>
-    <a href="#" id="bot-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-robot"></i></span><span>Bot Status</span></a>
-    <a href="#" id="commands-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-terminal"></i></span><span>Commands</span></a>
-    <a href="#" id="users-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-user-shield"></i></span><span>Users</span></a>
-    <a href="#" id="audit-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-history"></i></span><span>Audit Log</span></a>
-    <a href="#" id="integrations-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-plug"></i></span><span>Integrations</span></a>
-    <a href="#" id="settings-tab" class="nav-item"><span class="nav-icon"><i class="fas fa-cog"></i></span><span>Settings</span></a>
+    <a href="#" id="bot-tab" class="nav-item" title="Bot Status"><span class="nav-icon"><i class="fas fa-robot"></i></span><span class="sb-label">Bot Status</span></a>
+    <a href="#" id="commands-tab" class="nav-item" title="Commands"><span class="nav-icon"><i class="fas fa-terminal"></i></span><span class="sb-label">Commands</span></a>
+    <a href="#" id="users-tab" class="nav-item" title="Users"><span class="nav-icon"><i class="fas fa-user-shield"></i></span><span class="sb-label">Users</span></a>
+    <a href="#" id="audit-tab" class="nav-item" title="Audit Log"><span class="nav-icon"><i class="fas fa-history"></i></span><span class="sb-label">Audit Log</span></a>
+    <a href="#" id="integrations-tab" class="nav-item" title="Integrations"><span class="nav-icon"><i class="fas fa-plug"></i></span><span class="sb-label">Integrations</span></a>
+    <a href="#" id="settings-tab" class="nav-item" title="Settings"><span class="nav-icon"><i class="fas fa-cog"></i></span><span class="sb-label">Settings</span></a>
   </nav>
   <div class="px-4 py-3 border-t border-gray-100 flex-shrink-0">
-    <div class="flex items-center justify-between">
-      <div class="flex items-center gap-2.5">
+    <div id="sidebar-footer-inner" class="flex items-center justify-between">
+      <div class="flex items-center gap-2.5 min-w-0">
         <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0"><i class="fas fa-user text-indigo-600 text-xs"></i></div>
-        <div><div id="username" class="text-sm font-semibold text-gray-800 leading-none">Admin</div><div class="text-xs text-gray-400 mt-0.5">Administrator</div></div>
+        <div id="sidebar-footer-info" class="sb-label min-w-0"><div id="username" class="text-sm font-semibold text-gray-800 leading-none">Admin</div><div class="text-xs text-gray-400 mt-0.5">Administrator</div></div>
       </div>
-      <button id="logout" title="Logout" class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"><i class="fas fa-sign-out-alt text-sm"></i></button>
+      <button id="logout" title="Logout" class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"><i class="fas fa-sign-out-alt text-sm"></i></button>
     </div>
   </div>
 </aside>
@@ -436,6 +461,62 @@
     </div>
   </div>
 
+  <!-- Group Recap -->
+  <div id="groups-section" class="section-content hidden p-6">
+    <div class="mb-6"><h1 class="text-2xl font-bold text-gray-900">Group Recap</h1><p class="text-sm text-gray-500 mt-0.5">Generate AI summaries of WhatsApp group conversations — private, admin-only</p></div>
+
+    <!-- Controls -->
+    <div class="bg-white border border-gray-200 rounded-2xl p-5 mb-4">
+      <div class="flex flex-wrap gap-4 items-end">
+        <div class="flex-1" style="min-width:200px;">
+          <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Group</label>
+          <select id="recap-group-select" class="field" onchange="updateGroupStats()"><option value="">Loading…</option></select>
+        </div>
+        <div style="min-width:160px;">
+          <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Period</label>
+          <select id="recap-period-select" class="field">
+            <option value="1h">Last 1 hour</option>
+            <option value="6h">Last 6 hours</option>
+            <option value="12h">Last 12 hours</option>
+            <option value="24h" selected>Last 24 hours</option>
+            <option value="2d">Last 2 days</option>
+            <option value="7d">Last 7 days</option>
+            <option value="1w">Last week</option>
+          </select>
+        </div>
+        <div>
+          <button onclick="generateRecap()" id="recap-btn" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors">
+            <i class="fas fa-magic text-xs"></i> Generate Recap
+          </button>
+        </div>
+      </div>
+      <div id="recap-group-stats" class="mt-3 text-xs text-gray-400 hidden"></div>
+    </div>
+
+    <!-- Provider badge -->
+    <div id="recap-provider-badge" class="hidden mb-4 flex items-center gap-2 text-xs text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-2.5">
+      <i class="fas fa-robot"></i><span id="recap-provider-text"></span>
+    </div>
+
+    <!-- Result card -->
+    <div id="recap-result-card" class="hidden bg-white border border-gray-200 rounded-2xl overflow-hidden mb-4">
+      <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+        <div>
+          <h2 class="font-semibold text-gray-900 text-sm" id="recap-result-title">Summary</h2>
+          <p class="text-xs text-gray-400 mt-0.5" id="recap-result-meta"></p>
+        </div>
+        <button onclick="copyRecap()" class="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1.5 font-semibold transition-colors"><i class="fas fa-copy"></i> Copy</button>
+      </div>
+      <div class="p-5"><div id="recap-result-body" class="text-sm text-gray-700 leading-relaxed"></div></div>
+    </div>
+
+    <!-- Empty state -->
+    <div id="recap-empty" class="text-center py-16 text-gray-300">
+      <i class="fas fa-book-open text-5xl mb-3 block"></i>
+      <p class="text-sm font-medium">Select a group and period, then click Generate</p>
+    </div>
+  </div>
+
   <!-- Audit Log -->
   <div id="audit-section" class="section-content hidden p-6">
     <div class="mb-6"><h1 class="text-2xl font-bold text-gray-900">Audit Log</h1><p class="text-sm text-gray-500 mt-0.5">Record of all admin actions</p></div>
@@ -707,8 +788,9 @@
           <input id="int-name" class="field" placeholder="e.g. My Webhook">
         </div>
         <div>
-          <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">URL</label>
+          <label id="int-url-label" class="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">URL</label>
           <input id="int-url" class="field" placeholder="https://hooks.example.com/…">
+          <p id="int-url-hint" class="text-xs text-gray-400 mt-1 hidden">Comma-separated recipient email addresses</p>
         </div>
         <div id="int-secret-wrap">
           <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Secret (optional, for signature verification)</label>
@@ -773,6 +855,7 @@
             <select id="ar-aiprovider" class="field">
               <option value="gemini">Gemini (Google)</option>
               <option value="openai">OpenAI (GPT)</option>
+              <option value="claude">Claude (Anthropic)</option>
             </select>
           </div>
           <div>
@@ -798,7 +881,7 @@
 
   <!-- Settings -->
   <div id="settings-section" class="section-content hidden p-6">
-    <div class="mb-6"><h1 class="text-2xl font-bold text-gray-900">Settings</h1><p class="text-sm text-gray-500 mt-0.5">Bot configuration and API keys</p></div>
+    <div class="mb-6"><h1 class="text-2xl font-bold text-gray-900">Settings</h1><p class="text-sm text-gray-500 mt-0.5">Bot configuration and runtime paths</p></div>
     <form id="settings-form" class="space-y-5">
       <div class="bg-white border border-gray-200 rounded-2xl p-5">
         <div class="text-sm font-semibold text-gray-800 mb-4">Bot Info</div>
@@ -806,24 +889,30 @@
       </div>
       <div class="bg-white border border-gray-200 rounded-2xl p-5">
         <div class="text-sm font-semibold text-gray-800 mb-1">API Key Status</div>
-        <div class="text-xs text-gray-500 mb-4">Loaded from environment at startup</div>
+        <div class="text-xs text-gray-500 mb-4">Loaded from environment or restored from backoffice settings at startup</div>
         <div class="grid grid-cols-3 gap-3" id="api-keys-status-grid"></div>
       </div>
       <div class="bg-white border border-gray-200 rounded-2xl p-5">
-        <div class="text-sm font-semibold text-gray-800 mb-1">Update API Keys</div>
+        <div class="text-sm font-semibold text-gray-800 mb-1">Update Keys & Local Voice Runtime</div>
         <div class="text-xs text-gray-500 mb-4">Stored securely and applied at runtime. Leave blank to keep current value.</div>
         <div class="grid grid-cols-2 gap-4">
-          <div><label class="text-xs font-semibold text-gray-500 block mb-1">GEMINI_API_KEY</label><input class="field" type="password" id="key-GEMINI_API_KEY" placeholder="Enter new value…" autocomplete="new-password"></div>
-          <div><label class="text-xs font-semibold text-gray-500 block mb-1">CHAT_GPT_API_KEY</label><input class="field" type="password" id="key-CHAT_GPT_API_KEY" placeholder="Enter new value…" autocomplete="new-password"></div>
-          <div><label class="text-xs font-semibold text-gray-500 block mb-1">OPENWEATHERMAP_API_KEY</label><input class="field" type="password" id="key-OPENWEATHERMAP_API_KEY" placeholder="Enter new value…" autocomplete="new-password"></div>
-          <div><label class="text-xs font-semibold text-gray-500 block mb-1">ASSEMBLYAI_API_KEY</label><input class="field" type="password" id="key-ASSEMBLYAI_API_KEY" placeholder="Enter new value…" autocomplete="new-password"></div>
-          <div><label class="text-xs font-semibold text-gray-500 block mb-1">SPEECHIFY_API_KEY</label><input class="field" type="password" id="key-SPEECHIFY_API_KEY" placeholder="Enter new value…" autocomplete="new-password"></div>
+          <div><label class="text-xs font-semibold text-gray-500 block mb-1"><span class="inline-flex items-center gap-1"><a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-indigo-600" title="Open Google AI Studio"><i class="fas fa-info-circle"></i></a><span>GEMINI_API_KEY</span></span></label><input class="field" type="password" id="key-GEMINI_API_KEY" placeholder="Enter new value…" autocomplete="new-password"></div>
+          <div><label class="text-xs font-semibold text-gray-500 block mb-1"><span class="inline-flex items-center gap-1"><a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-indigo-600" title="Open OpenAI API keys"><i class="fas fa-info-circle"></i></a><span>CHAT_GPT_API_KEY</span></span></label><input class="field" type="password" id="key-CHAT_GPT_API_KEY" placeholder="Enter new value…" autocomplete="new-password"></div>
+          <div><label class="text-xs font-semibold text-gray-500 block mb-1"><span class="inline-flex items-center gap-1"><a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-indigo-600" title="Open Anthropic Console"><i class="fas fa-info-circle"></i></a><span>ANTHROPIC_API_KEY</span></span></label><input class="field" type="password" id="key-ANTHROPIC_API_KEY" placeholder="Enter new value…" autocomplete="new-password"></div>
+          <div><label class="text-xs font-semibold text-gray-500 block mb-1"><span class="inline-flex items-center gap-1"><a href="https://www.weatherapi.com/my/" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-indigo-600" title="Open WeatherAPI dashboard"><i class="fas fa-info-circle"></i></a><span>OPENWEATHERMAP_API_KEY</span></span></label><input class="field" type="password" id="key-OPENWEATHERMAP_API_KEY" placeholder="Enter new value…" autocomplete="new-password"></div>
+          <div><label class="text-xs font-semibold text-gray-500 block mb-1">SHERPA_ONNX_ASR_ENCODER_PATH</label><input class="field" type="text" id="key-SHERPA_ONNX_ASR_ENCODER_PATH" placeholder="/opt/sherpa/asr/encoder.onnx" autocomplete="off"></div>
+          <div><label class="text-xs font-semibold text-gray-500 block mb-1">SHERPA_ONNX_ASR_DECODER_PATH</label><input class="field" type="text" id="key-SHERPA_ONNX_ASR_DECODER_PATH" placeholder="/opt/sherpa/asr/decoder.onnx" autocomplete="off"></div>
+          <div><label class="text-xs font-semibold text-gray-500 block mb-1">SHERPA_ONNX_ASR_TOKENS_PATH</label><input class="field" type="text" id="key-SHERPA_ONNX_ASR_TOKENS_PATH" placeholder="/opt/sherpa/asr/tokens.txt" autocomplete="off"></div>
+          <div><label class="text-xs font-semibold text-gray-500 block mb-1">SHERPA_ONNX_TTS_MODEL_PATH</label><input class="field" type="text" id="key-SHERPA_ONNX_TTS_MODEL_PATH" placeholder="/opt/sherpa/tts/model.onnx" autocomplete="off"></div>
+          <div><label class="text-xs font-semibold text-gray-500 block mb-1">SHERPA_ONNX_TTS_TOKENS_PATH</label><input class="field" type="text" id="key-SHERPA_ONNX_TTS_TOKENS_PATH" placeholder="/opt/sherpa/tts/tokens.txt" autocomplete="off"></div>
+          <div><label class="text-xs font-semibold text-gray-500 block mb-1">SHERPA_ONNX_TTS_LEXICON_PATH</label><input class="field" type="text" id="key-SHERPA_ONNX_TTS_LEXICON_PATH" placeholder="/opt/sherpa/tts/lexicon.txt (optional)" autocomplete="off"></div>
         </div>
       </div>
       <div class="bg-white border border-gray-200 rounded-2xl p-5">
         <div class="text-sm font-semibold text-gray-800 mb-4">Download Settings</div>
         <div class="flex items-center gap-8">
           <div><label class="text-xs font-semibold text-gray-500 block mb-1">Max File Size (MB)</label><input type="number" id="setting-maxFileSizeMb" class="field" style="max-width:140px;" min="1" max="2000"></div>
+          <div><label class="text-xs font-semibold text-gray-500 block mb-1">Voice AI Provider</label><select id="setting-defaultAudioAiCommand" class="field" style="min-width:220px;"><option value="chat">Gemini</option><option value="gpt">OpenAI GPT</option><option value="claude">Claude</option></select></div>
           <div class="flex items-center gap-3 mt-4">
             <div class="toggle-track" id="toggle-autoDownload" onclick="toggleAutoDownload()"><div class="toggle-thumb"></div></div>
             <div><div class="text-sm font-medium text-gray-800">Auto-download</div><div class="text-xs text-gray-500">Automatically download media from URLs</div></div>
@@ -1186,6 +1275,20 @@
   </div>
 </div>
 
+<!-- Admin modules — load order matters: state first, then feature modules, then bootstrapper -->
+<script src="/public/js/admin/state.js"></script>
+<script src="/public/js/admin/utils.js"></script>
+<script src="/public/js/admin/dashboard.js"></script>
+<script src="/public/js/admin/contacts.js"></script>
+<script src="/public/js/admin/campaigns.js"></script>
+<script src="/public/js/admin/templates.js"></script>
+<script src="/public/js/admin/chats.js"></script>
+<script src="/public/js/admin/bot-logs.js"></script>
+<script src="/public/js/admin/system.js"></script>
+<script src="/public/js/admin/scoring.js"></script>
+<script src="/public/js/admin/scheduled.js"></script>
+<script src="/public/js/admin/integrations.js"></script>
+<script src="/public/js/admin/groups.js"></script>
 <script src="/public/js/admin.js"></script>
 <script>
   function updateWaPreview() {
@@ -1252,6 +1355,16 @@
   function toggleIntEnabled() {
     const t = document.getElementById('int-enabled-toggle');
     t.classList.toggle('on');
+  }
+  function toggleKeyVisibility() {
+    const inp = document.getElementById('inbound-api-key-input');
+    const icon = document.getElementById('key-eye-icon');
+    if (inp.type === 'password') { inp.type = 'text'; icon.className = 'fas fa-eye-slash text-sm'; }
+    else { inp.type = 'password'; icon.className = 'fas fa-eye text-sm'; }
+  }
+  function copyApiExample() {
+    const text = document.getElementById('inbound-api-example').textContent;
+    navigator.clipboard.writeText(text).then(() => { /* silent */ });
   }
   function toggleArEnabled() {
     const t = document.getElementById('ar-enabled-toggle');

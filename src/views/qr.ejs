@@ -1,99 +1,225 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsBot QR Code</title>
-    <link rel="icon" href="/public/favicon.png">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-
-        #status {
-            margin-top: 10px;
-            padding: 10px;
-            border-radius: 5px;
-        }
-
-        .checking {
-            background-color: #f0f0f0;
-            color: #666;
-        }
-
-        .waiting {
-            background-color: #fff3cd;
-            color: #856404;
-        }
-
-        .success {
-            background-color: #d4edda;
-            color: #155724;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsBot — Scan QR Code</title>
+  <link rel="icon" href="/public/favicon.png">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f1f5f9;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    /* ── Navbar ── */
+    .navbar {
+      background: #fff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .logo-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: #4f46e5;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 8px rgba(79,70,229,0.25);
+      flex-shrink: 0;
+    }
+    /* ── Card ── */
+    .card {
+      background: #fff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 20px;
+      box-shadow: 0 4px 24px rgba(15,23,42,0.06);
+    }
+    /* ── QR wrapper ── */
+    .qr-frame {
+      background: #fff;
+      border: 2px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 14px;
+      display: inline-block;
+      position: relative;
+    }
+    .qr-frame img { border-radius: 8px; display: block; }
+    /* Corner accents */
+    .qr-corner {
+      position: absolute; width: 18px; height: 18px;
+      border-color: #4f46e5; border-style: solid;
+    }
+    .qr-corner.tl { top: -1px; left: -1px; border-width: 3px 0 0 3px; border-radius: 5px 0 0 0; }
+    .qr-corner.tr { top: -1px; right: -1px; border-width: 3px 3px 0 0; border-radius: 0 5px 0 0; }
+    .qr-corner.bl { bottom: -1px; left: -1px; border-width: 0 0 3px 3px; border-radius: 0 0 0 5px; }
+    .qr-corner.br { bottom: -1px; right: -1px; border-width: 0 3px 3px 0; border-radius: 0 0 5px 0; }
+    /* ── Loader placeholder ── */
+    .qr-loader {
+      width: 260px; height: 260px;
+      border-radius: 12px;
+      background: #f8fafc;
+      border: 1.5px dashed #cbd5e1;
+      display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 12px;
+    }
+    /* ── Status pill ── */
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 7px 16px; border-radius: 999px;
+      font-size: 0.8rem; font-weight: 600;
+      transition: all 0.25s;
+    }
+    .status-pill.waiting  { background: #fef9c3; color: #92400e; border: 1.5px solid #fde68a; }
+    .status-pill.success  { background: #dcfce7; color: #166534; border: 1.5px solid #86efac; }
+    .status-pill.error    { background: #fee2e2; color: #991b1b; border: 1.5px solid #fca5a5; }
+    /* ── Step ── */
+    .step {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .step:last-child { border-bottom: none; padding-bottom: 0; }
+    .step:first-child { padding-top: 0; }
+    .step-num {
+      width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+      background: #eef2ff; border: 1.5px solid #c7d2fe;
+      color: #4f46e5; font-size: 0.72rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin { animation: spin 1s linear infinite; }
+  </style>
 </head>
-
 <body>
-    <div align="center">
-        <div id="qrCodeData">
-            <h3>🤖 WhatsBot : Scan the QR Code to Continue! </h3>
-            <% if (qrCodeData) { %>
-                <img src="https://api.qrserver.com/v1/create-qr-code/?data=<%= encodeURIComponent(qrCodeData) %>&size=300x300"
-                    alt="QR Code" />
-                <p>📱 Open WhatsApp on your phone and scan this QR code</p>
-                <% } else { %>
-                    <img src="/public/loader.svg" alt="Loader" width="100" height="100" />
-                    <p>Hold on a sec while the QR code is being generated.</p>
-                    <% } %>
-                        <div id="status" class="checking">Checking status...</div>
-        </div>
-        <script>
-            let lastQrCode = '';
-            const statusDiv = document.getElementById('status');
 
-            const checkQrStatus = () => {
-                fetch('/qr-status')
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log('QR Status:', data);
-
-                        // If the QR code has changed, reload the page to show the new one
-                        if (data.qrCodeData && data.qrCodeData !== lastQrCode) {
-                            lastQrCode = data.qrCodeData;
-                            statusDiv.className = 'waiting';
-                            statusDiv.textContent = '⏳ Waiting for QR code scan...';
-                            location.reload();
-                        }
-
-                        // If authenticated successfully, redirect to the main page
-                        if (data.qrScanned) {
-                            console.log('QR scanned! Redirecting...');
-                            statusDiv.className = 'success';
-                            statusDiv.textContent = '✅ Authentication successful! Redirecting...';
-                            setTimeout(() => {
-                                window.location.href = '/';
-                            }, 1000);
-                        } else if (data.qrCodeData) {
-                            statusDiv.className = 'waiting';
-                            statusDiv.textContent = '⏳ Waiting for QR code scan...';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error checking QR status:', error);
-                        statusDiv.className = 'checking';
-                        statusDiv.textContent = '⚠️ Connection error, retrying...';
-                    });
-            };
-
-            // Check status every 3 seconds
-            setInterval(checkQrStatus, 3000);
-
-            // Check immediately on load
-            checkQrStatus();
-        </script>
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="flex items-center gap-3">
+    <div class="logo-icon"><i class="fab fa-whatsapp text-white"></i></div>
+    <div>
+      <div class="font-bold text-gray-900 text-sm">WhatsBot</div>
+      <div class="text-xs text-gray-400">Scan to connect</div>
     </div>
-</body>
+  </div>
+  <a href="/admin" class="flex items-center gap-2 text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 px-4 py-2 rounded-lg transition-colors">
+    <i class="fas fa-shield-alt"></i>Admin Panel
+  </a>
+</nav>
 
+<!-- Main -->
+<main class="flex-1 flex items-center justify-center py-10 px-4">
+  <div class="w-full" style="max-width:460px;">
+
+    <!-- Heading -->
+    <div class="text-center mb-8">
+      <h1 class="text-2xl font-bold text-gray-900 mb-1" style="letter-spacing:-0.01em">Link your WhatsApp</h1>
+      <p class="text-sm text-gray-400">Scan the QR code below with your phone to connect</p>
+    </div>
+
+    <!-- QR Card -->
+    <div class="card p-8 mb-4 flex flex-col items-center gap-5">
+
+      <!-- QR code or loader -->
+      <div id="qr-area">
+        <% if (qrCodeData) { %>
+          <div class="qr-frame">
+            <div class="qr-corner tl"></div>
+            <div class="qr-corner tr"></div>
+            <div class="qr-corner bl"></div>
+            <div class="qr-corner br"></div>
+            <img
+              src="https://api.qrserver.com/v1/create-qr-code/?data=<%= encodeURIComponent(qrCodeData) %>&size=260x260&margin=4"
+              alt="WhatsApp QR Code" width="260" height="260">
+          </div>
+        <% } else { %>
+          <div class="qr-loader">
+            <i class="fas fa-circle-notch spin text-indigo-400 text-3xl"></i>
+            <span class="text-sm text-gray-400 font-medium">Generating QR code…</span>
+          </div>
+        <% } %>
+      </div>
+
+      <!-- Status -->
+      <div id="status-pill" class="status-pill waiting">
+        <i id="status-icon" class="fas fa-hourglass-half text-xs"></i>
+        <span id="status-text">Waiting for scan…</span>
+      </div>
+
+      <p class="text-xs text-gray-300 text-center">QR code refreshes automatically every 60 seconds</p>
+    </div>
+
+    <!-- Instructions Card -->
+    <div class="card px-6 py-5 mb-6">
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">How to scan</p>
+      <div class="step">
+        <div class="step-num">1</div>
+        <div>
+          <p class="text-sm font-semibold text-gray-800">Open WhatsApp on your phone</p>
+          <p class="text-xs text-gray-400 mt-0.5">Make sure you are signed in to your account</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div>
+          <p class="text-sm font-semibold text-gray-800">Go to Settings → Linked Devices</p>
+          <p class="text-xs text-gray-400 mt-0.5">Tap the menu icon (Android) or Settings tab (iOS)</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div>
+          <p class="text-sm font-semibold text-gray-800">Tap "Link a Device" and scan</p>
+          <p class="text-xs text-gray-400 mt-0.5">Point your camera at the QR code above</p>
+        </div>
+      </div>
+    </div>
+
+    <p class="text-center text-xs text-gray-300">WhatsBot · Automated WhatsApp Bot</p>
+  </div>
+</main>
+
+<script>
+  let lastQrCode = '';
+
+  function setStatus(type, text) {
+    const pill = document.getElementById('status-pill');
+    const icon = document.getElementById('status-icon');
+    const span = document.getElementById('status-text');
+    pill.className = 'status-pill ' + type;
+    span.textContent = text;
+    if (type === 'waiting') icon.className = 'fas fa-hourglass-half text-xs';
+    else if (type === 'success') icon.className = 'fas fa-check-circle text-xs';
+    else icon.className = 'fas fa-exclamation-circle text-xs';
+  }
+
+  function checkStatus() {
+    fetch('/qr-status')
+      .then(r => r.json())
+      .then(data => {
+        if (data.qrCodeData && data.qrCodeData !== lastQrCode) {
+          lastQrCode = data.qrCodeData;
+          location.reload();
+        }
+        if (data.qrScanned) {
+          setStatus('success', 'Authenticated! Redirecting…');
+          setTimeout(() => { window.location.href = '/'; }, 1200);
+        } else if (data.qrCodeData) {
+          setStatus('waiting', 'Waiting for scan…');
+        }
+      })
+      .catch(() => setStatus('error', 'Connection error — retrying…'));
+  }
+
+  checkStatus();
+  setInterval(checkStatus, 3000);
+</script>
+</body>
 </html>

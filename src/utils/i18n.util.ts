@@ -31,6 +31,14 @@ export const TRANSLATIONS = {
                 description: "Discuter avec Gemini AI",
                 example: "chat Bonjour gemini!"
             },
+            gpt: {
+                description: "Discuter avec OpenAI GPT",
+                example: "gpt Explique-moi TypeScript"
+            },
+            claude: {
+                description: "Discuter avec Claude",
+                example: "claude Résume cette idée"
+            },
             meme: {
                 description: "Obtenir un mème aléatoire",
                 example: "meme"
@@ -101,6 +109,14 @@ export const TRANSLATIONS = {
             chat: {
                 description: "Chat with Gemini AI",
                 example: "chat Hello gemini!"
+            },
+            gpt: {
+                description: "Chat with OpenAI GPT",
+                example: "gpt Explain TypeScript"
+            },
+            claude: {
+                description: "Chat with Claude",
+                example: "claude Summarize this idea"
             },
             meme: {
                 description: "Get random meme",

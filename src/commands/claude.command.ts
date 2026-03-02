@@ -1,5 +1,5 @@
 import { Message, MessageMedia, MessageTypes } from "whatsapp-web.js";
-import { chatGptCompletion } from "../utils/chat-gpt.util";
+import { claudeCompletion } from "../utils/claude.util";
 import logger from "../configs/logger.config";
 import { AppConfig } from "../configs/app.config";
 import { speechToText } from "../utils/speech-to-text.util";
@@ -15,7 +15,7 @@ export const run = async (message: Message, args: string[], userI18n: UserI18n) 
     const chat = await message.getChat();
 
     if (!query && message.type !== MessageTypes.VOICE) {
-        message.reply(`> WhatsBot 🤖 Please provide a message for GPT.`);
+        message.reply(`> WhatsBot 🤖 Please provide a message for Claude.`);
         return;
     }
 
@@ -49,8 +49,8 @@ export const run = async (message: Message, args: string[], userI18n: UserI18n) 
     }
 
     try {
-        const result = await chatGptCompletion(query);
-        const chatReply = result.choices[0].message.content || 'No reply';
+        const result = await claudeCompletion(query);
+        const chatReply = result?.content?.find((item: any) => item.type === "text")?.text || "No reply";
 
         if (message.type === MessageTypes.VOICE) {
             if (chat) await chat.sendStateRecording();
@@ -77,6 +77,6 @@ export const run = async (message: Message, args: string[], userI18n: UserI18n) 
         message.reply(AppConfig.instance.printMessage(chatReply));
     } catch (err) {
         logger.error(err);
-        message.reply('> WhatsBot 🤖 Error communicating with GPT.');
+        message.reply('> WhatsBot 🤖 Error communicating with Claude.');
     }
 };

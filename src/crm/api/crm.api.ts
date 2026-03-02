@@ -21,11 +21,15 @@ import { messageEmitter } from '../../utils/message-emitter.util';
 import { IntegrationModel, INTEGRATION_EVENTS } from '../models/integration.model';
 import { AutoReplyModel } from '../models/auto-reply.model';
 import { fireEvent } from '../../utils/fire-event.util';
+import { encryptValue, decryptValue } from '../../utils/crypto.util';
+import { geminiCompletion } from '../../utils/gemini.util';
+import { claudeCompletion } from '../../utils/claude.util';
+import { chatGptCompletion } from '../../utils/chat-gpt.util';
 import crypto from 'crypto';
 
 export const router = express.Router();
 
-// ─── Audit Log Helper ────────────────────────────────────────────────────────
+// Audit Log Helper
 async function addAuditLog(
     userId: string, username: string,
     action: string, resource: string,
@@ -38,7 +42,7 @@ async function addAuditLog(
     }
 }
 
-// ─── CSV Helpers ─────────────────────────────────────────────────────────────
+// CSV Helpers
 function parseCSV(csv: string): Array<{ phoneNumber: string; name?: string }> {
     const lines = csv.split('\n').map(l => l.trim()).filter(Boolean);
     if (!lines.length) return [];
@@ -67,7 +71,7 @@ function contactsToCSV(contacts: any[]): string {
 
 export default function (botManager: BotManager) {
 
-    // ── Contacts ──────────────────────────────────────────────────────────────
+    // Contacts
     router.get('/contacts', authenticate, authorizeAdmin, async (req, res) => {
         try {
             const { page = 1, limit = 20, search = '', sort = '-lastInteraction', language = '' } = req.query;
@@ -200,7 +204,7 @@ export default function (botManager: BotManager) {
         }
     });
 
-    // ── Campaigns ─────────────────────────────────────────────────────────────
+    // Campaigns
     router.post('/campaigns', authenticate, authorizeAdmin, async (req, res) => {
         try {
             const {
@@ -292,7 +296,7 @@ export default function (botManager: BotManager) {
         }
     });
 
-    // ── Templates ─────────────────────────────────────────────────────────────
+    // Templates
     router.get('/templates', authenticate, authorizeAdmin, async (req, res) => {
         try {
             const templates = await TemplateModel.find().sort({ createdAt: -1 });
@@ -359,7 +363,7 @@ export default function (botManager: BotManager) {
         }
     });
 
-    // ── Auth ──────────────────────────────────────────────────────────────────
+    // Auth
     router.post('/auth/register', async (req, res) => {
         try {
             const { username, password, role } = req.body;
@@ -386,7 +390,7 @@ export default function (botManager: BotManager) {
         res.json({ user: req.user });
     });
 
-    // ── Settings ──────────────────────────────────────────────────────────────
+    // Settings
     router.get('/settings', authenticate, authorizeAdmin, async (req, res) => {
         try {
             let settings = await SettingsModel.findOne();
@@ -394,19 +398,54 @@ export default function (botManager: BotManager) {
 
             const apiKeysMap: Map<string, string> = settings.get('apiKeys') || new Map();
             const maskedKeys: Record<string, string> = {};
-            apiKeysMap.forEach((val, key) => {
-                maskedKeys[key] = val.length > 8 ? val.slice(0, 4) + '…' + val.slice(-4) : val ? '****' : '';
+            const displayKeys: Record<string, string> = {};
+            const sensitiveKeys = new Set([
+                'GEMINI_API_KEY',
+                'CHAT_GPT_PROJECT_ID',
+                'CHAT_GPT_ORG_ID',
+                'CHAT_GPT_API_KEY',
+                'ANTHROPIC_API_KEY',
+                'OPENWEATHERMAP_API_KEY',
+            ]);
+            apiKeysMap.forEach((rawVal, key) => {
+                const val    = decryptValue(String(rawVal || ''));
+                const masked = val.length > 8 ? val.slice(0, 4) + '…' + val.slice(-4) : val ? '****' : '';
+                maskedKeys[key]    = masked;
+                displayKeys[key]   = sensitiveKeys.has(key) ? masked : val;
             });
+
+            const runtimeDisplayKeys = [
+                'SHERPA_ONNX_ASR_ENCODER_PATH',
+                'SHERPA_ONNX_ASR_DECODER_PATH',
+                'SHERPA_ONNX_ASR_TOKENS_PATH',
+                'SHERPA_ONNX_TTS_MODEL_PATH',
+                'SHERPA_ONNX_TTS_TOKENS_PATH',
+                'SHERPA_ONNX_TTS_LEXICON_PATH',
+                'SHERPA_ONNX_TTS_DATA_DIR',
+            ];
+            runtimeDisplayKeys.forEach((key) => {
+                if (!displayKeys[key] && process.env[key]) {
+                    displayKeys[key] = String(process.env[key]);
+                }
+            });
+
+            const hasRuntimeKey = (key: string) => !!(process.env[key] || apiKeysMap.get(key));
 
             res.json({
                 ...settings.toObject(),
                 apiKeysMasked: maskedKeys,
+                apiKeysDisplay: displayKeys,
                 env: {
-                    GEMINI_API_KEY: !!process.env.GEMINI_API_KEY,
-                    OPENWEATHERMAP_API_KEY: !!process.env.OPENWEATHERMAP_API_KEY,
-                    ASSEMBLYAI_API_KEY: !!process.env.ASSEMBLYAI_API_KEY,
-                    SPEECHIFY_API_KEY: !!process.env.SPEECHIFY_API_KEY,
-                    CHAT_GPT_API_KEY: !!process.env.CHAT_GPT_API_KEY,
+                    GEMINI_API_KEY: hasRuntimeKey('GEMINI_API_KEY'),
+                    OPENWEATHERMAP_API_KEY: hasRuntimeKey('OPENWEATHERMAP_API_KEY'),
+                    SHERPA_ONNX_ASR_ENCODER_PATH: hasRuntimeKey('SHERPA_ONNX_ASR_ENCODER_PATH'),
+                    SHERPA_ONNX_ASR_DECODER_PATH: hasRuntimeKey('SHERPA_ONNX_ASR_DECODER_PATH'),
+                    SHERPA_ONNX_ASR_TOKENS_PATH: hasRuntimeKey('SHERPA_ONNX_ASR_TOKENS_PATH'),
+                    SHERPA_ONNX_TTS_MODEL_PATH: hasRuntimeKey('SHERPA_ONNX_TTS_MODEL_PATH'),
+                    SHERPA_ONNX_TTS_TOKENS_PATH: hasRuntimeKey('SHERPA_ONNX_TTS_TOKENS_PATH'),
+                    SHERPA_ONNX_TTS_LEXICON_PATH: hasRuntimeKey('SHERPA_ONNX_TTS_LEXICON_PATH'),
+                    CHAT_GPT_API_KEY: hasRuntimeKey('CHAT_GPT_API_KEY'),
+                    ANTHROPIC_API_KEY: hasRuntimeKey('ANTHROPIC_API_KEY'),
                     ENV: process.env.ENV || 'unknown',
                     PORT: process.env.PORT || '3000',
                 }
@@ -419,15 +458,22 @@ export default function (botManager: BotManager) {
 
     router.put('/settings', authenticate, authorizeAdmin, async (req, res) => {
         try {
-            const { maxFileSizeMb, autoDownloadEnabled, apiKeys } = req.body;
+            const { maxFileSizeMb, autoDownloadEnabled, defaultAudioAiCommand, apiKeys } = req.body;
             const update: any = {};
-            if (maxFileSizeMb !== undefined) update.maxFileSizeMb = maxFileSizeMb;
+            if (maxFileSizeMb !== undefined) {
+                const mb = Number(maxFileSizeMb);
+                if (isNaN(mb) || mb < 1 || mb > 500) {
+                    return res.status(400).json({ error: 'maxFileSizeMb must be between 1 and 500' });
+                }
+                update.maxFileSizeMb = mb;
+            }
             if (autoDownloadEnabled !== undefined) update.autoDownloadEnabled = autoDownloadEnabled;
+            if (defaultAudioAiCommand !== undefined) update.defaultAudioAiCommand = defaultAudioAiCommand;
             if (apiKeys && typeof apiKeys === 'object') {
                 for (const [key, value] of Object.entries(apiKeys)) {
                     if (value) {
-                        update[`apiKeys.${key}`] = value;
-                        process.env[key] = String(value);
+                        update[`apiKeys.${key}`] = encryptValue(String(value));
+                        process.env[key] = String(value); // plaintext in memory
                     }
                 }
             }
@@ -440,7 +486,7 @@ export default function (botManager: BotManager) {
         }
     });
 
-    // ── Commands ──────────────────────────────────────────────────────────────
+    // Commands
     router.get('/commands', authenticate, authorizeAdmin, async (req, res) => {
         try {
             const settings = await SettingsModel.findOne().lean() as any;
@@ -453,6 +499,16 @@ export default function (botManager: BotManager) {
         } catch (error) {
             logger.error('Failed to fetch commands:', error);
             res.status(500).json({ error: 'Failed to fetch commands' });
+        }
+    });
+
+    router.get('/commands/stats', authenticate, authorizeAdmin, async (_req, res) => {
+        try {
+            const settings = await SettingsModel.findOne().lean() as any;
+            res.json(settings?.commandStats || {});
+        } catch (error) {
+            logger.error('Failed to fetch command stats:', error);
+            res.status(500).json({ error: 'Failed to fetch command stats' });
         }
     });
 
@@ -473,7 +529,7 @@ export default function (botManager: BotManager) {
         }
     });
 
-    // ── Users ─────────────────────────────────────────────────────────────────
+    // Users
     router.get('/users', authenticate, authorizeAdmin, async (req, res) => {
         try {
             const users = await UserModel.find().select('-password').sort({ createdAt: -1 });
@@ -511,7 +567,7 @@ export default function (botManager: BotManager) {
         }
     });
 
-    // ── Audit Logs ────────────────────────────────────────────────────────────
+    // Audit Logs
     router.get('/audit-logs', authenticate, authorizeAdmin, async (req, res) => {
         try {
             const { page = 1, limit = 30, action = '', resource = '' } = req.query;
@@ -530,7 +586,7 @@ export default function (botManager: BotManager) {
         }
     });
 
-    // ── Analytics ─────────────────────────────────────────────────────────────
+    // Analytics
     router.get('/analytics', authenticate, authorizeAdmin, async (req, res) => {
         try {
             const thirtyDaysAgo = new Date();
@@ -591,7 +647,7 @@ export default function (botManager: BotManager) {
         }
     });
 
-    // ── Bot Status ────────────────────────────────────────────────────────────
+    // Bot Status
     router.get('/bot/status', authenticate, authorizeAdmin, (req, res) => {
         res.json(botManager.getStatus());
     });
@@ -607,7 +663,7 @@ export default function (botManager: BotManager) {
         }
     });
 
-    // ── Log Streaming (SSE) ───────────────────────────────────────────────────
+    // Log Streaming (SSE)
     router.get('/logs/stream', async (req, res) => {
         const token = req.query.token as string;
         if (!token) return res.status(401).end();
@@ -633,7 +689,7 @@ export default function (botManager: BotManager) {
         req.on('close', () => buffer.emitter.off('log', onLog));
     });
 
-    // ── Inbox ─────────────────────────────────────────────────────────────────
+    // Inbox
     router.get('/inbox', authenticate, authorizeAdmin, async (req, res) => {
         try {
             const conversations = await MessageModel.aggregate([
@@ -733,7 +789,7 @@ export default function (botManager: BotManager) {
         }
     });
 
-    // ── Contact Scoring ───────────────────────────────────────────────────────
+    // Contact Scoring
     router.get('/contacts/leaderboard', authenticate, authorizeAdmin, async (req, res) => {
         try {
             const limit = Number(req.query.limit) || 10;
@@ -797,7 +853,7 @@ export default function (botManager: BotManager) {
         }
     });
 
-    // ── Campaign Extra Actions ────────────────────────────────────────────────
+    // Campaign Extra Actions
     router.patch('/campaigns/:id/pause', authenticate, authorizeAdmin, async (req, res) => {
         try {
             const campaign = await CampaignModel.findByIdAndUpdate(req.params.id, { status: 'paused' }, { new: true });
@@ -924,7 +980,7 @@ export default function (botManager: BotManager) {
         }
     });
 
-    // ── Template Extra Actions ─────────────────────────────────────────────────
+    // Template Extra Actions
     router.post('/templates/:id/duplicate', authenticate, authorizeAdmin, async (req, res) => {
         try {
             const original = await TemplateModel.findById(req.params.id).lean();
@@ -1018,7 +1074,7 @@ export default function (botManager: BotManager) {
         }
     });
 
-    // ── Scheduled Messages ────────────────────────────────────────────────────
+    // Scheduled Messages
     router.get('/scheduled-messages', authenticate, authorizeAdmin, async (req, res) => {
         try {
             const msgs = await ScheduledMessageModel.find().sort({ scheduledAt: 1 });
@@ -1060,7 +1116,7 @@ export default function (botManager: BotManager) {
         }
     });
 
-    // ── Conversations Search ──────────────────────────────────────────────────
+    // Conversations Search
     router.get('/conversations/search', authenticate, authorizeAdmin, async (req, res) => {
         try {
             const q = (req.query.q as string || '').trim();
@@ -1101,7 +1157,7 @@ export default function (botManager: BotManager) {
         }
     });
 
-    // ── Direct Message ────────────────────────────────────────────────────────
+    // Direct Message
     router.post('/send-message', authenticate, authorizeAdmin, async (req, res) => {
         try {
             const { phoneNumber, message } = req.body;
@@ -1114,7 +1170,7 @@ export default function (botManager: BotManager) {
         }
     });
 
-    // ── Integrations (Webhooks / Slack / Discord) ─────────────────────────────
+    // Integrations (Webhooks / Slack / Discord)
     router.get('/integrations', authenticate, authorizeAdmin, async (_req, res) => {
         try {
             const items = await IntegrationModel.find().sort({ createdAt: -1 }).lean();
@@ -1143,6 +1199,55 @@ export default function (botManager: BotManager) {
             res.status(201).json(integration);
         } catch (error) {
             res.status(500).json({ error: 'Failed to create integration' });
+        }
+    });
+
+    // SMTP Settings
+    // Keep these above /integrations/:id so "smtp" is not treated as an id.
+    router.get('/integrations/smtp', authenticate, authorizeAdmin, async (_req, res) => {
+        try {
+            const settings = await SettingsModel.findOne().lean() as any;
+            res.json(settings?.smtp || {});
+        } catch (error) {
+            logger.error('Failed to fetch SMTP settings:', error);
+            res.status(500).json({ error: 'Failed to fetch SMTP settings' });
+        }
+    });
+
+    router.put('/integrations/smtp', authenticate, authorizeAdmin, async (req: any, res) => {
+        try {
+            const { host, port, secure, user, pass, fromName, fromEmail } = req.body;
+            await SettingsModel.findOneAndUpdate(
+                {},
+                { $set: { 'smtp.host': host, 'smtp.port': port, 'smtp.secure': secure, 'smtp.user': user, 'smtp.pass': pass, 'smtp.fromName': fromName, 'smtp.fromEmail': fromEmail } },
+                { upsert: true }
+            );
+            await addAuditLog(req.user?.userId, req.user?.username, 'update', 'smtp-settings');
+            res.json({ success: true });
+        } catch (error) {
+            logger.error('Failed to save SMTP settings:', error);
+            res.status(500).json({ error: 'Failed to save SMTP settings' });
+        }
+    });
+
+    router.post('/integrations/smtp/test', authenticate, authorizeAdmin, async (_req, res) => {
+        try {
+            const settings = await SettingsModel.findOne().lean() as any;
+            const smtp = settings?.smtp;
+            if (!smtp?.host || !smtp?.user || !smtp?.pass) {
+                return res.status(400).json({ error: 'SMTP not fully configured' });
+            }
+            const nodemailer = await import('nodemailer');
+            const transporter = nodemailer.default.createTransport({
+                host: smtp.host, port: smtp.port || 587,
+                secure: smtp.secure || false,
+                auth: { user: smtp.user, pass: smtp.pass }
+            });
+            await transporter.verify();
+            res.json({ success: true, message: 'SMTP connection verified successfully' });
+        } catch (error: any) {
+            logger.error('SMTP connection test failed:', error);
+            res.status(400).json({ error: error.message || 'SMTP connection failed' });
         }
     });
 
@@ -1185,7 +1290,7 @@ export default function (botManager: BotManager) {
         }
     });
 
-    // ── Auto-Reply Rules ──────────────────────────────────────────────────────
+    // Auto-Reply Rules
     router.get('/auto-reply', authenticate, authorizeAdmin, async (_req, res) => {
         try {
             const rules = await AutoReplyModel.find().sort({ priority: -1, createdAt: 1 }).lean();
@@ -1238,52 +1343,7 @@ export default function (botManager: BotManager) {
         }
     });
 
-    // ── SMTP Settings ─────────────────────────────────────────────────────────
-    router.get('/integrations/smtp', authenticate, authorizeAdmin, async (_req, res) => {
-        try {
-            const settings = await SettingsModel.findOne().lean() as any;
-            res.json(settings?.smtp || {});
-        } catch (error) {
-            res.status(500).json({ error: 'Failed to fetch SMTP settings' });
-        }
-    });
-
-    router.put('/integrations/smtp', authenticate, authorizeAdmin, async (req: any, res) => {
-        try {
-            const { host, port, secure, user, pass, fromName, fromEmail } = req.body;
-            await SettingsModel.findOneAndUpdate(
-                {},
-                { $set: { 'smtp.host': host, 'smtp.port': port, 'smtp.secure': secure, 'smtp.user': user, 'smtp.pass': pass, 'smtp.fromName': fromName, 'smtp.fromEmail': fromEmail } },
-                { upsert: true }
-            );
-            await addAuditLog(req.user?.id, req.user?.username, 'update', 'smtp-settings');
-            res.json({ success: true });
-        } catch (error) {
-            res.status(500).json({ error: 'Failed to save SMTP settings' });
-        }
-    });
-
-    router.post('/integrations/smtp/test', authenticate, authorizeAdmin, async (_req, res) => {
-        try {
-            const settings = await SettingsModel.findOne().lean() as any;
-            const smtp = settings?.smtp;
-            if (!smtp?.host || !smtp?.user || !smtp?.pass) {
-                return res.status(400).json({ error: 'SMTP not fully configured' });
-            }
-            const nodemailer = await import('nodemailer');
-            const transporter = nodemailer.default.createTransport({
-                host: smtp.host, port: smtp.port || 587,
-                secure: smtp.secure || false,
-                auth: { user: smtp.user, pass: smtp.pass }
-            });
-            await transporter.verify();
-            res.json({ success: true, message: 'SMTP connection verified successfully' });
-        } catch (error: any) {
-            res.status(400).json({ error: error.message || 'SMTP connection failed' });
-        }
-    });
-
-    // ── Inbound API ───────────────────────────────────────────────────────────
+    // Inbound API
     // External systems can POST here to send a WhatsApp message, no login needed — API key required
     router.post('/inbound/send', async (req, res) => {
         try {
@@ -1304,6 +1364,128 @@ export default function (botManager: BotManager) {
         } catch (error) {
             logger.error('Inbound API send failed:', error);
             res.status(500).json({ error: 'Failed to send message' });
+        }
+    });
+
+    // Groups / Recap
+
+    // GET /crm/groups — distinct groups known from persisted messages
+    router.get('/groups', authenticate, authorizeAdmin, async (_req, res) => {
+        try {
+            const groups = await MessageModel.aggregate([
+                { $match: { isGroup: true, groupId: { $exists: true, $ne: null } } },
+                { $group: { _id: '$groupId', count: { $sum: 1 }, lastMessage: { $max: '$timestamp' } } },
+                { $sort: { lastMessage: -1 } },
+            ]);
+
+            // Resolve group names from the live WhatsApp client where possible
+            const result = await Promise.all(groups.map(async (g) => {
+                let name = g._id;
+                try {
+                    const waChat = await botManager.client.getChatById(g._id);
+                    if (waChat?.name) name = waChat.name;
+                } catch (_) { /* client may not be connected */ }
+                return { id: g._id, name, count: g.count, lastMessage: g.lastMessage };
+            }));
+
+            res.json(result);
+        } catch (error) {
+            logger.error('GET /groups error:', error);
+            res.status(500).json({ error: 'Failed to fetch groups' });
+        }
+    });
+
+    // POST /crm/groups/:groupId/recap — AI summary of group messages for a period
+    router.post('/groups/:groupId/recap', authenticate, authorizeAdmin, async (req: any, res) => {
+        try {
+            const { groupId } = req.params;
+            const { period = '24h' } = req.body;
+
+            // Parse period string (e.g. "6h", "2d", "1w")
+            const match = (period as string).match(/^(\d+)(h|d|w)$/);
+            let ms = 24 * 3600 * 1000;
+            let label = 'last 24 hours';
+            if (match) {
+                const n = parseInt(match[1], 10);
+                const unit = match[2];
+                if (unit === 'h') { ms = n * 3600 * 1000; label = `last ${n} hour${n === 1 ? '' : 's'}`; }
+                else if (unit === 'd') { ms = n * 24 * 3600 * 1000; label = `last ${n} day${n === 1 ? '' : 's'}`; }
+                else { ms = n * 7 * 24 * 3600 * 1000; label = `last ${n} week${n === 1 ? '' : 's'}`; }
+            }
+            const cutoff = new Date(Date.now() - ms);
+
+            const messages = await MessageModel.find({
+                groupId,
+                isGroup: true,
+                timestamp: { $gte: cutoff },
+            }).sort({ timestamp: 1 }).lean();
+
+            if (!messages.length) {
+                return res.json({ summary: null, count: 0, label });
+            }
+
+            // Build transcript
+            const transcript = messages.map(m => {
+                const t = new Date(m.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+                return `[${t}] ${m.senderName || m.phoneNumber}: ${m.body}`;
+            }).join('\n');
+
+            // Resolve group name
+            let groupName = groupId;
+            try {
+                const waChat = await botManager.client.getChatById(groupId);
+                if (waChat?.name) groupName = waChat.name;
+            } catch (_) { /* ignore */ }
+
+            // Pick AI provider from settings (same setting as audio AI command)
+            const settings = await SettingsModel.findOne().lean() as any;
+            const provider: string = settings?.defaultAudioAiCommand || 'chat';
+
+            const prompt = `You are summarising the WhatsApp group "${groupName}".
+Below is a transcript of the conversation from the ${label} (${messages.length} messages).
+Each line is formatted as: [HH:MM] Name: message
+
+Provide a structured summary using **bold** section headers. When attributing a topic, decision, or statement to someone, always mention them by name (e.g. "Alice raised...", "Bob and Carol agreed on..."). Only use names that appear in the transcript — do not invent or assume names.
+
+**Participants**
+List every person who sent at least one message.
+
+**Main topics discussed**
+For each topic, note who raised or drove it.
+
+**Key decisions or conclusions**
+Attribute decisions to the people who made them.
+
+**Important announcements**
+Note who announced what.
+
+**Notable exchanges**
+Highlight any significant back-and-forth between specific people.
+
+Skip any section with nothing to report. Keep the total under 500 words. Be concise and factual.
+
+Transcript:
+${transcript}`;
+
+            let summary = '';
+            if (provider === 'gpt') {
+                const result = await chatGptCompletion(prompt);
+                summary = result.choices[0]?.message?.content || '';
+            } else if (provider === 'claude') {
+                const result = await claudeCompletion(
+                    prompt,
+                    'You are a helpful assistant that summarises group conversations.'
+                );
+                summary = result?.content?.find((c: any) => c.type === 'text')?.text || '';
+            } else {
+                const result = await geminiCompletion(prompt);
+                summary = result.response.text() || '';
+            }
+
+            res.json({ summary: summary.trim(), count: messages.length, label, groupName, provider });
+        } catch (error) {
+            logger.error('POST /groups/:groupId/recap error:', error);
+            res.status(500).json({ error: 'Failed to generate recap' });
         }
     });
 

@@ -1,110 +1,204 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WhatsBot CRM - Login</title>
+  <title>WhatsBot — Sign In</title>
+  <link rel="icon" href="/public/favicon.png">
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    * { box-sizing: border-box; }
     body {
-      background-color: #f8fafc;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f1f5f9;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
     }
-
-    .login-card {
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-      border: 1px solid rgba(0, 0, 0, 0.05);
+    .card {
+      background: #fff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 20px;
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 4px 24px rgba(15,23,42,0.07), 0 1px 4px rgba(15,23,42,0.04);
     }
-
-    .input-field {
-      transition: all 0.2s ease;
-      border: 1px solid #e2e8f0;
+    .logo-icon {
+      width: 52px; height: 52px; border-radius: 14px;
+      background: #4f46e5;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 14px rgba(79,70,229,0.3);
+      margin: 0 auto 18px;
     }
-
-    .input-field:focus {
-      border-color: #cbd5e0;
-      box-shadow: 0 0 0 3px rgba(203, 213, 224, 0.2);
+    label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
     }
+    .field {
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 10px 12px 10px 38px;
+      width: 100%;
+      font-size: 0.875rem;
+      color: #1e293b;
+      outline: none;
+      background: white;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .field::placeholder { color: #94a3b8; }
+    .field:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.12); }
+    .field-icon {
+      position: absolute; left: 12px; top: 50%;
+      transform: translateY(-50%);
+      color: #94a3b8; font-size: 0.8rem;
+    }
+    .btn {
+      width: 100%;
+      background: #4f46e5;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 11px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
+      box-shadow: 0 2px 8px rgba(79,70,229,0.3);
+      letter-spacing: 0.01em;
+    }
+    .btn:hover { background: #4338ca; box-shadow: 0 4px 14px rgba(79,70,229,0.35); transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+    .error-box {
+      background: #fef2f2;
+      border: 1.5px solid #fecaca;
+      border-radius: 10px;
+      color: #b91c1c;
+      font-size: 0.82rem;
+      font-weight: 500;
+      padding: 10px 14px;
+      text-align: center;
+    }
+    .divider { height: 1px; background: #f1f5f9; margin: 24px 0; }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%,60% { transform: translateX(-5px); }
+      40%,80% { transform: translateX(5px); }
+    }
+    .shake { animation: shake 0.35s ease; }
   </style>
 </head>
+<body>
 
-<body class="min-h-screen flex items-center justify-center p-4">
-  <div class="login-card bg-white p-10 rounded-lg w-full max-w-md">
-    <div class="text-center mb-8">
-      <div class="flex justify-center mb-4">
-        <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
-          <i class="fas fa-robot text-gray-500 text-xl"></i>
-        </div>
-      </div>
-      <h1 class="text-2xl font-light text-gray-800">WhatsBot CRM</h1>
-      <p class="text-gray-500 mt-1">Administration Panel</p>
+  <div class="card">
+    <!-- Logo -->
+    <div class="logo-icon">
+      <i class="fab fa-whatsapp text-white text-2xl"></i>
     </div>
 
-    <form id="login-form" class="space-y-5">
+    <div class="text-center mb-8">
+      <h1 class="text-2xl font-bold text-gray-900" style="letter-spacing:-0.01em">WhatsBot CRM</h1>
+      <p class="text-sm text-gray-400 mt-1">Administration Panel · Sign in to continue</p>
+    </div>
+
+    <form id="login-form" class="space-y-4" autocomplete="on">
       <div>
-        <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+        <label for="username">Username</label>
         <div class="relative">
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <i class="fas fa-user text-gray-400"></i>
-          </div>
-          <input type="text" id="username" name="username" required
-            class="input-field pl-10 w-full rounded-md px-3 py-2 focus:outline-none">
+          <i class="fas fa-user field-icon"></i>
+          <input type="text" id="username" name="username" required autocomplete="username"
+            class="field" placeholder="Enter your username">
         </div>
       </div>
 
       <div>
-        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+        <label for="password">Password</label>
         <div class="relative">
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <i class="fas fa-lock text-gray-400"></i>
-          </div>
-          <input type="password" id="password" name="password" required
-            class="input-field pl-10 w-full rounded-md px-3 py-2 focus:outline-none">
+          <i class="fas fa-lock field-icon"></i>
+          <input type="password" id="password" name="password" required autocomplete="current-password"
+            class="field" placeholder="Enter your password" style="padding-right:40px">
+          <button type="button" id="toggle-pw"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+            style="background:none;border:none;cursor:pointer;font-size:0.82rem;">
+            <i class="fas fa-eye"></i>
+          </button>
         </div>
       </div>
 
-      <button type="submit"
-        class="w-full bg-gray-800 hover:bg-gray-700 text-white py-2 rounded-md transition duration-150 ease-in-out">
-        Sign In
-      </button>
+      <div id="error-message" class="error-box hidden"></div>
 
-      <div id="error-message" class="text-red-500 text-center text-sm hidden py-2 px-3 bg-red-50 rounded-md"></div>
+      <div class="pt-1">
+        <button type="submit" id="submit-btn" class="btn">
+          <span id="btn-text">Sign In</span>
+          <span id="btn-spinner" class="hidden"><i class="fas fa-circle-notch fa-spin mr-2"></i>Signing in…</span>
+        </button>
+      </div>
     </form>
+
+    <div class="divider"></div>
+    <p class="text-center text-xs text-gray-300">WhatsBot CRM &nbsp;·&nbsp; Secure Administration Access</p>
   </div>
 
   <script>
+    document.getElementById('toggle-pw').addEventListener('click', function () {
+      const pw = document.getElementById('password');
+      const icon = this.querySelector('i');
+      if (pw.type === 'password') { pw.type = 'text'; icon.className = 'fas fa-eye-slash'; }
+      else { pw.type = 'password'; icon.className = 'fas fa-eye'; }
+    });
+
     document.getElementById('login-form').addEventListener('submit', async function (e) {
       e.preventDefault();
+      const btn     = document.getElementById('submit-btn');
+      const btnText = document.getElementById('btn-text');
+      const spinner = document.getElementById('btn-spinner');
+      const errEl   = document.getElementById('error-message');
 
-      const username = document.getElementById('username').value;
-      const password = document.getElementById('password').value;
-      const errorElement = document.getElementById('error-message');
+      btn.disabled = true;
+      btnText.classList.add('hidden');
+      spinner.classList.remove('hidden');
+      errEl.classList.add('hidden');
 
       try {
-        const response = await fetch('/crm/auth/login', {
+        const res = await fetch('/crm/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password })
+          body: JSON.stringify({
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value,
+          }),
         });
 
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || 'Login failed');
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Invalid credentials');
         }
 
-        const { token } = await response.json();
+        const { token } = await res.json();
         localStorage.setItem('token', token);
         window.location.href = '/admin';
       } catch (error) {
-        errorElement.textContent = error.message;
-        errorElement.classList.remove('hidden');
-        setTimeout(() => {
-          errorElement.classList.add('hidden');
-        }, 5000);
+        errEl.textContent = error.message;
+        errEl.classList.remove('hidden');
+        btn.disabled = false;
+        btnText.classList.remove('hidden');
+        spinner.classList.add('hidden');
+        const card = document.querySelector('.card');
+        card.classList.remove('shake');
+        void card.offsetWidth;
+        card.classList.add('shake');
       }
     });
   </script>
 </body>
-
 </html>

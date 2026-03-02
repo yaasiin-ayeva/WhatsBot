@@ -9,6 +9,10 @@ export interface IMessage extends Document {
     read: boolean;
     campaignId?: mongoose.Types.ObjectId;
     timestamp: Date;
+    // Group chat fields
+    isGroup: boolean;
+    groupId?: string;
+    senderName?: string;
 }
 
 const MessageSchema = new Schema<IMessage>({
@@ -19,7 +23,10 @@ const MessageSchema = new Schema<IMessage>({
     sentVia: { type: String, enum: ['whatsapp', 'admin'], default: 'whatsapp' },
     read: { type: Boolean, default: false },
     campaignId: { type: Schema.Types.ObjectId, ref: 'Campaign' },
-    timestamp: { type: Date, default: Date.now }
+    timestamp: { type: Date, default: Date.now },
+    isGroup: { type: Boolean, default: false },
+    groupId: { type: String, index: true },
+    senderName: { type: String },
 });
 
 export const MessageModel = mongoose.model<IMessage>('Message', MessageSchema);

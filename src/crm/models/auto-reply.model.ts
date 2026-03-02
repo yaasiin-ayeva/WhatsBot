@@ -7,7 +7,7 @@ export interface IAutoReply extends Document {
     trigger: string;          // keyword or regex pattern
     response: string;         // static response text (used when useAI is false)
     useAI: boolean;
-    aiProvider: 'openai' | 'gemini' | 'none';
+    aiProvider: 'openai' | 'gemini' | 'claude' | 'none';
     aiPrompt: string;         // system prompt for AI provider
     cooldownMinutes: number;  // per-contact cooldown to avoid spam
     priority: number;         // higher = checked first
@@ -21,7 +21,7 @@ const AutoReplySchema = new Schema<IAutoReply>({
     trigger:         { type: String, required: true },
     response:        { type: String, default: '' },
     useAI:           { type: Boolean, default: false },
-    aiProvider:      { type: String, enum: ['openai', 'gemini', 'none'], default: 'none' },
+    aiProvider:      { type: String, enum: ['openai', 'gemini', 'claude', 'none'], default: 'none' },
     aiPrompt:        { type: String, default: 'You are a helpful WhatsApp assistant. Reply briefly and helpfully.' },
     cooldownMinutes: { type: Number, default: 60 },
     priority:        { type: Number, default: 0 },

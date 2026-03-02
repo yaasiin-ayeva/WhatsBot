@@ -1,4 +1,5 @@
 import { SettingsModel } from "../crm/models/settings.model";
+import { decryptValue } from "./crypto.util";
 import logger from "../configs/logger.config";
 
 export async function hydrateRuntimeConfigFromSettings(): Promise<void> {
@@ -13,7 +14,7 @@ export async function hydrateRuntimeConfigFromSettings(): Promise<void> {
 
         for (const [key, value] of entries) {
             if (value && !process.env[key]) {
-                process.env[key] = String(value);
+                process.env[key] = decryptValue(String(value));
             }
         }
     } catch (error) {

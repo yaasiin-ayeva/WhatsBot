@@ -286,6 +286,12 @@ async function loadSettings() {
 async function saveSettings() {
   const AS = window.AdminState;
   const maxFileSizeMb = parseInt(document.getElementById('setting-maxFileSizeMb').value, 10);
+
+  if (isNaN(maxFileSizeMb) || maxFileSizeMb < 1 || maxFileSizeMb > 500) {
+    showToast('Max file size must be between 1 and 500 MB', 'error');
+    return;
+  }
+
   const defaultAudioAiCommand = document.getElementById('setting-defaultAudioAiCommand').value;
   const keyIds = ['GEMINI_API_KEY', 'CHAT_GPT_API_KEY', 'ANTHROPIC_API_KEY', 'OPENWEATHERMAP_API_KEY', 'SHERPA_ONNX_ASR_ENCODER_PATH', 'SHERPA_ONNX_ASR_DECODER_PATH', 'SHERPA_ONNX_ASR_TOKENS_PATH', 'SHERPA_ONNX_TTS_MODEL_PATH', 'SHERPA_ONNX_TTS_TOKENS_PATH', 'SHERPA_ONNX_TTS_LEXICON_PATH'];
   const apiKeys = {};

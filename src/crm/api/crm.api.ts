@@ -21,6 +21,7 @@ import { messageEmitter } from '../../utils/message-emitter.util';
 import { IntegrationModel, INTEGRATION_EVENTS } from '../models/integration.model';
 import { AutoReplyModel } from '../models/auto-reply.model';
 import { fireEvent } from '../../utils/fire-event.util';
+import { encryptValue, decryptValue } from '../../utils/crypto.util';
 import { geminiCompletion } from '../../utils/gemini.util';
 import { claudeCompletion } from '../../utils/claude.util';
 import { chatGptCompletion } from '../../utils/chat-gpt.util';
@@ -406,10 +407,11 @@ export default function (botManager: BotManager) {
                 'ANTHROPIC_API_KEY',
                 'OPENWEATHERMAP_API_KEY',
             ]);
-            apiKeysMap.forEach((val, key) => {
+            apiKeysMap.forEach((rawVal, key) => {
+                const val    = decryptValue(String(rawVal || ''));
                 const masked = val.length > 8 ? val.slice(0, 4) + '…' + val.slice(-4) : val ? '****' : '';
-                maskedKeys[key] = masked;
-                displayKeys[key] = sensitiveKeys.has(key) ? masked : val;
+                maskedKeys[key]    = masked;
+                displayKeys[key]   = sensitiveKeys.has(key) ? masked : val;
             });
 
             const runtimeDisplayKeys = [
@@ -458,14 +460,20 @@ export default function (botManager: BotManager) {
         try {
             const { maxFileSizeMb, autoDownloadEnabled, defaultAudioAiCommand, apiKeys } = req.body;
             const update: any = {};
-            if (maxFileSizeMb !== undefined) update.maxFileSizeMb = maxFileSizeMb;
+            if (maxFileSizeMb !== undefined) {
+                const mb = Number(maxFileSizeMb);
+                if (isNaN(mb) || mb < 1 || mb > 500) {
+                    return res.status(400).json({ error: 'maxFileSizeMb must be between 1 and 500' });
+                }
+                update.maxFileSizeMb = mb;
+            }
             if (autoDownloadEnabled !== undefined) update.autoDownloadEnabled = autoDownloadEnabled;
             if (defaultAudioAiCommand !== undefined) update.defaultAudioAiCommand = defaultAudioAiCommand;
             if (apiKeys && typeof apiKeys === 'object') {
                 for (const [key, value] of Object.entries(apiKeys)) {
                     if (value) {
-                        update[`apiKeys.${key}`] = value;
-                        process.env[key] = String(value);
+                        update[`apiKeys.${key}`] = encryptValue(String(value));
+                        process.env[key] = String(value); // plaintext in memory
                     }
                 }
             }

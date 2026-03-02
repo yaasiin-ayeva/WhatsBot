@@ -28,7 +28,8 @@
 - **Voice chat**: local `sherpa-onnx` STT/TTS with admin-selectable reply model
 - **Downloads**: social media video download via direct URL or `/get` (up to 150 MB)
 - **Utilities**: translation, weather, memes, jokes, onboarding, ping, help
-- **Backoffice** at `/admin`: dashboard, contacts, chats/inbox, scoring, campaigns, templates, scheduled messages, bot status/logs, command toggles, users, audit log, integrations, settings
+- **Group Recap**: `/recap [period]` summarises a group's activity for a time window (1h–1w); admin panel version is fully private (browser-only, nothing sent on WhatsApp)
+- **Backoffice** at `/admin`: full CRM with 15 tabs — see [Admin Panel Features](#admin-panel-features) below
 
 ---
 
@@ -52,6 +53,7 @@
 | `/meteo <city>` | Get current weather | `/meteo Paris` |
 | `/meme` | Get random meme | `/meme` |
 | `/joke` | Get random joke | `/joke` |
+| `/recap [period]` | AI summary of group chat activity (group chats only). Period: `1h`, `6h`, `24h`, `2d`, `7d`, `1w`. Defaults to 24 h. Uses the AI provider configured in admin Settings. | `/recap 6h` |
 
 ---
 
@@ -143,12 +145,18 @@ PORT=3000
 
 # Browser (Required for local deployment)
 PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+
+# Security — encrypt API keys stored in the database (strongly recommended)
+# Generate with: openssl rand -hex 32
+ENCRYPTION_MASTER_KEY=<64-char-hex-string>
 ```
+
+> **Security note**: When `ENCRYPTION_MASTER_KEY` is set, all API keys saved via the admin panel are encrypted at rest using AES-256-GCM before being written to MongoDB. Without this variable the keys are stored as plaintext — the app still works but database backups or a leaked MongoDB URI would expose them.
 
 #### AI And Weather Keys
 Configure `GEMINI_API_KEY`, `CHAT_GPT_API_KEY`, `ANTHROPIC_API_KEY`, and `OPENWEATHERMAP_API_KEY` from the admin backoffice after first login.
 
-These values are stored in the database and restored at startup, so they no longer need to be kept in `.env`.
+These values are encrypted and stored in the database, then restored into the process environment at startup, so they no longer need to be kept in `.env`.
 
 Until those keys are configured in the admin panel, AI and weather commands will not work.
 
@@ -167,6 +175,61 @@ JWT_SECRET=your_secret_here
 REDIS_URL=redis://localhost:6379
 REDIS_PORT=6379
 ```
+
+---
+
+## Hardware Requirements
+
+| Mode | CPU | RAM | Disk |
+|------|-----|-----|------|
+| Text-only (no voice) | 1 core | 512 MB | 500 MB |
+| With voice (sherpa-onnx) | 2+ cores | 2 GB | 1 GB (includes ~400 MB models) |
+
+> Voice processing with the bundled `whisper-tiny.en` model takes roughly 5–15 seconds per voice message on a 2-core CPU. Models are auto-downloaded on first startup — ensure outbound internet access and sufficient disk space.
+
+---
+
+## Admin Panel Features
+
+Navigate to `/admin` after running `npm run create-admin`.
+
+### Overview
+| Tab | Purpose |
+|-----|---------|
+| **Dashboard** | Live counters (contacts, messages, campaigns), delta indicators (today vs. yesterday), failed-campaign alerts, top commands, recent audit entries |
+| **Contacts** | Search, filter, import/export CSV, tag, block, archive contacts |
+| **Analytics** | Chart.js graphs for messages, campaigns, contact growth over time |
+| **Chats (Inbox)** | WhatsApp-style live inbox — read and reply to 1-to-1 conversations directly from the browser via SSE |
+| **Contact Scoring** | Define point rules per event (`first_interaction`, `message_received`, `command_used`, `campaign_reply`). View top-10 leaderboard |
+| **Group Recap** | Select a WhatsApp group + time period → generate an AI summary (Gemini/GPT/Claude). Completely private — nothing is sent on WhatsApp |
+
+### Messaging
+| Tab | Purpose |
+|-----|---------|
+| **Campaigns** | Create/schedule/pause/resume/cancel/archive bulk message campaigns. A/B variant body, per-contact variable substitution (`{{name\|fallback}}`), exclude tags, throttle rate, expiry date, multi-message sequences, per-contact preview, test send, delivery report with reply tracking and CSV export |
+| **Templates** | Reusable message templates with categories, pin, duplicate, approval workflow (draft → pending → approved), usage count, revision history with restore, live preview with sample data |
+| **Scheduled Messages** | Send a single message to a specific contact at a future date/time |
+
+### System
+| Tab | Purpose |
+|-----|---------|
+| **Bot Status** | Live connection state, QR code display, reconnect button |
+| **Bot Logs** | Real-time log stream via SSE, filterable by level (info/warn/error) |
+| **Commands** | Enable or disable individual bot commands; view usage statistics |
+| **Users** | Create additional admin accounts, assign roles |
+| **Audit Log** | Immutable record of every admin action (create/update/delete) with actor, resource, and timestamp |
+| **Integrations** | Webhooks, Slack, Discord notifications; SMTP email forwarding; inbound API key for external send |
+| **Auto-Reply** | Keyword-triggered automatic replies — exact, contains, startsWith, or regex match; optional AI generation (Gemini/GPT/Claude); per-rule cooldown |
+| **Settings** | AI provider for voice, max file size (1–500 MB), API keys (stored encrypted), sherpa-onnx model paths |
+
+### Campaign Throttle
+
+The **throttle rate** field controls how many messages per minute the campaign cron sends.
+
+- Default: `60` (one message per minute)
+- WhatsApp personal accounts: ~256 messages/day max
+- WhatsApp Business accounts: ~1 000 messages/day max
+- Set conservatively and monitor the delivery report — exceeding limits may result in a temporary ban
 
 ---
 

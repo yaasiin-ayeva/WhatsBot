@@ -75,8 +75,8 @@ export async function sendCampaignMessages(botManager: BotManager, campaign: any
 
         let sentCount = 0;
         let failedCount = 0;
-        const throttleRate = campaign.throttleRate || 60;
-        const delayMs = Math.floor(60000 / throttleRate);
+        const throttleRate = Math.max(1, campaign.throttleRate || 60);
+        const delayMs = Math.max(0, Math.floor(60000 / throttleRate));
 
         // Pre-fetch media attachment once if a URL is set
         let media: WAWebJS.MessageMedia | null = null;
@@ -139,8 +139,9 @@ export async function sendCampaignMessages(botManager: BotManager, campaign: any
                         } else {
                             await botManager.client.sendMessage(formattedNumber, body);
                         }
-                        if (step.delaySeconds > 0) {
-                            await new Promise(r => setTimeout(r, step.delaySeconds * 1000));
+                        const stepDelay = Math.max(0, step.delaySeconds || 0);
+                        if (stepDelay > 0) {
+                            await new Promise(r => setTimeout(r, stepDelay * 1000));
                         }
                     }
                 } else {

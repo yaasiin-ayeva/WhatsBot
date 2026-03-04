@@ -236,7 +236,7 @@
     if (!phoneNumber) return;
     var since = lastReplyTs || new Date(Date.now() - 60000).toISOString();
     var xhr = new XMLHttpRequest();
-    xhr.open('GET', baseUrl + '/crm/widget/replies/' + encodeURIComponent(phoneNumber) + '?since=' + encodeURIComponent(since));
+    xhr.open('GET', baseUrl + '/crm/widget/replies/' + encodeURIComponent(phoneNumber) + '?since=' + encodeURIComponent(since) + '&widgetId=' + encodeURIComponent(widgetId));
     xhr.onload = function () {
       if (xhr.status === 200) {
         try {

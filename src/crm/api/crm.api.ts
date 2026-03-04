@@ -24,6 +24,8 @@ import { AutoReplyModel } from '../models/auto-reply.model';
 import { fireEvent } from '../../utils/fire-event.util';
 import { encryptValue, decryptValue } from '../../utils/crypto.util';
 import { WidgetSettingsModel } from '../models/widget-settings.model';
+import { FlowModel } from '../models/flow.model';
+import { FlowSessionModel } from '../models/flow-session.model';
 import { geminiCompletion } from '../../utils/gemini.util';
 import { claudeCompletion } from '../../utils/claude.util';
 import { chatGptCompletion } from '../../utils/chat-gpt.util';
@@ -99,12 +101,14 @@ export default function (botManager: BotManager) {
                 .sort(sort as string).skip(skip).limit(Number(limit));
 
             for (const contact of contacts) {
-                if (!contact.detectedLanguage) {
-                    const detection = PhoneDetectionUtil.detectLanguageFromPhone(contact.phoneNumber);
-                    contact.detectedLanguage = detection.primaryLanguage;
-                    contact.detectedCountry = detection.countryCode;
-                    contact.detectedRegion = detection.region;
-                    await contact.save();
+                if (!contact.detectedLanguage && contact.phoneNumber) {
+                    try {
+                        const detection = PhoneDetectionUtil.detectLanguageFromPhone(contact.phoneNumber);
+                        contact.detectedLanguage = detection.primaryLanguage;
+                        contact.detectedCountry = detection.countryCode;
+                        contact.detectedRegion = detection.region;
+                        await contact.save();
+                    } catch { /* non-critical, skip */ }
                 }
             }
 
@@ -1542,11 +1546,44 @@ ${transcript}`;
         }
     });
 
+    // ── Widget CORS helper ─────────────────────────────────────────
+    // Returns false and sends 403 only when allowedDomains is set and origin doesn't match.
+    function applyWidgetCors(req: any, res: any, allowedDomains: string[] = []): boolean {
+        const origin: string = req.headers.origin || '';
+        let allowOrigin = '*';
+
+        if (allowedDomains.length > 0) {
+            const matched = allowedDomains.some(d => {
+                const domain = d.trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
+                return origin.replace(/^https?:\/\//, '').replace(/\/$/, '') === domain
+                    || origin.endsWith('.' + domain);
+            });
+            if (!matched && origin) {
+                res.status(403).json({ error: 'Origin not allowed' });
+                return false;
+            }
+            allowOrigin = origin || '*';
+        }
+
+        res.setHeader('Access-Control-Allow-Origin', allowOrigin);
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        if (allowOrigin !== '*') res.setHeader('Vary', 'Origin');
+        return true;
+    }
+
+    // Preflight for POST /widget/chat (browser sends OPTIONS before POST with JSON)
+    router.options('/widget/chat', (req, res) => {
+        applyWidgetCors(req, res);
+        res.sendStatus(204);
+    });
+
     // Public: get safe widget config (called by the embeddable snippet)
     router.get('/widget/config/:widgetId', async (req, res) => {
         try {
             const s = await WidgetSettingsModel.findOne({ widgetId: req.params.widgetId }).lean() as any;
             if (!s || !s.enabled) return res.status(404).json({ error: 'Widget not found or disabled' });
+            if (!applyWidgetCors(req, res, s.allowedDomains)) return;
             const { primaryColor, secondaryColor, headerText, operatorName, welcomeMessage,
                     onlineMessage, offlineMessage, placeholderText, logoUrl,
                     buttonStyle, displayPosition, whatsappMode, whatsappNumber } = s;
@@ -1567,12 +1604,12 @@ ${transcript}`;
             }
             const s = await WidgetSettingsModel.findOne({ widgetId }).lean() as any;
             if (!s || !s.enabled) return res.status(404).json({ error: 'Widget not found or disabled' });
+            if (!applyWidgetCors(req, res, s.allowedDomains)) return;
 
             const visitorIp = s.trackVisitorIp
                 ? ((req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || 'unknown').split(',')[0].trim()
                 : undefined;
 
-            // Use a stable virtual phone key per session so inbox groups by visitor
             const sessionKey = visitorSessionId ? visitorSessionId.slice(0, 20).replace(/[^a-z0-9]/gi, '') : 'anon';
             const phoneNumber = `widget_${widgetId.slice(0, 8)}_${sessionKey}`;
 
@@ -1600,6 +1637,15 @@ ${transcript}`;
     // Public: poll for replies (widget uses this to show admin replies)
     router.get('/widget/replies/:phoneNumber', async (req, res) => {
         try {
+            // Fetch widget settings via widgetId query param so we can apply CORS correctly
+            const widgetId = req.query.widgetId as string | undefined;
+            let allowedDomains: string[] = [];
+            if (widgetId) {
+                const s = await WidgetSettingsModel.findOne({ widgetId }).lean() as any;
+                if (s) allowedDomains = s.allowedDomains || [];
+            }
+            if (!applyWidgetCors(req, res, allowedDomains)) return;
+
             const { phoneNumber } = req.params;
             const since = req.query.since ? new Date(req.query.since as string) : new Date(0);
             const msgs = await MessageModel.find({
@@ -1633,6 +1679,119 @@ ${transcript}`;
             res.status(500).json({ error: 'Failed to rotate API key' });
         }
     });
+
+    // ─── Flows ────────────────────────────────────────────────────────────────
+
+    router.get('/flows', authenticate, authorizeAdmin, async (_req, res) => {
+        try {
+            const flows = await FlowModel.find().sort({ createdAt: -1 }).lean();
+            res.json(flows);
+        } catch { res.status(500).json({ error: 'Failed to load flows' }); }
+    });
+
+    router.post('/flows', authenticate, authorizeAdmin, async (req: any, res) => {
+        try {
+            const { name, description, trigger, nodes, edges, status } = req.body;
+            const flow = await FlowModel.create({ name, description, trigger, nodes: nodes || [], edges: edges || [], status: status || 'draft' });
+            await addAuditLog(req.user?.id, req.user?.username, 'create', 'flow', String(flow._id), { name });
+            res.status(201).json(flow);
+        } catch { res.status(500).json({ error: 'Failed to create flow' }); }
+    });
+
+    // Static sub-routes MUST come before /:id to avoid Express treating them as IDs
+    router.get('/flows/active-sessions', authenticate, authorizeAdmin, async (_req, res) => {
+        try {
+            const sessions = await FlowSessionModel.find({ status: 'active' })
+                .populate('flowId', 'name')
+                .sort({ lastActivityAt: -1 })
+                .limit(100)
+                .lean();
+            res.json(sessions);
+        } catch { res.status(500).json({ error: 'Failed to load sessions' }); }
+    });
+
+    router.delete('/flows/active-sessions/:sessionId', authenticate, authorizeAdmin, async (req: any, res) => {
+        try {
+            await FlowSessionModel.findByIdAndUpdate(req.params.sessionId, { status: 'cancelled' });
+            res.json({ success: true });
+        } catch { res.status(500).json({ error: 'Failed to cancel session' }); }
+    });
+
+    router.get('/flows/:id', authenticate, authorizeAdmin, async (req, res) => {
+        try {
+            const flow = await FlowModel.findById(req.params.id).lean();
+            if (!flow) return res.status(404).json({ error: 'Not found' });
+            res.json(flow);
+        } catch { res.status(500).json({ error: 'Failed to load flow' }); }
+    });
+
+    router.put('/flows/:id', authenticate, authorizeAdmin, async (req: any, res) => {
+        try {
+            const { name, description, trigger, nodes, edges, status } = req.body;
+            const flow = await FlowModel.findByIdAndUpdate(
+                req.params.id,
+                { name, description, trigger, nodes, edges, status },
+                { new: true }
+            );
+            if (!flow) return res.status(404).json({ error: 'Not found' });
+            await addAuditLog(req.user?.id, req.user?.username, 'update', 'flow', req.params.id, { name });
+            res.json(flow);
+        } catch { res.status(500).json({ error: 'Failed to update flow' }); }
+    });
+
+    router.delete('/flows/:id', authenticate, authorizeAdmin, async (req: any, res) => {
+        try {
+            await FlowModel.findByIdAndDelete(req.params.id);
+            await FlowSessionModel.updateMany({ flowId: req.params.id, status: 'active' }, { status: 'cancelled' });
+            await addAuditLog(req.user?.id, req.user?.username, 'delete', 'flow', req.params.id);
+            res.json({ success: true });
+        } catch { res.status(500).json({ error: 'Failed to delete flow' }); }
+    });
+
+    router.patch('/flows/:id/publish', authenticate, authorizeAdmin, async (req: any, res) => {
+        try {
+            const flow = await FlowModel.findById(req.params.id);
+            if (!flow) return res.status(404).json({ error: 'Not found' });
+            flow.status = flow.status === 'published' ? 'draft' : 'published';
+            await flow.save();
+            await addAuditLog(req.user?.id, req.user?.username, flow.status === 'published' ? 'publish' : 'unpublish', 'flow', req.params.id);
+            res.json(flow);
+        } catch { res.status(500).json({ error: 'Failed to toggle flow status' }); }
+    });
+
+    router.get('/flows/:id/analytics', authenticate, authorizeAdmin, async (req, res) => {
+        try {
+            const flow = await FlowModel.findById(req.params.id).lean();
+            if (!flow) return res.status(404).json({ error: 'Not found' });
+            // Per-node drop-off: count sessions that last stopped at each nodeId
+            const dropoffs = await FlowSessionModel.aggregate([
+                { $match: { flowId: flow._id, status: { $in: ['completed', 'timed_out', 'cancelled'] } } },
+                { $group: { _id: '$currentNodeId', count: { $sum: 1 } } },
+            ]);
+            const activeSessions = await FlowSessionModel.countDocuments({ flowId: flow._id, status: 'active' });
+            res.json({ stats: flow.stats, activeSessions, dropoffs });
+        } catch { res.status(500).json({ error: 'Failed to load analytics' }); }
+    });
+
+    router.post('/flows/:id/test-send', authenticate, authorizeAdmin, async (req: any, res) => {
+        try {
+            const flow = await FlowModel.findById(req.params.id).lean();
+            if (!flow) return res.status(404).json({ error: 'Not found' });
+            const phone = req.body.phone?.replace(/\D/g, '');
+            if (!phone) return res.status(400).json({ error: 'phone required' });
+            // Cancel any existing test session for this phone+flow
+            await FlowSessionModel.updateMany({ phoneNumber: phone, flowId: flow._id, status: 'active' }, { status: 'cancelled' });
+            const triggerNode = flow.nodes.find(n => n.type === 'trigger');
+            if (!triggerNode) return res.status(400).json({ error: 'Flow has no trigger node' });
+            await FlowSessionModel.create({
+                phoneNumber: phone, flowId: flow._id, currentNodeId: triggerNode.id,
+                variables: {}, waitingForReply: false, pendingVariable: '', status: 'active',
+                startedAt: new Date(), lastActivityAt: new Date(),
+            });
+            res.json({ success: true, message: 'Test session created — send a message from that phone to activate it' });
+        } catch { res.status(500).json({ error: 'Failed to create test session' }); }
+    });
+
 
     return router;
 }

@@ -12,66 +12,116 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
-    :root { --primary: #4f46e5; --sidebar-width: 260px; }
-    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #f1f5f9; }
-    .sidebar { width: var(--sidebar-width); }
+    /* ── CSS Variables (light mode) ─────────────────────────────── */
+    :root {
+      --primary: #4f46e5;
+      --sidebar-width: 260px;
+      --sidebar-collapsed-width: 64px;
+      --bg-page:    #f1f5f9;
+      --bg-card:    #ffffff;
+      --bg-sidebar: #ffffff;
+      --bg-muted:   #fafafa;
+      --bg-hover:   #f1f5f9;
+      --bg-input:   #ffffff;
+      --text-primary:   #1e293b;
+      --text-secondary: #64748b;
+      --text-muted:     #94a3b8;
+      --border:       #e2e8f0;
+      --border-light: #f1f5f9;
+      --nav-hover:       #f1f5f9;
+      --nav-active-bg:   #eef2ff;
+      --nav-active-text: #4f46e5;
+    }
+    /* ── Dark mode overrides ────────────────────────────────────── */
+    html.dark {
+      --bg-page:    #0f172a;
+      --bg-card:    #1e293b;
+      --bg-sidebar: #1e293b;
+      --bg-muted:   #162032;
+      --bg-hover:   #334155;
+      --bg-input:   #1e293b;
+      --text-primary:   #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted:     #64748b;
+      --border:       #334155;
+      --border-light: #243044;
+      --nav-hover:       #334155;
+      --nav-active-bg:   #2e1065;
+      --nav-active-text: #a5b4fc;
+    }
+    /* ── Base ───────────────────────────────────────────────────── */
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg-page); color: var(--text-primary); }
+    /* ── Sidebar ────────────────────────────────────────────────── */
+    .sidebar { width: var(--sidebar-width); background: var(--bg-sidebar); border-right: 1px solid var(--border); }
     .main-content { margin-left: var(--sidebar-width); }
-    .nav-group-label { font-size: 0.67rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.07em; padding: 0 12px; margin-bottom: 3px; margin-top: 14px; }
-    .nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 9px; color: #64748b; font-weight: 500; font-size: 0.85rem; transition: all 0.13s; cursor: pointer; text-decoration: none; }
-    .nav-item:hover { background: #f1f5f9; color: #1e293b; }
-    .nav-item.active { background: #eef2ff; color: #4f46e5; font-weight: 600; }
+    /* ── Nav ────────────────────────────────────────────────────── */
+    .nav-group-label { font-size: 0.67rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; padding: 0 12px; margin-bottom: 3px; margin-top: 14px; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 9px; color: var(--text-secondary); font-weight: 500; font-size: 0.85rem; transition: all 0.13s; cursor: pointer; text-decoration: none; }
+    .nav-item:hover { background: var(--nav-hover); color: var(--text-primary); }
+    .nav-item.active { background: var(--nav-active-bg); color: var(--nav-active-text); font-weight: 600; }
     .nav-item .nav-icon { width: 18px; text-align: center; font-size: 0.82rem; }
+    /* ── Badges ─────────────────────────────────────────────────── */
     .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
     .badge-sent { background: #dcfce7; color: #166534; }
     .badge-sending { background: #fef9c3; color: #92400e; }
     .badge-scheduled { background: #dbeafe; color: #1e40af; }
     .badge-failed { background: #fee2e2; color: #991b1b; }
-    .badge-draft { background: #f1f5f9; color: #475569; }
+    .badge-draft { background: var(--bg-hover); color: var(--text-secondary); }
     .badge-admin { background: #ede9fe; color: #5b21b6; }
     .badge-user { background: #e0f2fe; color: #0369a1; }
-    .trow:hover td { background: #fafafa; }
+    .trow:hover td { background: var(--bg-muted); }
+    /* ── WA preview ─────────────────────────────────────────────── */
     .wa-bg { background: #e5ddd5; border-radius: 14px; padding: 14px 12px; }
     .wa-bubble { background: #dcf8c6; border-radius: 0 12px 12px 12px; padding: 9px 13px; position: relative; display: inline-block; max-width: 100%; font-size: 0.83rem; line-height: 1.55; white-space: pre-wrap; word-break: break-word; box-shadow: 0 1px 2px rgba(0,0,0,0.12); }
     .wa-bubble::before { content:''; position:absolute; top:0; left:-8px; width:0; height:0; border-style:solid; border-width:0 9px 9px 0; border-color:transparent #dcf8c6 transparent transparent; }
-    .modal-backdrop { background: rgba(15,23,42,0.55); backdrop-filter: blur(3px); }
-    .modal-box { animation: modal-in 0.2s cubic-bezier(0.34,1.56,0.64,1); }
+    /* ── Modals ─────────────────────────────────────────────────── */
+    .modal-backdrop { background: rgba(15,23,42,0.6); backdrop-filter: blur(3px); }
+    .modal-box { animation: modal-in 0.2s cubic-bezier(0.34,1.56,0.64,1); background: var(--bg-card); }
     @keyframes modal-in { from { opacity:0; transform:scale(0.94) translateY(10px); } to { opacity:1; transform:scale(1) translateY(0); } }
-    .ctab { padding: 9px 16px; font-size: 0.83rem; font-weight: 500; color: #64748b; border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.13s; white-space: nowrap; }
-    .ctab:hover:not(.active) { color: #1e293b; }
+    /* ── Tabs ───────────────────────────────────────────────────── */
+    .ctab { padding: 9px 16px; font-size: 0.83rem; font-weight: 500; color: var(--text-secondary); border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.13s; white-space: nowrap; }
+    .ctab:hover:not(.active) { color: var(--text-primary); }
     .ctab.active { color: #4f46e5; border-bottom-color: #4f46e5; font-weight: 600; }
+    /* ── Toasts ─────────────────────────────────────────────────── */
     .toast { animation: toast-slide 0.3s ease; }
     @keyframes toast-slide { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
-    .field { border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 9px 12px; width: 100%; font-size: 0.875rem; outline: none; transition: border-color 0.15s, box-shadow 0.15s; background: white; }
+    /* ── Fields ─────────────────────────────────────────────────── */
+    .field { border: 1.5px solid var(--border); border-radius: 10px; padding: 9px 12px; width: 100%; font-size: 0.875rem; outline: none; transition: border-color 0.15s, box-shadow 0.15s; background: var(--bg-input); color: var(--text-primary); }
     .field:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.12); }
-    .tmpl-card { background: white; border: 1.5px solid #e2e8f0; border-radius: 14px; overflow: hidden; transition: box-shadow 0.15s, border-color 0.15s; }
+    /* ── Cards ──────────────────────────────────────────────────── */
+    .tmpl-card { background: var(--bg-card); border: 1.5px solid var(--border); border-radius: 14px; overflow: hidden; transition: box-shadow 0.15s, border-color 0.15s; }
     .tmpl-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); border-color: #c7d2fe; }
+    .stat-card { background: var(--bg-card); border: 1.5px solid var(--border); border-radius: 16px; padding: 18px; }
+    /* ── Contacts ───────────────────────────────────────────────── */
     .contact-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 8px; cursor: pointer; transition: background 0.1s; font-size: 0.79rem; }
-    .contact-item:hover { background: #f8fafc; }
+    .contact-item:hover { background: var(--bg-hover); }
     .contact-item input[type=checkbox] { accent-color: #4f46e5; cursor: pointer; }
     .sel-chip { display: flex; align-items: center; justify-content: space-between; padding: 5px 9px; background: #eef2ff; border-radius: 8px; font-size: 0.76rem; color: #4338ca; gap: 6px; }
     .tag-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 999px; font-size: 0.7rem; font-weight: 600; color: #15803d; }
+    /* ── Toggle switches ────────────────────────────────────────── */
     .toggle-track { width: 40px; height: 22px; background: #cbd5e1; border-radius: 999px; position: relative; transition: background 0.2s; cursor: pointer; flex-shrink: 0; }
     .toggle-track.on { background: #4f46e5; }
     .toggle-thumb { width: 18px; height: 18px; background: white; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
     .toggle-track.on .toggle-thumb { transform: translateX(18px); }
-    .stat-card { background: white; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 18px; }
+    /* ── Logs ───────────────────────────────────────────────────── */
     #log-output { font-family: 'Menlo','Courier New',monospace; font-size: 0.75rem; line-height: 1.6; background: #0f172a; color: #94a3b8; border-radius: 12px; padding: 14px; height: 360px; overflow-y: auto; }
     .log-error { color: #f87171; } .log-warn { color: #fbbf24; } .log-info { color: #34d399; } .log-debug { color: #60a5fa; } .log-verbose { color: #a78bfa; }
+    /* ── Status dots ────────────────────────────────────────────── */
     .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
     .status-dot.connected { background: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,0.2); }
     .status-dot.disconnected { background: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.2); }
     .status-dot.scanning { background: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,0.2); animation: pulse 1.5s infinite; }
     @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+    /* ── Scrollbar ──────────────────────────────────────────────── */
     ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
-    /* ── Recap markdown rendering ───────────────────────────────── */
-    .recap-heading { display: block; font-weight: 700; color: #1e293b; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 1.1em; margin-bottom: 0.3em; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+    /* ── Recap markdown ─────────────────────────────────────────── */
+    .recap-heading { display: block; font-weight: 700; color: var(--text-primary); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 1.1em; margin-bottom: 0.3em; }
     #recap-result-body br + .recap-heading { margin-top: 1.4em; }
     .recap-bullet { color: #4f46e5; font-weight: 700; margin-right: 2px; }
     /* ── Collapsible sidebar ────────────────────────────────────── */
-    :root { --sidebar-collapsed-width: 64px; }
-    .sidebar { transition: width 0.22s cubic-bezier(0.4,0,0.2,1); overflow: hidden; }
+    .sidebar { transition: width 0.22s cubic-bezier(0.4,0,0.2,1); overflow-x: hidden; }
     .main-content { transition: margin-left 0.22s cubic-bezier(0.4,0,0.2,1); }
     body.sidebar-collapsed .sidebar { width: var(--sidebar-collapsed-width); }
     body.sidebar-collapsed .main-content { margin-left: var(--sidebar-collapsed-width); }
@@ -80,15 +130,17 @@
     body.sidebar-collapsed .nav-item { justify-content: center; padding: 9px 0; }
     body.sidebar-collapsed .nav-item .nav-icon { width: auto; font-size: 1rem; }
     body.sidebar-collapsed #sidebar-footer-info { display: none; }
-    body.sidebar-collapsed #sidebar-footer-inner { justify-content: center; }
+    body.sidebar-collapsed #sidebar-footer-wrap { padding: 8px 0; }
+    body.sidebar-collapsed #sidebar-footer-inner { flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+    body.sidebar-collapsed #sidebar-footer-inner > div:first-child { min-width: 0; }
     body.sidebar-collapsed #sidebar-header-text { display: none; }
     body.sidebar-collapsed #sidebar-toggle-icon { transform: rotate(180deg); }
     #sidebar-toggle-icon { transition: transform 0.22s cubic-bezier(0.4,0,0.2,1); }
-    /* ── WhatsApp-style inbox ──────────────────────────────────── */
+    /* ── WhatsApp inbox ─────────────────────────────────────────── */
     .chat-bg { background-color: #e5ddd5; }
-    .conv-item { display:flex; align-items:center; gap:10px; padding:10px 14px; cursor:pointer; border-bottom:1px solid #f0f0f0; transition:background .1s; }
-    .conv-item:hover { background:#f0f4ff; }
-    .conv-item.active { background:#e8eeff; }
+    .conv-item { display:flex; align-items:center; gap:10px; padding:10px 14px; cursor:pointer; border-bottom:1px solid var(--border-light); transition:background .1s; }
+    .conv-item:hover { background: var(--bg-hover); }
+    .conv-item.active { background: var(--nav-active-bg); }
     .conv-avatar { width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1rem; flex-shrink:0; color:#fff; }
     .msg-row-in  { display:flex; justify-content:flex-start; padding:2px 12px; }
     .msg-row-out { display:flex; justify-content:flex-end;   padding:2px 12px; }
@@ -98,9 +150,8 @@
     .msg-bubble-out { background:#dcf8c6; border-radius:8px 0 8px 8px; }
     .msg-bubble-out::after  { content:''; position:absolute; right:-7px; top:0; border:7px solid transparent; border-left-color:#dcf8c6; border-top:0; }
     .msg-time { font-size:0.67rem; color:#999; text-align:right; margin-top:2px; }
-    .msg-time-in { color:#aaa; }
     .date-sep { display:flex; align-items:center; justify-content:center; margin:10px 0; }
-    .date-sep span { background:rgba(255,255,255,.75); color:#777; font-size:0.7rem; font-weight:600; padding:3px 12px; border-radius:999px; box-shadow:0 1px 2px rgba(0,0,0,.08); }
+    .date-sep span { background:rgba(255,255,255,.75); color:#777; font-size:0.7rem; font-weight:600; padding:3px 12px; border-radius:999px; }
     .chat-input-bar { background:#f0f0f0; border-top:1px solid #d9d9d9; padding:10px 14px; display:flex; align-items:flex-end; gap:10px; }
     .chat-input-bar textarea { flex-grow:1; background:#fff; border:none; border-radius:20px; padding:9px 14px; font-size:0.87rem; resize:none; outline:none; max-height:120px; line-height:1.4; }
     .chat-send-btn { width:42px; height:42px; border-radius:50%; background:#25d366; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:background .15s; }
@@ -108,14 +159,43 @@
     .chat-header-bar { background:#075e54; color:#fff; padding:10px 16px; display:flex; align-items:center; gap:12px; flex-shrink:0; }
     .chat-header-bar .chat-avatar { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.9rem; flex-shrink:0; }
     .unread-dot { width:20px; height:20px; border-radius:50%; background:#25d366; color:#fff; font-size:0.65rem; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    /* ── Dark mode — Tailwind utility overrides ─────────────────── */
+    html.dark body                              { color: var(--text-primary); }
+    html.dark .bg-white                         { background-color: var(--bg-card) !important; }
+    html.dark .bg-gray-50                       { background-color: var(--bg-muted) !important; }
+    html.dark .bg-gray-100                      { background-color: var(--bg-hover) !important; }
+    html.dark .bg-gray-200                      { background-color: #475569 !important; }
+    html.dark .text-gray-900, html.dark .text-gray-800 { color: var(--text-primary)   !important; }
+    html.dark .text-gray-700, html.dark .text-gray-600 { color: var(--text-secondary) !important; }
+    html.dark .text-gray-500, html.dark .text-gray-400 { color: var(--text-muted)     !important; }
+    html.dark .border-gray-200                  { border-color: var(--border)       !important; }
+    html.dark .border-gray-100                  { border-color: var(--border-light) !important; }
+    html.dark .border-gray-300                  { border-color: #475569             !important; }
+    html.dark .border-t, html.dark .border-b, html.dark .border-r, html.dark .border-l, html.dark .border { border-color: var(--border) !important; }
+    html.dark input:not([type=color]):not([type=checkbox]):not([type=radio]):not([type=range]),
+    html.dark textarea,
+    html.dark select                            { background-color: var(--bg-input) !important; color: var(--text-primary) !important; border-color: var(--border) !important; }
+    html.dark .hover\:bg-gray-50:hover          { background-color: var(--bg-hover) !important; }
+    html.dark .hover\:bg-gray-100:hover         { background-color: var(--border)   !important; }
+    html.dark .hover\:bg-white:hover            { background-color: var(--bg-muted) !important; }
+    html.dark th                                { color: var(--text-muted)  !important; background-color: var(--bg-muted) !important; }
+    html.dark td                                { color: var(--text-primary) !important; }
+    html.dark .chat-bg                          { background-color: #162032 !important; }
+    html.dark .chat-input-bar                   { background: var(--bg-card) !important; border-color: var(--border) !important; }
+    html.dark .chat-input-bar textarea          { background: var(--bg-input) !important; color: var(--text-primary) !important; }
+    html.dark .date-sep span                    { background: var(--bg-hover) !important; color: var(--text-secondary) !important; }
+    html.dark .msg-bubble-in                    { background: #243044 !important; color: var(--text-primary) !important; }
+    html.dark .msg-bubble-in::before            { border-right-color: #243044 !important; }
+    html.dark pre, html.dark code               { background-color: var(--bg-muted) !important; color: var(--text-secondary) !important; }
   </style>
+  <script>/* Prevent dark-mode flash */(function(){if(localStorage.getItem('darkMode')==='true')document.documentElement.classList.add('dark');})();</script>
 </head>
 <body class="min-h-screen flex">
 
 <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none" style="min-width:280px;max-width:360px;"></div>
 
 <!-- SIDEBAR -->
-<aside class="sidebar fixed h-full bg-white border-r border-gray-200 flex flex-col z-30 shadow-sm overflow-y-auto">
+<aside class="sidebar fixed h-full flex flex-col z-30 shadow-sm">
   <div class="px-4 py-4 border-b border-gray-100 flex-shrink-0">
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-3 min-w-0">
@@ -127,7 +207,7 @@
       </button>
     </div>
   </div>
-  <nav class="flex-1 px-3 py-2">
+  <nav class="flex-1 px-3 py-2 overflow-y-auto">
     <div class="nav-group-label">Overview</div>
     <a href="#" id="dashboard-tab" class="nav-item" title="Dashboard"><span class="nav-icon"><i class="fas fa-home"></i></span><span class="sb-label">Dashboard</span></a>
     <a href="#" id="contacts-tab" class="nav-item active" title="Contacts"><span class="nav-icon"><i class="fas fa-users"></i></span><span class="sb-label">Contacts</span></a>
@@ -140,6 +220,7 @@
     <a href="#" id="templates-tab" class="nav-item" title="Templates"><span class="nav-icon"><i class="fas fa-layer-group"></i></span><span class="sb-label">Templates</span></a>
     <a href="#" id="scheduled-messages-tab" class="nav-item" title="Scheduled"><span class="nav-icon"><i class="fas fa-clock"></i></span><span class="sb-label">Scheduled</span></a>
     <a href="#" id="widget-tab" class="nav-item" title="Website Widget"><span class="nav-icon"><i class="fas fa-window-maximize"></i></span><span class="sb-label">Website Widget</span></a>
+    <a href="#" id="flows-tab" class="nav-item" title="Flows"><span class="nav-icon"><i class="fas fa-project-diagram"></i></span><span class="sb-label">Flows</span></a>
     <div class="nav-group-label">System</div>
     <a href="#" id="bot-tab" class="nav-item" title="Bot Status"><span class="nav-icon"><i class="fas fa-robot"></i></span><span class="sb-label">Bot Status</span></a>
     <a href="#" id="commands-tab" class="nav-item" title="Commands"><span class="nav-icon"><i class="fas fa-terminal"></i></span><span class="sb-label">Commands</span></a>
@@ -148,13 +229,16 @@
     <a href="#" id="integrations-tab" class="nav-item" title="Integrations"><span class="nav-icon"><i class="fas fa-plug"></i></span><span class="sb-label">Integrations</span></a>
     <a href="#" id="settings-tab" class="nav-item" title="Settings"><span class="nav-icon"><i class="fas fa-cog"></i></span><span class="sb-label">Settings</span></a>
   </nav>
-  <div class="px-4 py-3 border-t border-gray-100 flex-shrink-0">
+  <div id="sidebar-footer-wrap" class="px-4 py-3 border-t border-gray-100 flex-shrink-0">
     <div id="sidebar-footer-inner" class="flex items-center justify-between">
       <div class="flex items-center gap-2.5 min-w-0">
         <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0"><i class="fas fa-user text-indigo-600 text-xs"></i></div>
         <div id="sidebar-footer-info" class="sb-label min-w-0"><div id="username" class="text-sm font-semibold text-gray-800 leading-none">Admin</div><div class="text-xs text-gray-400 mt-0.5">Administrator</div></div>
       </div>
-      <button id="logout" title="Logout" class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"><i class="fas fa-sign-out-alt text-sm"></i></button>
+      <div class="flex items-center gap-1 flex-shrink-0">
+        <button id="dark-toggle" onclick="toggleDark()" title="Toggle dark mode" class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"><i id="dark-toggle-icon" class="fas fa-moon text-sm"></i></button>
+        <button id="logout" title="Logout" class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"><i class="fas fa-sign-out-alt text-sm"></i></button>
+      </div>
     </div>
   </div>
 </aside>
@@ -278,6 +362,23 @@
       </select>
     </div>
     <div id="templates-grid" class="grid gap-4" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr));"></div>
+  </div>
+
+  <!-- Flows -->
+  <div id="flows-section" class="section-content hidden p-6">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">Flows</h1>
+        <p class="text-sm text-gray-500 mt-0.5">Visual drag-and-drop conversation automation</p>
+      </div>
+      <button onclick="newFlow()" class="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"><i class="fas fa-plus text-xs"></i> New Flow</button>
+    </div>
+    <div id="flows-grid" class="grid gap-4" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr));"></div>
+    <div id="flows-empty" class="hidden text-center py-16 text-gray-400">
+      <i class="fas fa-project-diagram text-4xl mb-3 opacity-30"></i>
+      <p class="text-sm font-medium">No flows yet</p>
+      <p class="text-xs mt-1">Click <strong>New Flow</strong> to build your first automated conversation</p>
+    </div>
   </div>
 
   <!-- Bot Status -->
@@ -1465,12 +1566,35 @@
 <script src="/public/js/admin/bot-logs.js"></script>
 <script src="/public/js/admin/system.js"></script>
 <script src="/public/js/admin/scoring.js"></script>
-<script src="/public/js/admin/scheduled.js?v=2"></script>
+<script src="/public/js/admin/scheduled.js?v=3"></script>
 <script src="/public/js/admin/integrations.js"></script>
 <script src="/public/js/admin/groups.js?v=2"></script>
 <script src="/public/js/admin/widget.js"></script>
+<script src="/public/js/admin/flows.js?v=2"></script>
 <script src="/public/js/admin.js"></script>
 <script>
+  function toggleDark() {
+    const isDark = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('darkMode', isDark);
+    const icon = document.getElementById('dark-toggle-icon');
+    if (icon) icon.className = isDark ? 'fas fa-sun text-sm' : 'fas fa-moon text-sm';
+  }
+  // Sync icon on load
+  document.addEventListener('DOMContentLoaded', function () {
+    const icon = document.getElementById('dark-toggle-icon');
+    if (icon && localStorage.getItem('darkMode') === 'true') icon.className = 'fas fa-sun text-sm';
+  });
+  function openScheduledModal() {
+    document.getElementById('sched-phone').value = '';
+    document.getElementById('sched-message').value = '';
+    document.getElementById('sched-at').value = '';
+    const nameEl = document.getElementById('sched-contact-name');
+    if (nameEl) nameEl.classList.add('hidden');
+    document.getElementById('scheduled-modal').style.display = 'flex';
+  }
+  function closeScheduledModal() {
+    document.getElementById('scheduled-modal').style.display = 'none';
+  }
   function updateWaPreview() {
     const msg = document.getElementById('campaign-message').value || 'Your message will appear here…';
     document.getElementById('wa-preview').textContent = msg;
@@ -1567,5 +1691,118 @@
     document.getElementById('audit-action-filter')?.addEventListener('keydown', e => { if (e.key === 'Enter') loadAuditLogs(); });
   });
 </script>
+
+<!-- ═══════════════════════════════════════════════════════════════ FLOW BUILDER -->
+<div id="flow-builder-overlay" class="hidden fixed inset-0 z-50 flex flex-col" style="background:var(--bg-page)">
+
+  <!-- Toolbar -->
+  <div class="h-14 flex items-center gap-3 px-4 border-b flex-shrink-0" style="background:var(--bg-card);border-color:var(--border)">
+    <button onclick="exitFlowBuilder()" class="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-800 px-2 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"><i class="fas fa-arrow-left text-xs"></i> <span class="sb-label">Flows</span></button>
+    <div class="w-px h-6 bg-gray-200 flex-shrink-0"></div>
+    <input id="flow-name-input" type="text" placeholder="Flow name…" class="text-sm font-semibold bg-transparent border-none outline-none text-gray-800 w-48 placeholder-gray-400" oninput="fb.dirty=true">
+    <span id="builder-status-badge" class="text-xs px-2 py-0.5 rounded-full font-semibold bg-gray-100 text-gray-500">Draft</span>
+    <div class="flex-1"></div>
+    <span id="builder-save-indicator" class="text-xs text-gray-400 hidden">Unsaved changes</span>
+    <button onclick="testSendFlow()" title="Send test" class="flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"><i class="fas fa-paper-plane text-xs"></i> Test</button>
+    <button onclick="togglePublishFlow()" id="publish-btn" class="flex items-center gap-1.5 text-sm font-medium text-white px-3 py-1.5 rounded-lg transition-colors bg-gray-400 hover:bg-gray-500"><i class="fas fa-globe text-xs"></i> <span id="publish-btn-label">Publish</span></button>
+    <button onclick="saveFlow()" class="flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 transition-colors"><i class="fas fa-save text-xs"></i> Save</button>
+  </div>
+
+  <!-- Body -->
+  <div class="flex flex-1 overflow-hidden">
+
+    <!-- Node palette -->
+    <div id="node-palette" class="w-52 border-r flex-shrink-0 overflow-y-auto p-3 flex flex-col gap-1" style="background:var(--bg-card);border-color:var(--border)">
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1 px-1">Nodes</p>
+      <div class="pal-node" draggable="true" data-type="trigger"      ondragstart="palDragStart(event)"><i class="fas fa-bolt w-4 text-center" style="color:#6366f1"></i><span>Trigger</span></div>
+      <div class="pal-node" draggable="true" data-type="message"     ondragstart="palDragStart(event)"><i class="fas fa-comment w-4 text-center" style="color:#10b981"></i><span>Send Message</span></div>
+      <div class="pal-node" draggable="true" data-type="question"    ondragstart="palDragStart(event)"><i class="fas fa-question-circle w-4 text-center" style="color:#3b82f6"></i><span>Ask Question</span></div>
+      <div class="pal-node" draggable="true" data-type="condition"   ondragstart="palDragStart(event)"><i class="fas fa-code-branch w-4 text-center" style="color:#f59e0b"></i><span>Condition</span></div>
+      <div class="pal-node" draggable="true" data-type="tag"         ondragstart="palDragStart(event)"><i class="fas fa-tag w-4 text-center" style="color:#8b5cf6"></i><span>Apply Tag</span></div>
+      <div class="pal-node" draggable="true" data-type="delay"       ondragstart="palDragStart(event)"><i class="fas fa-clock w-4 text-center" style="color:#6b7280"></i><span>Wait / Delay</span></div>
+      <div class="pal-node" draggable="true" data-type="set_variable" ondragstart="palDragStart(event)"><i class="fas fa-database w-4 text-center" style="color:#0891b2"></i><span>Set Variable</span></div>
+      <div class="pal-node" draggable="true" data-type="score"       ondragstart="palDragStart(event)"><i class="fas fa-star w-4 text-center" style="color:#f97316"></i><span>Update Score</span></div>
+      <div class="pal-node" draggable="true" data-type="jump"        ondragstart="palDragStart(event)"><i class="fas fa-share w-4 text-center" style="color:#ec4899"></i><span>Jump to Flow</span></div>
+      <div class="pal-node" draggable="true" data-type="transfer"    ondragstart="palDragStart(event)"><i class="fas fa-headset w-4 text-center" style="color:#0ea5e9"></i><span>Transfer</span></div>
+      <div class="pal-node" draggable="true" data-type="end"         ondragstart="palDragStart(event)"><i class="fas fa-flag-checkered w-4 text-center" style="color:#ef4444"></i><span>End</span></div>
+      <div class="mt-4 p-3 rounded-xl text-xs text-gray-500 border border-dashed border-gray-200">
+        <p class="font-semibold mb-1">Tips</p>
+        <p>Drag nodes onto canvas.</p>
+        <p class="mt-1">Drag from <span class="text-indigo-500">●</span> output to <span class="text-gray-400">○</span> input to connect.</p>
+        <p class="mt-1">Click a node to edit it.</p>
+        <p class="mt-1">Scroll to zoom, drag canvas to pan.</p>
+      </div>
+    </div>
+
+    <!-- Canvas -->
+    <div id="flow-canvas-wrap" class="flex-1 relative overflow-hidden select-none"
+         style="background-color:#f1f5f9;background-image:radial-gradient(circle,#cbd5e1 1px,transparent 1px);background-size:24px 24px;"
+         ondragover="canvasDragOver(event)" ondrop="canvasDrop(event)">
+      <div id="flow-canvas" style="position:absolute;top:0;left:0;transform-origin:0 0;width:0;height:0;">
+        <svg id="flow-svg" style="position:absolute;top:-5000px;left:-5000px;width:10000px;height:10000px;overflow:visible;pointer-events:none;"></svg>
+      </div>
+      <!-- Zoom controls -->
+      <div class="absolute bottom-4 right-4 flex flex-col gap-1 z-10">
+        <button onclick="fbZoom(0.15)"  class="w-8 h-8 rounded-lg bg-white shadow text-gray-600 hover:bg-gray-50 flex items-center justify-center text-sm font-bold border border-gray-200">+</button>
+        <button onclick="fbZoom(-0.15)" class="w-8 h-8 rounded-lg bg-white shadow text-gray-600 hover:bg-gray-50 flex items-center justify-center text-sm font-bold border border-gray-200">−</button>
+        <button onclick="fbResetView()" class="w-8 h-8 rounded-lg bg-white shadow text-gray-600 hover:bg-gray-50 flex items-center justify-center border border-gray-200" title="Reset view"><i class="fas fa-compress-alt text-xs"></i></button>
+      </div>
+    </div>
+
+    <!-- Properties panel -->
+    <div id="node-props-panel" class="w-72 border-l flex-shrink-0 overflow-y-auto hidden flex-col" style="background:var(--bg-card);border-color:var(--border)">
+      <div class="flex items-center justify-between px-4 py-3 border-b" style="border-color:var(--border)">
+        <span id="props-panel-title" class="text-sm font-semibold text-gray-700">Node Properties</span>
+        <button onclick="deselectNode()" class="text-gray-400 hover:text-gray-600 text-xs"><i class="fas fa-times"></i></button>
+      </div>
+      <div id="props-panel-body" class="p-4 flex flex-col gap-3 flex-1"></div>
+      <div class="px-4 pb-4">
+        <button onclick="deleteSelectedNode()" class="w-full text-xs text-red-500 hover:text-red-700 border border-red-200 hover:border-red-400 py-2 rounded-lg transition-colors"><i class="fas fa-trash mr-1"></i> Delete Node</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<style>
+  /* ── Flow Builder ─────────────────────────────────────────────────────── */
+  .pal-node {
+    display: flex; align-items: center; gap: 8px; padding: 7px 10px;
+    border-radius: 8px; cursor: grab; font-size: 12px; font-weight: 500;
+    color: var(--text-primary); border: 1px solid transparent;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .pal-node:hover { background: var(--nav-hover); border-color: var(--border); }
+  .pal-node:active { cursor: grabbing; }
+  .flow-node {
+    position: absolute; width: 210px; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.1);
+    border: 2px solid transparent; background: #fff; font-family: inherit;
+    transition: box-shadow 0.15s, border-color 0.15s; cursor: default; user-select: none;
+  }
+  html.dark .flow-node { background: var(--bg-card); }
+  .flow-node.selected { border-color: #6366f1 !important; box-shadow: 0 0 0 3px rgba(99,102,241,.2); }
+  .flow-node-header {
+    display: flex; align-items: center; gap: 7px; padding: 9px 12px 7px;
+    border-radius: 10px 10px 0 0; cursor: grab; font-size: 12px; font-weight: 600; color: #fff;
+  }
+  .flow-node-header:active { cursor: grabbing; }
+  .flow-node-body { padding: 8px 12px 10px; font-size: 11px; color: var(--text-secondary); min-height: 28px; }
+  .flow-node-ports { display: flex; justify-content: space-around; padding: 0 12px 10px; position: relative; }
+  .port {
+    width: 14px; height: 14px; border-radius: 50%; border: 2px solid #fff;
+    cursor: crosshair; flex-shrink: 0; position: relative; z-index: 2;
+    box-shadow: 0 1px 4px rgba(0,0,0,.18); transition: transform 0.1s;
+  }
+  .port:hover { transform: scale(1.3); }
+  .port-in { position: absolute; top: -7px; left: 50%; transform: translateX(-50%); background: #94a3b8; border-color: #fff; }
+  .port-label { font-size: 9px; font-weight: 700; margin-top: 3px; color: var(--text-muted); text-align: center; }
+  .props-field label { display: block; font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
+  .props-field input, .props-field textarea, .props-field select {
+    width: 100%; font-size: 12px; padding: 7px 10px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--bg-page); color: var(--text-primary); outline: none;
+  }
+  .props-field input:focus, .props-field textarea:focus, .props-field select:focus { border-color: #6366f1; }
+  .props-field textarea { resize: vertical; min-height: 72px; }
+</style>
 </body>
 </html>

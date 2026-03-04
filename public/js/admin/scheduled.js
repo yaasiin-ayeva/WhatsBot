@@ -1,4 +1,5 @@
 // Scheduled Messages
+// openScheduledModal / closeScheduledModal are defined inline in admin.ejs
 
 async function loadScheduledMessages() {
   try {
@@ -40,17 +41,8 @@ function renderScheduledMessages(msgs) {
     </tr>`).join('');
 }
 
-window.openScheduledModal = function () {
-  document.getElementById('sched-phone').value = '';
-  document.getElementById('sched-message').value = '';
-  document.getElementById('sched-at').value = '';
-  const nameEl = document.getElementById('sched-contact-name');
-  if (nameEl) nameEl.classList.add('hidden');
-  document.getElementById('scheduled-modal').style.display = 'flex';
-};
-
 window.openScheduledContactPicker = function () {
-  const phone = prompt('Enter phone number or leave blank to pick from contacts:');
+  const phone = prompt('Enter phone number:');
   if (phone) {
     document.getElementById('sched-phone').value = phone.replace(/\D/g, '');
   }
@@ -66,7 +58,7 @@ window.saveScheduledMessage = async function () {
   if (new Date(scheduledAt) <= new Date()) return showToast('Scheduled time must be in the future', 'error');
   try {
     await apiFetch('/crm/scheduled-messages', 'POST', { phoneNumber, message, scheduledAt });
-    document.getElementById('scheduled-modal').style.display = 'none';
+    closeScheduledModal();
     showToast('Message scheduled', 'success');
     loadScheduledMessages();
   } catch {
@@ -83,8 +75,4 @@ window.deleteScheduledMessage = async function (id) {
   } catch {
     showToast('Failed to cancel message', 'error');
   }
-};
-
-window.closeScheduledModal = function () {
-  document.getElementById('scheduled-modal').style.display = 'none';
 };

@@ -55,6 +55,12 @@ const port = EnvConfig.PORT || 3000;
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
+// Serve widget.js with CORS so it can be loaded cross-origin
+app.get('/public/js/widget.js', (_req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', 'application/javascript');
+    res.sendFile(path.join(process.cwd(), 'public', 'js', 'widget.js'));
+});
 app.use("/public", express.static("public"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));

@@ -16,6 +16,8 @@ import { messageEmitter } from "./utils/message-emitter.util";
 import { AutoReplyModel } from "./crm/models/auto-reply.model";
 import { fireEvent } from "./utils/fire-event.util";
 import { claudeCompletion } from "./utils/claude.util";
+import { FlowModel } from "./crm/models/flow.model";
+import { FlowSessionModel } from "./crm/models/flow-session.model";
 const qrcode = require('qrcode-terminal');
 
 // Per-contact auto-reply cooldown: phone → last triggered timestamp
@@ -242,6 +244,10 @@ export class BotManager {
                 // Check auto-reply rules
                 const replied = await this.checkAutoReply(user.number, content, chat);
                 if (replied) return;
+
+                // Check active flows
+                const flowHandled = await this.executeFlow(user.number, content, chat);
+                if (flowHandled) return;
             }
 
             await Promise.all([
@@ -365,6 +371,242 @@ export class BotManager {
         }
         return false;
     }
+
+    // ─── Flow Execution Engine ────────────────────────────────────────────────
+
+    private async executeFlow(phoneNumber: string, content: string, chat: any): Promise<boolean> {
+        try {
+            // 1. Check for active session
+            const session = await FlowSessionModel.findOne({ phoneNumber, status: 'active' })
+                .populate<{ flowId: any }>('flowId')
+                .exec();
+
+            if (session && session.flowId) {
+                const flow = session.flowId;
+
+                // Clear expired delay
+                if (session.resumeAt && new Date() < session.resumeAt) {
+                    session.resumeAt = undefined;
+                }
+
+                if (session.waitingForReply) {
+                    // Store the reply in the named variable
+                    if (session.pendingVariable) {
+                        session.variables.set(session.pendingVariable, content);
+                    }
+                    session.waitingForReply = false;
+                    session.pendingVariable = '';
+
+                    // Advance to the next node connected from the question's output
+                    const nextEdge = flow.edges.find((e: any) => e.source === session.currentNodeId && e.sourceHandle === 'out');
+                    if (!nextEdge) { await this.endFlowSession(session); return true; }
+                    const nextNode = flow.nodes.find((n: any) => n.id === nextEdge.target);
+                    if (!nextNode) { await this.endFlowSession(session); return true; }
+
+                    session.currentNodeId = nextNode.id;
+                    session.lastActivityAt = new Date();
+                    await session.save();
+                    await this.runFlowNode(session, nextNode, flow, chat);
+                    return true;
+                }
+                // Active session but not waiting — shouldn't block normal messages
+                return false;
+            }
+
+            // 2. No active session — match published flows by trigger
+            const flows = await FlowModel.find({ status: 'published' }).lean();
+            for (const flow of flows) {
+                const trigger = flow.trigger;
+                let matches = false;
+
+                if (trigger.type === 'any_message') {
+                    matches = true;
+                } else if (trigger.type === 'keyword') {
+                    const lc = content.toLowerCase().trim();
+                    matches = (trigger.keywords || []).some(kw => lc === kw.toLowerCase().trim() || lc.startsWith(kw.toLowerCase().trim() + ' '));
+                } else if (trigger.type === 'first_contact') {
+                    const contact = await ContactModel.findOne({ phoneNumber }).lean();
+                    matches = !contact || (contact as any).interactionsCount <= 1;
+                } else if (trigger.type === 'campaign_reply') {
+                    const campaign = await CampaignModel.findOne({ 'deliveryReport.phone': phoneNumber, 'deliveryReport.status': 'sent' }).lean();
+                    matches = !!campaign;
+                } else if (trigger.type === 'tag_applied') {
+                    const contact = await ContactModel.findOne({ phoneNumber }).lean();
+                    matches = !!(contact as any)?.tags?.includes(trigger.tagName);
+                }
+
+                if (!matches) continue;
+
+                const triggerNode = flow.nodes.find(n => n.type === 'trigger');
+                if (!triggerNode) continue;
+
+                const newSession = await FlowSessionModel.create({
+                    phoneNumber,
+                    flowId: flow._id,
+                    currentNodeId: triggerNode.id,
+                    variables: {},
+                    waitingForReply: false,
+                    pendingVariable: '',
+                    status: 'active',
+                    startedAt: new Date(),
+                    lastActivityAt: new Date(),
+                });
+                await FlowModel.updateOne({ _id: flow._id }, { $inc: { 'stats.activations': 1 } });
+                await this.runFlowNode(newSession, triggerNode, flow as any, chat);
+                return true;
+            }
+        } catch (err) {
+            logger.error('Flow execution error:', err);
+        }
+        return false;
+    }
+
+    private async runFlowNode(session: any, node: any, flow: any, chat: any, depth = 0): Promise<void> {
+        if (depth > 20) { await this.endFlowSession(session); return; } // guard against loops
+
+        const vars = Object.fromEntries(session.variables as Map<string, string>);
+        const contact = await ContactModel.findOne({ phoneNumber: session.phoneNumber }).lean() as any;
+        const ctx: Record<string, string> = {
+            name:  contact?.name || contact?.pushName || 'Friend',
+            phone: session.phoneNumber,
+            ...vars,
+        };
+        const resolve = (text: string) =>
+            (text || '').replace(/\{\{(\w+)(?:\|([^}]*))?\}\}/g, (_: string, k: string, fb: string) => ctx[k] || fb || '');
+
+        const advance = async (handle = 'out') => {
+            const edge = flow.edges.find((e: any) => e.source === node.id && e.sourceHandle === handle);
+            if (!edge) { await this.endFlowSession(session); return; }
+            const nextNode = flow.nodes.find((n: any) => n.id === edge.target);
+            if (!nextNode) { await this.endFlowSession(session); return; }
+            session.currentNodeId = nextNode.id;
+            session.lastActivityAt = new Date();
+            await session.save();
+            await this.runFlowNode(session, nextNode, flow, chat, depth + 1);
+        };
+
+        try {
+            switch (node.type) {
+                case 'trigger':
+                    await advance('out');
+                    break;
+
+                case 'message': {
+                    const text = resolve(node.data.text || '');
+                    if (text) await chat.sendMessage(text);
+                    await advance('out');
+                    break;
+                }
+
+                case 'question': {
+                    const text = resolve(node.data.text || '');
+                    if (text) await chat.sendMessage(text);
+                    session.waitingForReply = true;
+                    session.pendingVariable = node.data.variable || 'answer';
+                    session.lastActivityAt = new Date();
+                    await session.save();
+                    break; // wait for reply — DO NOT advance
+                }
+
+                case 'condition': {
+                    const actual   = ctx[node.data.variable || ''] || '';
+                    const expected = resolve(node.data.value || '');
+                    const op       = node.data.operator || 'equals';
+                    let result = false;
+                    if (op === 'equals')      result = actual.toLowerCase() === expected.toLowerCase();
+                    else if (op === 'contains')    result = actual.toLowerCase().includes(expected.toLowerCase());
+                    else if (op === 'starts_with') result = actual.toLowerCase().startsWith(expected.toLowerCase());
+                    else if (op === 'not_empty')   result = actual.trim() !== '';
+                    else if (op === 'is_empty')    result = actual.trim() === '';
+                    await advance(result ? 'yes' : 'no');
+                    break;
+                }
+
+                case 'tag': {
+                    const tag    = node.data.tag || '';
+                    const action = node.data.action || 'add';
+                    if (tag) {
+                        if (action === 'add') await ContactModel.updateOne({ phoneNumber: session.phoneNumber }, { $addToSet: { tags: tag } });
+                        else                   await ContactModel.updateOne({ phoneNumber: session.phoneNumber }, { $pull:    { tags: tag } });
+                    }
+                    await advance('out');
+                    break;
+                }
+
+                case 'delay': {
+                    const secs = (parseInt(node.data.seconds) || 0) + (parseInt(node.data.minutes) || 0) * 60;
+                    if (secs > 0 && secs <= 60) {
+                        await new Promise(r => setTimeout(r, secs * 1000));
+                    } else if (secs > 60) {
+                        session.resumeAt = new Date(Date.now() + secs * 1000);
+                        await session.save();
+                    }
+                    await advance('out');
+                    break;
+                }
+
+                case 'set_variable': {
+                    const varName = node.data.variable || '';
+                    const value   = resolve(node.data.value || '');
+                    if (varName) session.variables.set(varName, value);
+                    await advance('out');
+                    break;
+                }
+
+                case 'score': {
+                    const pts = parseInt(node.data.points) || 0;
+                    if (pts !== 0) await ContactModel.updateOne({ phoneNumber: session.phoneNumber }, { $inc: { score: pts } });
+                    await advance('out');
+                    break;
+                }
+
+                case 'transfer': {
+                    const note = node.data.note ? resolve(node.data.note) : null;
+                    if (note) await chat.sendMessage(`ℹ️ ${note}`);
+                    await ContactModel.updateOne({ phoneNumber: session.phoneNumber }, { $addToSet: { tags: 'transfer-requested' } });
+                    await this.endFlowSession(session);
+                    break;
+                }
+
+                case 'jump': {
+                    const targetFlow = await FlowModel.findById(node.data.flowId).lean();
+                    if (targetFlow) {
+                        const tNode = targetFlow.nodes.find((n: any) => n.type === 'trigger');
+                        if (tNode) {
+                            session.flowId = targetFlow._id;
+                            session.currentNodeId = tNode.id;
+                            await session.save();
+                            await FlowModel.updateOne({ _id: targetFlow._id }, { $inc: { 'stats.activations': 1 } });
+                            await this.runFlowNode(session, tNode, targetFlow as any, chat, depth + 1);
+                            return;
+                        }
+                    }
+                    await this.endFlowSession(session);
+                    break;
+                }
+
+                case 'end':
+                default: {
+                    const text = node.data.text ? resolve(node.data.text) : null;
+                    if (text) await chat.sendMessage(text);
+                    await this.endFlowSession(session);
+                    break;
+                }
+            }
+        } catch (err) {
+            logger.error(`runFlowNode error (type=${node.type}):`, err);
+            await this.endFlowSession(session);
+        }
+    }
+
+    private async endFlowSession(session: any): Promise<void> {
+        session.status = 'completed';
+        session.lastActivityAt = new Date();
+        await session.save();
+        await FlowModel.updateOne({ _id: session.flowId }, { $inc: { 'stats.completions': 1 } });
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
 
     private async handleTextMessage(message: Message, content: string, userI18n: UserI18n, chat: any) {
         const url = content.trim().split(/ +/)[0];

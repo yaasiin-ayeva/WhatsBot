@@ -57,6 +57,7 @@ document.addEventListener('DOMContentLoaded', function () {
       'scoring-tab':            { section: 'scoring-section',            onLoad: loadScoring },
       'scheduled-messages-tab': { section: 'scheduled-messages-section', onLoad: loadScheduledMessages },
       'widget-tab':             { section: 'widget-section',             onLoad: loadWidgetSettings },
+      'flows-tab':              { section: 'flows-section',              onLoad: loadFlows },
       'integrations-tab':       { section: 'integrations-section',       onLoad: loadIntegrations },
       'groups-tab':             { section: 'groups-section',             onLoad: loadGroups },
     };

@@ -23,7 +23,7 @@
         "jsonwebtoken": "^9.0.2",
         "langdetect": "^0.2.1",
         "mongoose": "^8.22.1",
-        "nodemailer": "^8.0.1",
+        "nodemailer": "^9.0.1",
         "nodemon": "^3.1.4",
         "openai": "^4.48.2",
         "path": "^0.12.7",
